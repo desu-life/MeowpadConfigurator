@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::{Config, str_to_cur};
+use crate::{str_to_cur, Config};
 use anyhow::Result;
 use hidapi::HidDevice;
 use log::*;
@@ -19,10 +19,9 @@ pub struct Meowpad {
 
 impl Debug for Meowpad {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("Meowpad")
+        f.write_fmt(format_args!("Meowpad {{ config: {:?} }}", self.config))
     }
 }
-
 
 impl Meowpad {
     pub fn new(device: HidDevice) -> Meowpad {
@@ -55,26 +54,34 @@ impl Meowpad {
     pub fn ping(&self) -> Result<bool> {
         let cur = str_to_cur(PING);
         self.write(cur.get_ref())?;
-        let (res, _) = self.read_timeout(1000)?;
-        Ok(String::from_utf8_lossy(&res[..4]) == "pong")
+        let (res, size) = self.read_timeout(1000)?;
+        let mut byte = res[..size].to_owned();
+        if let Some(first) = byte.iter().position(|&b| b == 0) {
+            byte.truncate(first);
+        }
+        Ok(String::from_utf8(byte)? == "pong")
     }
 
     pub fn get_device_name(&self) -> Result<String> {
         let cur = str_to_cur(GET_DEVICE_NAME);
         self.write(cur.get_ref())?;
         let (res, size) = self.read()?; // 读取
-        Ok(String::from_utf8_lossy(&res[..size])
-            .trim_end_matches('\0')
-            .to_owned())
+        let mut byte = res[..size].to_owned();
+        if let Some(first) = byte.iter().position(|&b| b == 0) {
+            byte.truncate(first);
+        }
+        Ok(String::from_utf8(byte)?)
     }
 
     pub fn get_firmware_version(&self) -> Result<String> {
         let cur = str_to_cur(GET_FIRMWARE_VERSION);
         self.write(cur.get_ref())?;
         let (res, size) = self.read()?; // 读取
-        Ok(String::from_utf8_lossy(&res[..size])
-            .trim_end_matches('\0')
-            .to_owned())
+        let mut byte = res[..size].to_owned();
+        if let Some(first) = byte.iter().position(|&b| b == 0) {
+            byte.truncate(first);
+        }
+        Ok(String::from_utf8(byte)?)
     }
 
     pub fn write_config(&self) -> Result<()> {

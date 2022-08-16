@@ -18,10 +18,3 @@ fn str_to_cur(str: &str) -> Cursor<[u8; 65]> {
         .for_each(|b| cur.write_u8(*b).unwrap());
     cur
 }
-
-// use strum::IntoEnumIterator;
-// pub fn itertest() {
-//     for k in KeyCode::iter() {
-//         println!("{k}")
-//     }
-// }

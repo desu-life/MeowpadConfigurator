@@ -7,13 +7,13 @@ use anyhow::{anyhow, Result as AnyResult};
 use hidapi::HidApi;
 use log::*;
 use meowpad::*;
+use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
+use once_cell::sync::{Lazy, OnceCell};
 use std::env;
 use std::fs;
 use std::io::Write;
 use std::sync::{mpsc, Mutex, RwLock};
 use std::time::Duration;
-use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
-use once_cell::sync::{OnceCell, Lazy};
 
 static HID_API: RwLock<Lazy<HidApi>> = RwLock::new(Lazy::new(|| (HidApi::new().unwrap())));
 static DEVICE: Mutex<OnceCell<Meowpad>> = Mutex::new(OnceCell::new());
@@ -47,7 +47,7 @@ fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
         Ok(_d.get().ok_or(anyhow!("获取设备失败"))?.config())
     }() {
         Ok(cfg) => Ok(cfg),
-        Err(e) => Err(format!("{}", e))
+        Err(e) => Err(format!("{}", e)),
     }
 }
 
@@ -61,7 +61,7 @@ fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), String> {
         Ok(())
     }() {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!("{}", e))
+        Err(e) => Err(format!("{}", e)),
     }
 }
 
@@ -69,7 +69,7 @@ fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), String> {
 fn connect(_app: tauri::AppHandle) -> Result<(), String> {
     match _connect(false, false) {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!("{}", e))
+        Err(e) => Err(format!("{}", e)),
     }
 }
 
@@ -94,7 +94,11 @@ fn _connect(console: bool, reset: bool) -> AnyResult<()> {
                 f.write_all(&toml::to_vec(&device.config())?)?;
             }
 
-            DEVICE.lock().unwrap().set(device).expect("设置设备连接失败");
+            DEVICE
+                .lock()
+                .unwrap()
+                .set(device)
+                .expect("设置设备连接失败");
             Ok(())
         }
         None => {
@@ -151,9 +155,9 @@ fn main() -> AnyResult<()> {
             watcher
                 .watch("meowpad.toml", RecursiveMode::NonRecursive)
                 .unwrap();
-        
+
             warn!("开始监听配置文件（meowpad.toml）如要修改配置，修改文件保存即可。");
-        
+
             loop {
                 match rx.recv() {
                     Ok(DebouncedEvent::Write(_)) => {
@@ -161,7 +165,8 @@ fn main() -> AnyResult<()> {
                         let mut _d = DEVICE.lock().unwrap();
                         let d = _d.get_mut().unwrap();
                         d.map_config(|c| {
-                            *c = toml::from_str(&fs::read_to_string("meowpad.toml").unwrap()).unwrap();
+                            *c = toml::from_str(&fs::read_to_string("meowpad.toml").unwrap())
+                                .unwrap();
                         });
                         d.write_config()?;
                     }
@@ -172,19 +177,24 @@ fn main() -> AnyResult<()> {
         }
         _ => {
             tauri::Builder::default()
-            .setup(|_app| {
-                #[cfg(debug_assertions)] // only include this code on debug builds
-                {
-                    use tauri::Manager;
-                    let window = _app.get_window("main").unwrap();
-                    window.open_devtools();
-                    window.set_fullscreen(false).unwrap();
-                }
-                Ok(())
-            })
-            .invoke_handler(tauri::generate_handler![connect, get_config, save_config, get_default])
-            .run(tauri::generate_context!())
-            .expect("error while running tauri application");
+                .setup(|_app| {
+                    #[cfg(debug_assertions)] // only include this code on debug builds
+                    {
+                        use tauri::Manager;
+                        let window = _app.get_window("main").unwrap();
+                        window.open_devtools();
+                        window.set_fullscreen(false).unwrap();
+                    }
+                    Ok(())
+                })
+                .invoke_handler(tauri::generate_handler![
+                    connect,
+                    get_config,
+                    save_config,
+                    get_default
+                ])
+                .run(tauri::generate_context!())
+                .expect("error while running tauri application");
         }
     }
     Ok(())
