@@ -1,26 +1,34 @@
 // export declare type LightingMode = 'Off' | 'Solid' | 'Breath' | 'RainbowBreath' | 'RainbowGradient' | "PressAndLight" | "SpeedPress";
 
+export interface IRgb {
+    red: number
+    green: number
+    blue: number
+}
+
 export interface IConfig { 
-    breath_interval: number
-    breath_maximum_light_duration: number
-    breath_minimum_light_duration: number
-    fade_light_switching_speed: number
     key_1: KeyCode
     key_2: KeyCode
     key_3: KeyCode
     key_4: KeyCode
     key_5: KeyCode
-    led_color_l: string
-    led_color_r: string
-    lighting_mode: LightingMode
+    led_color_l: IRgb
+    led_color_r: IRgb
+    led_color_btm_l: IRgb
+    led_color_btm_r: IRgb
+    lighting_mode_key: LightingMode
+    lighting_mode_btm: LightingMode
     maximum_brightness: number
-    minimum_brightness: number
-    press_light_duration: number
-    press_light_maximum_brightness: number
+    breath_minimum_brightness: number
+    breath_maximum_light_duration: number
+    breath_minimum_light_duration: number
+    breath_interval: number
     press_light_minimum_brightness: number
-    speed_press_color_l: string
-    speed_press_color_r: string
-    color_switching_speed: number
+    press_light_duration: number
+    rainbow_light_switching_speed: number
+    speed_press_high_color: IRgb
+    speed_press_low_color: IRgb
+    speed_press_trans_speed: number
     press_light_step: number
     keyboard_jitters_elimination_time: number
 }
@@ -29,10 +37,12 @@ export enum LightingMode {
     Off = 0,
     Solid = 1,
     Breath = 2,
-    RainbowBreath = 3,
-    RainbowGradient = 4,
-    PressAndLight = 5,
-    SpeedPress = 6
+    RainbowBreathSwitch = 3,
+    RainbowBreathSync = 4,
+    RainbowGradientSwitch = 5,
+    RainbowGradientSync = 6,
+    PressAndLight = 7,
+    SpeedPress = 8,
 }
 
 export enum KeyCode {
@@ -223,6 +233,8 @@ export let jsToHid = {
     "CapsLock": 0x39,
     "Comma": 0x36,
     "ControlLeft": 0xe0,
+    "ControlRight": 0xe4,
+    "Insert": 0x49,
     "Delete": 0x4c,
     "Digit0": 0x27,
     "Digit1": 0x1e,
@@ -291,5 +303,27 @@ export let jsToHid = {
     "ShiftRight": 0xe5,
     "Slash": 0x38,
     "Space": 0x2c,
-    "Tab": 0x2b
+    "Tab": 0x2b,
+    "Numpad1": 0x59,
+    "Numpad2": 0x5a,
+    "Numpad3": 0x5b,
+    "Numpad4": 0x5c,
+    "Numpad5": 0x5d,
+    "Numpad6": 0x5e,
+    "Numpad7": 0x5f,
+    "Numpad8": 0x60,
+    "Numpad9": 0x61,
+    "Numpad0": 0x62,
+    "NumpadDecimal": 0x63,
+    "NumpadAdd": 0x57,
+    "NumpadSubtract": 0x56,
+    "NumpadMultiply": 0x55,
+    "NumpadDivide": 0x54,
+    "NumpadEqual": 0x67,
+    "NumpadComma": 0x85,
+    "NumpadParenLeft": 0xb6,
+    "NumpadParenRight": 0xb7,
+    "IntlRo": 0x87,
+    "IntlYen": 0x7d,
+    "IntlHash": 0x32,
 };

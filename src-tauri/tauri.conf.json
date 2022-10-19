@@ -59,11 +59,7 @@
         "resizable": false,
         "title": "Meowpad Configurator",
         "width": 800,
-        "height": 600,
-        "minWidth": 500,
-        "minHeight": 400,
-        "maxWidth": 800,
-        "maxHeight": 600
+        "height": 600
       }
     ]
   }

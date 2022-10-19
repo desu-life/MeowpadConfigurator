@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { Type } from "naive-ui/es/button/src/interface"
 import { useStore } from '@/store'
 import { IConfig } from "@/interface";
+import { Rgb2Hex, Hex2Rgb } from '@/utils';
 // defineProps<{ msg: string }>()
 
 const store = useStore()
@@ -12,14 +13,14 @@ const status_str = ref("设备未连接")
 
 async function connect() {
   store.loading = true
-  status.value = undefined
+  status.value = "warning"
   status_str.value = "连接中"
   try {
     const res = await invoke("connect")
     store.connected = true
+    await get_config()
     status.value = "success"
     status_str.value = "连接成功"
-    await get_config()
   } catch (e) {
     store.connected = false
     status.value = "error"
@@ -32,6 +33,13 @@ async function connect() {
 async function get_config() {
   try {
     const res: IConfig = await invoke("get_config")
+    console.log(res)
+    store.led_color_l = Rgb2Hex(res.led_color_l)
+    store.led_color_r = Rgb2Hex(res.led_color_r)
+    store.led_color_btm_l = Rgb2Hex(res.led_color_btm_l)
+    store.led_color_btm_r = Rgb2Hex(res.led_color_btm_r)
+    store.speed_press_high_color = Rgb2Hex(res.speed_press_high_color)
+    store.speed_press_low_color = Rgb2Hex(res.speed_press_low_color)
     store.config = res
   } catch (e) {
     store.connected = false
@@ -43,7 +51,15 @@ async function get_config() {
 
 async function sync_config() {
   store.loading = true
+  status.value = "warning"
+  status_str.value = "正在上传配置"
   try {
+    store.config!.led_color_l = Hex2Rgb(store.led_color_l!)
+    store.config!.led_color_r = Hex2Rgb(store.led_color_r!)
+    store.config!.led_color_btm_l = Hex2Rgb(store.led_color_btm_l!)
+    store.config!.led_color_btm_r = Hex2Rgb(store.led_color_btm_r!)
+    store.config!.speed_press_high_color = Hex2Rgb(store.speed_press_high_color!)
+    store.config!.speed_press_low_color = Hex2Rgb(store.speed_press_low_color!)
     await invoke('save_config', { config: store.config })
     status.value = "success"
     status_str.value = "上传配置成功"

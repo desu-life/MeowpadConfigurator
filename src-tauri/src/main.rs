@@ -8,19 +8,19 @@ use hidapi::HidApi;
 use log::*;
 use meowpad::*;
 use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::Lazy;
 use std::env;
 use std::fs;
 use std::io::Write;
 use std::sync::{mpsc, Mutex, RwLock};
 use std::time::Duration;
 
-static HID_API: RwLock<Lazy<HidApi>> = RwLock::new(Lazy::new(|| (HidApi::new().unwrap())));
-static DEVICE: Mutex<OnceCell<Meowpad>> = Mutex::new(OnceCell::new());
+static HID_API: RwLock<Lazy<HidApi>> = RwLock::new(Lazy::new(|| HidApi::new().unwrap()));
+static DEVICE: Mutex<Option<Meowpad>> = Mutex::new(None);
 
-fn init_logger() {
+fn init_logger(default_level: &str) {
     use env_logger::{Builder, Env};
-    let mut builder = Builder::from_env(Env::default().filter_or("LOG_LEVEL", "INFO"));
+    let mut builder = Builder::from_env(Env::default().filter_or("LOG_LEVEL", default_level));
     builder
         .format(|buf, record| {
             let level = record.level();
@@ -36,15 +36,20 @@ fn init_logger() {
 
 #[tauri::command]
 fn get_default(_app: tauri::AppHandle) -> Result<Config, String> {
-    let config = Config::default();
-    Ok(config)
+    match || -> AnyResult<Config> {
+        let config = cbor::CONFIG::default();
+        config.try_into()
+    }() {
+        Ok(cfg) => Ok(cfg),
+        Err(e) => Err(format!("{}", e))
+    }
 }
 
 #[tauri::command]
 fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
     match || -> AnyResult<Config> {
         let _d = DEVICE.lock().unwrap();
-        Ok(_d.get().ok_or(anyhow!("获取设备失败"))?.config())
+        _d.as_ref().ok_or_else(|| anyhow!("获取设备失败"))?.config().try_into()
     }() {
         Ok(cfg) => Ok(cfg),
         Err(e) => Err(format!("{}", e)),
@@ -55,9 +60,10 @@ fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
 fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), String> {
     match || -> AnyResult<()> {
         let mut _d = DEVICE.lock().unwrap();
-        let d = _d.get_mut().ok_or(anyhow!("获取设备失败"))?;
-        d.map_config(|c| *c = config);
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        d.map_config(|c| *c = config.into());
         d.write_config()?;
+        d.flush()?;
         Ok(())
     }() {
         Ok(_) => Ok(()),
@@ -94,11 +100,8 @@ fn _connect(console: bool, reset: bool) -> AnyResult<()> {
                 f.write_all(&toml::to_vec(&device.config())?)?;
             }
 
-            DEVICE
-                .lock()
-                .unwrap()
-                .set(device)
-                .expect("设置设备连接失败");
+            let mut _d = DEVICE.lock().unwrap();
+            *_d = Some(device);
             Ok(())
         }
         None => {
@@ -142,10 +145,33 @@ fn find_device() -> Option<Meowpad> {
     meowpad
 }
 
-fn main() -> AnyResult<()> {
-    init_logger();
+static version: &str = "0.2.0";
 
-    let action = env::args().skip(1).next().unwrap_or_default();
+#[derive(serde::Deserialize)]
+struct Version {
+    version: String,
+    download_url: String,
+}
+
+fn main() -> AnyResult<()> {
+    init_logger("INFO");
+
+    // let resp = || -> AnyResult<Version> {
+    //     Ok(reqwest::blocking::get("https://desu.life/device/configurator_version")?
+    //         .json::<Version>()?)
+    // }();
+
+    // if let Ok(resp) = resp {
+    //     if resp.version != version {
+    //         warn!("配置器已更新，请使用以下链接下载更新");
+    //         warn!("{}", resp.download_url);
+    //         warn!("按回车键退出 ↲");
+    //         console::Term::stdout().read_line()?;
+    //         exit(0);
+    //     }
+    // }
+
+    let action = env::args().nth(1).unwrap_or_default();
     match action.as_str() {
         "--reset" => _connect(false, true)?,
         "--console" => {
@@ -163,7 +189,7 @@ fn main() -> AnyResult<()> {
                     Ok(DebouncedEvent::Write(_)) => {
                         warn!(" * 检测到配置文件更新，自动写入中 ...");
                         let mut _d = DEVICE.lock().unwrap();
-                        let d = _d.get_mut().unwrap();
+                        let mut d = _d.take().unwrap();
                         d.map_config(|c| {
                             *c = toml::from_str(&fs::read_to_string("meowpad.toml").unwrap())
                                 .unwrap();
