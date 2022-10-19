@@ -41,7 +41,7 @@ fn get_default(_app: tauri::AppHandle) -> Result<Config, String> {
         config.try_into()
     }() {
         Ok(cfg) => Ok(cfg),
-        Err(e) => Err(format!("{}", e))
+        Err(e) => Err(format!("{}", e)),
     }
 }
 
@@ -49,7 +49,10 @@ fn get_default(_app: tauri::AppHandle) -> Result<Config, String> {
 fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
     match || -> AnyResult<Config> {
         let _d = DEVICE.lock().unwrap();
-        _d.as_ref().ok_or_else(|| anyhow!("获取设备失败"))?.config().try_into()
+        _d.as_ref()
+            .ok_or_else(|| anyhow!("获取设备失败"))?
+            .config()
+            .try_into()
     }() {
         Ok(cfg) => Ok(cfg),
         Err(e) => Err(format!("{}", e)),
@@ -106,7 +109,7 @@ fn _connect(console: bool, reset: bool) -> AnyResult<()> {
         }
         None => {
             warn!("连接失败，无法找到设备");
-            Err(anyhow!("无法找到设备"))
+            Err(anyhow!("无法找到设备，请尝试重新插拔Meowpad"))
         }
     }
 }
@@ -145,13 +148,7 @@ fn find_device() -> Option<Meowpad> {
     meowpad
 }
 
-static version: &str = "0.2.0";
-
-#[derive(serde::Deserialize)]
-struct Version {
-    version: String,
-    download_url: String,
-}
+static _VERSION: &str = "0.2.0";
 
 fn main() -> AnyResult<()> {
     init_logger("INFO");

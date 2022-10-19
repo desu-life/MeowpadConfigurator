@@ -1,9 +1,7 @@
 use crate::{
+    cbor::CONFIG,
     packet::{Packet, PacketID},
-    // Config,
-    cbor::CONFIG
 };
-use std::{fmt::Debug, io::Cursor, thread, time::Duration, borrow::BorrowMut, fs::{File, OpenOptions, self}};
 use anyhow::{anyhow, Result};
 use byteorder::{BigEndian, ReadBytesExt};
 use hidapi::HidDevice;
@@ -11,13 +9,14 @@ use log::*;
 use num::FromPrimitive;
 use pretty_hex::*;
 use rand::RngCore;
+use std::{fmt::Debug, fs, io::Cursor, thread, time::Duration};
 
 type Config = CONFIG;
 
 pub struct Meowpad {
     device: HidDevice,
     config: Option<Config>,
-    key: Vec<u8>
+    key: Vec<u8>,
 }
 
 impl Debug for Meowpad {
@@ -33,10 +32,10 @@ impl Meowpad {
                 if data.len() != 64 || !data.starts_with(&[0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF]) {
                     warn!("错误的密钥，正在重置");
                     fs::remove_file(".meowkey").expect("错误的密钥 / 重置密钥失败");
-                    return Self::new(device)
+                    return Self::new(device);
                 }
                 data
-            },
+            }
             Err(_) => {
                 let mut data = vec![0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF];
                 let mut tmp = [0u8; 58];
@@ -44,9 +43,9 @@ impl Meowpad {
                 data.append(&mut tmp.to_vec());
                 fs::write(".meowkey", &data).unwrap();
                 data
-            },
+            }
         };
-        
+
         let mut key = vec![0];
         key.append(&mut data);
         device.set_blocking_mode(true).unwrap();
@@ -94,7 +93,7 @@ impl Meowpad {
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            panic!("Unexcepted Response")
+            Err(anyhow!("Unexcepted Response"))
         }
     }
 
@@ -106,7 +105,7 @@ impl Meowpad {
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            panic!("Unexcepted Response")
+            Err(anyhow!("Unexcepted Response"))
         }
     }
 
@@ -152,8 +151,8 @@ impl Meowpad {
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            debug!("密钥不正确，请重新插拔meowpad电源以重置");
-            Err(anyhow!("密钥不正确，请重新插拔meowpad电源以重置"))
+            warn!("密钥不正确，请重新插拔meowpad以重置");
+            Err(anyhow!("密钥不正确，请重新插拔meowpad以重置"))
         }
     }
 
@@ -182,7 +181,7 @@ impl Meowpad {
                     Ok(b) => {
                         read_bytes += 1;
                         data.push(b)
-                    },
+                    }
                     Err(_) => {
                         // cur已经遍历结束
                         // reset buffer
@@ -191,7 +190,7 @@ impl Meowpad {
                         self.write(Packet::new(packet_id, [packet_num]))?;
                         self.device.read_timeout(buf.get_mut(), timeout)?;
                         packet_num += 1;
-                    },
+                    }
                 }
             } else {
                 break;
@@ -217,7 +216,7 @@ impl Meowpad {
                     Ok(b) => {
                         read_bytes += 1;
                         data.push(b)
-                    },
+                    }
                     Err(_) => {
                         // cur已经遍历结束
                         // reset buffer
@@ -226,7 +225,7 @@ impl Meowpad {
                         self.write(Packet::new(packet_id, [packet_num]))?;
                         self.device.read(buf.get_mut())?;
                         packet_num += 1;
-                    },
+                    }
                 }
             } else {
                 break;

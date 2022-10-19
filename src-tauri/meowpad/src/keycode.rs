@@ -1,9 +1,20 @@
 use num_derive::{FromPrimitive, ToPrimitive};
-use strum_macros::EnumIter;
 use serde_repr::*;
+use strum_macros::EnumIter;
 
 #[allow(non_camel_case_types)]
-#[derive(EnumIter, Serialize_repr, Deserialize_repr, FromPrimitive, ToPrimitive, Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(
+    EnumIter,
+    Serialize_repr,
+    Deserialize_repr,
+    FromPrimitive,
+    ToPrimitive,
+    Copy,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+)]
 #[repr(u8)]
 pub enum KeyCode {
     KEY_NONE = 0x00,

@@ -17,11 +17,13 @@ const lightThemeOverrides: GlobalThemeOverrides = {
 const theme = ref<Theme | null>(null)
 
 onMounted(async () => {
-  theme.value = await appWindow.theme();
-
+  theme.value = await appWindow.theme()
+  
   await appWindow.onThemeChanged(({ payload: t }) => {
-    theme.value = t;
-  });
+    theme.value = t
+  })
+
+  setTimeout(appWindow.show, 500)
 })
 </script>
 

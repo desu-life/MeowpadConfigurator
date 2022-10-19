@@ -1,15 +1,11 @@
 use crate::{Config, KeyCode};
-use anyhow::{anyhow, Result};
-use byteorder::{ReadBytesExt, WriteBytesExt};
+use anyhow::Result;
 use ciborium;
-use num::FromPrimitive;
-use num_derive::{FromPrimitive, ToPrimitive};
-use serde::{Deserialize, Serialize};
-use serde_repr::*;
-use serde_with::*;
-use std::{io::Cursor, time::Duration};
 use palette::rgb::channels::Rgba;
 use palette::Srgb;
+use serde::{Deserialize, Serialize};
+use serde_with::*;
+use std::io::Cursor;
 
 pub unsafe fn serialize_row<T: Sized>(src: &T) -> &[u8] {
     ::std::slice::from_raw_parts((src as *const T) as *const u8, ::std::mem::size_of::<T>())
@@ -87,7 +83,6 @@ pub struct LED {
     pub LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: u16,
     #[serde(rename = "rbsc2")]
     pub LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: u16,
-
 }
 
 #[repr(C)]
@@ -101,7 +96,9 @@ pub struct CONFIG {
 }
 
 impl CONFIG {
-    pub fn from_cbor<T: AsRef<[u8]>>(data: T) -> Result<CONFIG, ciborium::de::Error<std::io::Error>> {
+    pub fn from_cbor<T: AsRef<[u8]>>(
+        data: T,
+    ) -> Result<CONFIG, ciborium::de::Error<std::io::Error>> {
         Ok(ciborium::de::from_reader(Cursor::new(data))?)
     }
 
@@ -153,10 +150,11 @@ impl From<Config> for CONFIG {
                 LED_BTM_MODE: cfg.lighting_mode_btm as u8,
                 LED_LUM_MAX: cfg.maximum_brightness,
                 LED_LUM_BREATH_MIN: cfg.breath_minimum_brightness,
-                LED_LUM_SPEED_LIGHT_MIN: cfg.press_light_minimum_brightness,        // ？
-                LED_LUM_PUSH_TO_GLOW_MIN: cfg.press_light_minimum_brightness,       // ？
-                LED_RAINBOW_CYCLE_TRANSITION_SPEED: cfg.rainbow_light_switching_speed.as_millis() as u16,   // ??
-                LED_RAINBOW_CYCLE_KEEP_TIME: cfg.rainbow_light_switching_speed.as_millis() as u16,      // ??
+                LED_LUM_SPEED_LIGHT_MIN: cfg.press_light_minimum_brightness, // ？
+                LED_LUM_PUSH_TO_GLOW_MIN: cfg.press_light_minimum_brightness, // ？
+                LED_RAINBOW_CYCLE_TRANSITION_SPEED: cfg.rainbow_light_switching_speed.as_millis()
+                    as u16, // ??
+                LED_RAINBOW_CYCLE_KEEP_TIME: cfg.rainbow_light_switching_speed.as_millis() as u16, // ??
                 LED_BREATH_LUM_MAX_KEEP_TIME: cfg.breath_maximum_light_duration.as_millis() as u16,
                 LED_BREATH_LUM_MIN_KEEP_TIME: cfg.breath_minimum_light_duration.as_millis() as u16,
                 LED_BREATH_LUM_TRANSITION_SPEED: cfg.breath_interval.as_millis() as u16,
@@ -193,7 +191,7 @@ impl Default for LED {
             LED_SPEED_LIGHT_TRANSITION_SPEED: 0,
             LED_SPEED_LIGHT_STEP_LENGTH: 20,
             LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: 2,
-            LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: 2
+            LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: 2,
         }
     }
 }

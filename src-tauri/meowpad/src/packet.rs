@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use num_derive::{FromPrimitive, ToPrimitive};
-use serde::{Deserialize};
+use serde::Deserialize;
 use std::io::Cursor;
 use std::io::Write;
 
@@ -16,7 +16,7 @@ pub enum PacketID {
     GetConfig = 6,
     GetFirmwareVersion = 7,
     GetDeviceName = 8,
-    Next = 9
+    Next = 9,
 }
 
 impl std::fmt::Display for PacketID {
@@ -24,7 +24,6 @@ impl std::fmt::Display for PacketID {
         write!(f, "{:?}", self)
     }
 }
-
 
 impl PacketID {
     pub fn to_packet(self, data: impl Into<Vec<u8>>) -> Packet {
@@ -35,13 +34,16 @@ impl PacketID {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Packet {
     pub id: PacketID,
-    pub data: Vec<u8>
+    pub data: Vec<u8>,
 }
 
 impl Packet {
     pub fn new(packet_id: PacketID, data: impl Into<Vec<u8>>) -> Self {
         let data = data.into();
-        Self { id: packet_id, data: data }
+        Self {
+            id: packet_id,
+            data: data,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -60,7 +62,11 @@ impl Packet {
     }
 
     pub fn build_packets(self) -> PacketBuilder {
-        PacketBuilder { inner: self.build_vec(), pos: 0 }.into_iter()
+        PacketBuilder {
+            inner: self.build_vec(),
+            pos: 0,
+        }
+        .into_iter()
     }
 }
 
@@ -82,9 +88,8 @@ impl IntoIterator for Packet {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PacketBuilder {
     inner: Vec<u8>,
-    pos: usize
+    pos: usize,
 }
-
 
 impl Iterator for PacketBuilder {
     // We can refer to this type using Self::Item
@@ -99,13 +104,15 @@ impl Iterator for PacketBuilder {
         if self.inner.len() > self.pos {
             let mut arr = [0u8; 65];
             let mut arr_iter = arr.iter_mut().skip(1);
-            if self.pos >= 64 { arr_iter.next().map(|v| *v = 0xFE).unwrap() }
+            if self.pos >= 64 {
+                arr_iter.next().map(|v| *v = 0xFE).unwrap()
+            }
             for p in arr_iter {
                 match self.inner.get(self.pos) {
                     Some(&v) => {
                         *p = v;
                         self.pos += 1;
-                    },
+                    }
                     None => break,
                 }
             }

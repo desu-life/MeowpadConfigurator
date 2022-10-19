@@ -1,8 +1,8 @@
+pub mod cbor;
 mod config;
+pub mod keycode;
 mod meowpad;
 mod packet;
-pub mod cbor;
-pub mod keycode;
 
 pub use crate::config::*;
 pub use crate::meowpad::*;
@@ -12,13 +12,15 @@ use keycode::*;
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use std::io::{Cursor, Read};
     use pretty_hex::*;
+    use std::io::{Cursor, Read};
 
     #[test]
     fn build_packet() {
         use packet::*;
-        let packet = Packet::new(PacketID::GetConfig, [
+        let packet = Packet::new(
+            PacketID::GetConfig,
+            [
                 0x1D, 0x1B, 0x29, 0x3B, 0x35, 204, 255, 229, 255, 153, 204, 3, 255, 5, 120, 4, 8,
                 255, 0, 5, 120, 204, 255, 229, 255, 153, 204, 2, 50, 12, 0x1D, 0x1B, 0x29, 0x3B,
                 0x35, 204, 255, 229, 255, 153, 204, 3, 255, 5, 120, 4, 8, 255, 0, 5, 120, 204, 255,
@@ -31,7 +33,8 @@ mod tests {
                 229, 255, 153, 204, 2, 50, 12, 0x1D, 0x1B, 0x29, 0x3B, 0x35, 204, 255, 229, 255,
                 153, 204, 3, 255, 5, 120, 4, 8, 255, 0, 5, 120, 204, 255, 229, 255, 153, 204, 2,
                 50, 12,
-        ]);
+            ],
+        );
         // let packets: Vec<[u8; 65]> = packet.iter().collect();
         dbg!(packet.to_string());
         for p in packet.build_packets() {
@@ -41,11 +44,13 @@ mod tests {
 
     #[test]
     fn read_packets() {
-        use packet::*;
         use byteorder::{BigEndian, ReadBytesExt};
         use num::FromPrimitive;
+        use packet::*;
         // 生成packet
-        let packet = Packet::new(PacketID::GetConfig, [
+        let packet = Packet::new(
+            PacketID::GetConfig,
+            [
                 0x1D, 0x1B, 0x29, 0x3B, 0x35, 204, 255, 229, 255, 153, 204, 3, 255, 5, 120, 4, 8,
                 255, 0, 5, 120, 204, 255, 229, 255, 153, 204, 2, 50, 12, 0x1D, 0x1B, 0x29, 0x3B,
                 0x35, 204, 255, 229, 255, 153, 204, 3, 255, 5, 120, 4, 8, 255, 0, 5, 120, 204, 255,
@@ -58,7 +63,8 @@ mod tests {
                 229, 255, 153, 204, 2, 50, 12, 0x1D, 0x1B, 0x29, 0x3B, 0x35, 204, 255, 229, 255,
                 153, 204, 3, 255, 5, 120, 4, 8, 255, 0, 5, 120, 204, 255, 229, 255, 153, 204, 2,
                 50, 12,
-        ]);
+            ],
+        );
         let mut packet_builder = packet.clone().build_packets();
         // 快捷fn
         fn read_packet(builder: &mut PacketBuilder, buf: &mut [u8]) {
@@ -67,7 +73,7 @@ mod tests {
             _c.set_position(1);
             _c.read_exact(buf).unwrap();
         }
-        
+
         let mut buf = Cursor::new([0u8; 64]);
         read_packet(&mut packet_builder, buf.get_mut());
         let packet_id = PacketID::from_u8(buf.read_u8().unwrap()).expect("解析数据包ID时报错");
@@ -80,13 +86,13 @@ mod tests {
                     Ok(b) => {
                         read_bytes += 1;
                         data.push(b)
-                    },
+                    }
                     Err(_) => {
                         // cur已经遍历结束
                         buf.get_mut().iter_mut().for_each(|b| *b = 0);
                         buf.set_position(0);
                         read_packet(&mut packet_builder, buf.get_mut());
-                    },
+                    }
                 }
             } else {
                 break;
