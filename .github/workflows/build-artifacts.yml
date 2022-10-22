@@ -38,11 +38,6 @@ jobs:
         run: |
           yarn install
 
-      - name: check
-        working-directory: ./src-tauri
-        run: |
-          cargo check --all --all-features
-
       - name: build artifacts
         working-directory: ./
         run: |
