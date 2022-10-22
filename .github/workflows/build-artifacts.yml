@@ -20,15 +20,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: install nightly
+      - name: install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-      - name: install webkit2gtk (ubuntu only)
+      - name: install libs (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y webkit2gtk-4.0
+          sudo apt-get install -y webkit2gtk-4.0 libusb-1.0-0
       - name: install deps
         working-directory: ./
         run: |

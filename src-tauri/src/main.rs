@@ -4,7 +4,7 @@
 // )]
 
 use anyhow::{anyhow, Result as AnyResult};
-use hidapi::HidApi;
+use hidapi_rusb::HidApi;
 use log::*;
 use meowpad::*;
 use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
