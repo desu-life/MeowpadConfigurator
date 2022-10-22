@@ -14,8 +14,8 @@ use std::{fmt::Debug, fs, io::Cursor, thread, time::Duration};
 type Config = CONFIG;
 
 pub struct Meowpad {
+    pub config: Option<Config>,
     device: HidDevice,
-    config: Option<Config>,
     key: Vec<u8>,
 }
 
@@ -26,13 +26,14 @@ impl Debug for Meowpad {
 }
 
 impl Meowpad {
-    pub fn new(device: HidDevice) -> Meowpad {
-        let mut data = match fs::read(".meowkey") {
+    pub fn new(device: HidDevice, path: impl AsRef<std::path::Path>) -> Meowpad {
+        let path = path.as_ref();
+        let mut data = match fs::read(path) {
             Ok(data) => {
                 if data.len() != 64 || !data.starts_with(&[0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF]) {
                     warn!("错误的密钥，正在重置");
-                    fs::remove_file(".meowkey").expect("错误的密钥 / 重置密钥失败");
-                    return Self::new(device);
+                    fs::remove_file(path).expect("错误的密钥 / 重置密钥失败");
+                    return Self::new(device, path);
                 }
                 data
             }
@@ -41,7 +42,7 @@ impl Meowpad {
                 let mut tmp = [0u8; 58];
                 rand::thread_rng().fill_bytes(&mut tmp);
                 data.append(&mut tmp.to_vec());
-                fs::write(".meowkey", &data).unwrap();
+                fs::write(path, &data).expect("初始化数据失败");
                 data
             }
         };
@@ -59,13 +60,6 @@ impl Meowpad {
     pub fn config(&self) -> Config {
         self.config
             .expect("未获取配置，请先使用load_config获取当前配置")
-    }
-
-    pub fn map_config<F>(&mut self, f: F)
-    where
-        F: FnMut(&mut Config),
-    {
-        self.config.iter_mut().for_each(f);
     }
 
     pub fn load_config(&mut self) -> Result<()> {

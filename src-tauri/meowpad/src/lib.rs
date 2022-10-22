@@ -105,24 +105,22 @@ mod tests {
     }
 
     #[test]
-    fn config() {
-        // let config = Config::parse(&[
-        //     0x1D, 0x1B, 0x29, 0x3B, 0x35, 204, 255, 229, 255, 153, 204, 3, 255, 5, 120, 4, 8, 255,
-        //     0, 5, 120, 204, 255, 229, 255, 153, 204, 2, 50, 12,
-        // ])
-        // .unwrap();
-        // println!("{:#?}", config);
-        // assert!(config.key_1 == KeyCode::KEY_Z);
-        // assert!(config.key_2 == KeyCode::KEY_X);
-        // assert!(config.lighting_mode == LighingMode::RainbowBreath);
-        // assert!(config.led_color_l == RGB::new(204, 255, 229));
-        // println!("{:?}", config.build().hex_dump());
-        // let config2 = Config::parse(&config.build()[3..]).unwrap();
-        // println!("{:#?}", config2);
-        // assert!(config == config2);
-        // assert!(config.build().starts_with(&[
-        //     0x0, 0x57, 0x43, 0x1D, 0x1B, 0x29, 0x3B, 0x35, 204, 255, 229, 255, 153, 204, 3, 255, 5,
-        //     120, 4, 8, 255, 0, 5, 120, 204, 255, 229, 255, 153, 204, 2, 50, 12
-        // ]));
+    fn kbparse() {
+        use num::FromPrimitive;
+        let mut r = KbReport::default();
+        r.pressed(KeyCode::A);
+        r.pressed(KeyCode::B);
+        r.pressed(KeyCode::C);
+        r.pressed(KeyCode::LShift);
+        r.pressed(KeyCode::LAlt);
+        
+        let r: [KeyCode; 4] = r.try_into().unwrap();
+        dbg!(r);
+        assert_eq!(r, [KeyCode::A, KeyCode::B, KeyCode::C, KeyCode::LShift]);
+        
+        let mut r = KbReport::default();
+        let r: [KeyCode; 4] = r.try_into().unwrap();
+        dbg!(r);
+        assert_eq!(r, [KeyCode::No, KeyCode::No, KeyCode::No, KeyCode::No]);
     }
 }

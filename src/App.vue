@@ -4,6 +4,7 @@
 import Main from '@/components/Main.vue'
 import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
+import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow, Theme } from "@tauri-apps/api/window";
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 
@@ -17,13 +18,21 @@ const lightThemeOverrides: GlobalThemeOverrides = {
 const theme = ref<Theme | null>(null)
 
 onMounted(async () => {
-  theme.value = await appWindow.theme()
+  let show = false;
+  invoke("check_update").then((res: boolean) => {
+    show = res;
+  });
   
+  theme.value = await appWindow.theme()
   await appWindow.onThemeChanged(({ payload: t }) => {
     theme.value = t
   })
-
-  setTimeout(appWindow.show, 500)
+  
+  setTimeout(async () => {
+    if (show) {
+      await appWindow.show()
+    }
+  }, 500)
 })
 </script>
 
@@ -36,7 +45,7 @@ onMounted(async () => {
             <Header />
           </n-layout-header>
           <n-layout-content class="main">
-            <div class="flex justify-center items-center h-full">
+            <div class="flex justify-center items-center h-full" id="main">
               <Main />
             </div>
           </n-layout-content>
@@ -57,3 +66,4 @@ $header-height: 56px;
   height: calc(100vh - $header-height);
 }
 </style>
+

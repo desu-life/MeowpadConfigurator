@@ -16,6 +16,8 @@ export const useStore = defineStore("main", () => {
   const led_color_btm_r = ref<string | undefined>(undefined);
   const speed_press_high_color = ref<string | undefined>(undefined);
   const speed_press_low_color = ref<string | undefined>(undefined);
+  const breath_speed = ref<number | undefined>(undefined);
+  const rainbow_light_switching_speed = ref<number | undefined>(undefined);
 
   return {
     loading,
@@ -27,6 +29,8 @@ export const useStore = defineStore("main", () => {
     speed_press_low_color,
     led_color_l,
     led_color_r,
+    breath_speed,
+    rainbow_light_switching_speed,
   };
 });
 

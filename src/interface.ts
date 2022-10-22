@@ -6,6 +6,11 @@ export interface IRgb {
     blue: number
 }
 
+export interface IDevice {
+    name: string
+    version: string
+}
+
 export interface IConfig { 
     key_1: KeyCode
     key_2: KeyCode
@@ -25,12 +30,19 @@ export interface IConfig {
     breath_interval: number
     press_light_minimum_brightness: number
     press_light_duration: number
-    rainbow_light_switching_speed: number
+    rainbow_light_switching_interval: number
     speed_press_high_color: IRgb
     speed_press_low_color: IRgb
     speed_press_trans_speed: number
+    speed_press_minimum_brightness: number
     press_light_step: number
     keyboard_jitters_elimination_time: number
+    keyboard_jitters_elimination_mode: JitterEliminationMode
+}
+
+export enum JitterEliminationMode {
+    Active = 0,
+    Lazy = 1,
 }
 
 export enum LightingMode {

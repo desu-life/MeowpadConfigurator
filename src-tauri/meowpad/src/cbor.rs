@@ -1,7 +1,7 @@
-use crate::{Config, KeyCode};
+use crate::{Config, KeyCode, KbReport};
 use anyhow::Result;
 use ciborium;
-use palette::rgb::channels::Rgba;
+use palette::rgb::channels::Argb;
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
 use serde_with::*;
@@ -16,15 +16,15 @@ pub unsafe fn serialize_row<T: Sized>(src: &T) -> &[u8] {
 #[allow(non_snake_case)]
 pub struct KEYBOARD {
     #[serde(rename = "k1")]
-    pub KEY_1: u8,
+    pub KEY_1: [u8; 4],
     #[serde(rename = "k2")]
-    pub KEY_2: u8,
+    pub KEY_2: [u8; 4],
     #[serde(rename = "k3")]
-    pub KEY_3: u8,
+    pub KEY_3: [u8; 4],
     #[serde(rename = "k4")]
-    pub KEY_4: u8,
+    pub KEY_4: [u8; 4],
     #[serde(rename = "k5")]
-    pub KEY_5: u8,
+    pub KEY_5: [u8; 4],
     #[serde(rename = "jet")]
     pub JittersEliminationTime: u16,
     /// 0 / 1   0是按下按键先消抖后发码
@@ -62,8 +62,10 @@ pub struct LED {
     pub LED_LUM_SPEED_LIGHT_MIN: u8,
     #[serde(rename = "lptgmn")]
     pub LED_LUM_PUSH_TO_GLOW_MIN: u8,
+    /// 颜色变化的间隔时间
     #[serde(rename = "rcts")]
     pub LED_RAINBOW_CYCLE_TRANSITION_SPEED: u16,
+    /// 每个颜色的停留时间
     #[serde(rename = "rckt")]
     pub LED_RAINBOW_CYCLE_KEEP_TIME: u16,
     #[serde(rename = "blmxkt")]
@@ -116,11 +118,11 @@ impl CONFIG {
 impl Default for KEYBOARD {
     fn default() -> Self {
         Self {
-            KEY_1: KeyCode::KEY_Z as u8,
-            KEY_2: KeyCode::KEY_X as u8,
-            KEY_3: KeyCode::KEY_ESC as u8,
-            KEY_4: KeyCode::KEY_F2 as u8,
-            KEY_5: KeyCode::KEY_GRAVE as u8,
+            KEY_1: KeyCode::Z.to_report().into(),
+            KEY_2: KeyCode::X.to_report().into(),
+            KEY_3: KeyCode::Escape.to_report().into(),
+            KEY_4: KeyCode::F2.to_report().into(),
+            KEY_5: KeyCode::Grave.to_report().into(),
             JittersEliminationTime: 100,
             JittersEliminationMode: 1,
         }
@@ -131,36 +133,35 @@ impl From<Config> for CONFIG {
     fn from(cfg: Config) -> Self {
         Self {
             Key: KEYBOARD {
-                KEY_1: cfg.key_1 as u8,
-                KEY_2: cfg.key_2 as u8,
-                KEY_3: cfg.key_3 as u8,
-                KEY_4: cfg.key_4 as u8,
-                KEY_5: cfg.key_5 as u8,
+                KEY_1: cfg.key_1.into_iter().collect::<KbReport>().into(),
+                KEY_2: cfg.key_2.into_iter().collect::<KbReport>().into(),
+                KEY_3: cfg.key_3.into_iter().collect::<KbReport>().into(),
+                KEY_4: cfg.key_4.into_iter().collect::<KbReport>().into(),
+                KEY_5: cfg.key_5.into_iter().collect::<KbReport>().into(),
                 JittersEliminationTime: cfg.keyboard_jitters_elimination_time,
-                ..Default::default()
+                JittersEliminationMode: cfg.keyboard_jitters_elimination_mode as u8
             },
             LED: LED {
-                LED1_COLOR: cfg.led_color_l.into_u32::<Rgba>(),
-                LED2_COLOR: cfg.led_color_r.into_u32::<Rgba>(),
-                LED3_COLOR: cfg.led_color_btm_l.into_u32::<Rgba>(),
-                LED4_COLOR: cfg.led_color_btm_r.into_u32::<Rgba>(),
-                LED_SPEED_LIGHT_HIGH_COLOR: cfg.speed_press_high_color.into_u32::<Rgba>(),
-                LED_SPEED_LIGHT_LOW_COLOR: cfg.speed_press_low_color.into_u32::<Rgba>(),
+                LED1_COLOR: cfg.led_color_l.into_u32::<Argb>(),
+                LED2_COLOR: cfg.led_color_r.into_u32::<Argb>(),
+                LED3_COLOR: cfg.led_color_btm_r.into_u32::<Argb>(),
+                LED4_COLOR: cfg.led_color_btm_l.into_u32::<Argb>(),
+                LED_SPEED_LIGHT_HIGH_COLOR: cfg.speed_press_high_color.into_u32::<Argb>(),
+                LED_SPEED_LIGHT_LOW_COLOR: cfg.speed_press_low_color.into_u32::<Argb>(),
                 LED_KEY_MODE: cfg.lighting_mode_key as u8,
                 LED_BTM_MODE: cfg.lighting_mode_btm as u8,
                 LED_LUM_MAX: cfg.maximum_brightness,
                 LED_LUM_BREATH_MIN: cfg.breath_minimum_brightness,
-                LED_LUM_SPEED_LIGHT_MIN: cfg.press_light_minimum_brightness, // ？
-                LED_LUM_PUSH_TO_GLOW_MIN: cfg.press_light_minimum_brightness, // ？
-                LED_RAINBOW_CYCLE_TRANSITION_SPEED: cfg.rainbow_light_switching_speed.as_millis()
-                    as u16, // ??
-                LED_RAINBOW_CYCLE_KEEP_TIME: cfg.rainbow_light_switching_speed.as_millis() as u16, // ??
+                LED_LUM_SPEED_LIGHT_MIN: cfg.speed_press_minimum_brightness,
+                LED_LUM_PUSH_TO_GLOW_MIN: cfg.press_light_minimum_brightness,
+                LED_RAINBOW_CYCLE_TRANSITION_SPEED: cfg.rainbow_light_switching_interval.as_millis() as u16,    // 两个同值
+                LED_RAINBOW_CYCLE_KEEP_TIME: cfg.rainbow_light_switching_interval.as_millis() as u16,
                 LED_BREATH_LUM_MAX_KEEP_TIME: cfg.breath_maximum_light_duration.as_millis() as u16,
                 LED_BREATH_LUM_MIN_KEEP_TIME: cfg.breath_minimum_light_duration.as_millis() as u16,
                 LED_BREATH_LUM_TRANSITION_SPEED: cfg.breath_interval.as_millis() as u16,
                 LED_PUSH_TO_GLOW_TRANSITION_SPEED: cfg.press_light_duration.as_millis() as u16,
                 LED_SPEED_LIGHT_TRANSITION_SPEED: cfg.speed_press_trans_speed.as_millis() as u16,
-                LED_SPEED_LIGHT_STEP_LENGTH: cfg.press_light_step,
+                LED_SPEED_LIGHT_STEP_LENGTH: cfg.speed_press_step,
                 ..Default::default()
             },
         }
@@ -170,23 +171,23 @@ impl From<Config> for CONFIG {
 impl Default for LED {
     fn default() -> Self {
         Self {
-            LED1_COLOR: Srgb::new(204, 255, 229).into_u32::<Rgba>(),
-            LED2_COLOR: Srgb::new(255, 153, 204).into_u32::<Rgba>(),
-            LED3_COLOR: Srgb::new(255, 153, 204).into_u32::<Rgba>(),
-            LED4_COLOR: Srgb::new(255, 153, 204).into_u32::<Rgba>(),
-            LED_SPEED_LIGHT_HIGH_COLOR: Srgb::new(255, 153, 204).into_u32::<Rgba>(),
-            LED_SPEED_LIGHT_LOW_COLOR: Srgb::new(255, 153, 204).into_u32::<Rgba>(),
-            LED_KEY_MODE: 7,
-            LED_BTM_MODE: 5,
-            LED_LUM_MAX: 100,
+            LED1_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            LED2_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            LED3_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            LED4_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            LED_SPEED_LIGHT_HIGH_COLOR: Srgb::new(255, 0, 0).into_u32::<Argb>(),
+            LED_SPEED_LIGHT_LOW_COLOR: Srgb::new(0, 0, 255).into_u32::<Argb>(),
+            LED_KEY_MODE: 1,
+            LED_BTM_MODE: 1,
+            LED_LUM_MAX: 80,
             LED_LUM_BREATH_MIN: 0,
             LED_LUM_SPEED_LIGHT_MIN: 100,
             LED_LUM_PUSH_TO_GLOW_MIN: 0,
-            LED_RAINBOW_CYCLE_TRANSITION_SPEED: 10,
-            LED_RAINBOW_CYCLE_KEEP_TIME: 10,
+            LED_RAINBOW_CYCLE_TRANSITION_SPEED: 25,
+            LED_RAINBOW_CYCLE_KEEP_TIME: 25,
             LED_BREATH_LUM_MAX_KEEP_TIME: 100,
             LED_BREATH_LUM_MIN_KEEP_TIME: 0,
-            LED_BREATH_LUM_TRANSITION_SPEED: 8,
+            LED_BREATH_LUM_TRANSITION_SPEED: 15,
             LED_PUSH_TO_GLOW_TRANSITION_SPEED: 1,
             LED_SPEED_LIGHT_TRANSITION_SPEED: 0,
             LED_SPEED_LIGHT_STEP_LENGTH: 20,

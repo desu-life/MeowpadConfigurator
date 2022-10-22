@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { FormInst } from 'naive-ui'
 import { useStore } from '@/store'
 import { Keyboard24Regular, Lightbulb24Regular } from '@vicons/fluent'
-import { LightingMode, KeyCode, jsToHid, IRgb } from "@/interface";
+import { LightingMode, KeyCode, jsToHid, IRgb, JitterEliminationMode } from "@/interface";
 import { Rgb2Hex, Hex2Rgb } from '@/utils';
 
 // defineProps<{ msg: string }>()
@@ -15,6 +15,7 @@ const message = useMessage()
 const configType = ref(0)
 const canChangeColor = ref(true)
 const showModal = ref(false)
+const showDrawer = ref(true)
 const lightingMode = ref(LightingMode.Solid)
 
 const LighingMode = [
@@ -40,11 +41,22 @@ const LighingMode = [
   },
   {
     key: LightingMode.PressAndLight,
-    label: '即按即亮'
+    label: '触发模式'
   },
   {
     key: LightingMode.SpeedPress,
-    label: '手速模式'
+    label: '手速计'
+  },
+]
+
+const JEModeSel = [
+  {
+    value: JitterEliminationMode.Lazy,
+    label: "激进模式（先发送）"
+  },
+  {
+    value: JitterEliminationMode.Active,
+    label: "稳定模式（先消抖）"
   }
 ]
 
@@ -60,6 +72,10 @@ const LighingModeSel = [
   {
     value: LightingMode.Breath,
     label: '呼吸'
+  },
+  {
+    value: LightingMode.SpeedPress,
+    label: '手速计'
   },
   {
     value: LightingMode.RainbowBreathSwitch,
@@ -79,17 +95,14 @@ const LighingModeSel = [
   },
   {
     value: LightingMode.PressAndLight,
-    label: '即按即亮'
+    label: '触发模式'
   },
-  {
-    value: LightingMode.SpeedPress,
-    label: '手速模式'
-  }
 ]
 
 function setKeys(keyNum: number) {
   showModal.value = true
   document.onkeydown = (_e) => {
+    if (showModal.value === false) { return }
     _e.preventDefault()
     const e = _e || window.event || arguments.callee.caller.arguments[0]
     console.log(e)
@@ -97,19 +110,39 @@ function setKeys(keyNum: number) {
     if (hidCode in KeyCode) {
       switch (keyNum) {
         case 1:
-          store.config!.key_1 = hidCode
+          if (store.config!.key_1 === hidCode) {
+            store.config!.key_1 = KeyCode.NONE
+          } else {
+            store.config!.key_1 = hidCode
+          }
           break
         case 2:
-          store.config!.key_2 = hidCode
+          if (store.config!.key_2 === hidCode) {
+            store.config!.key_2 = KeyCode.NONE
+          } else {
+            store.config!.key_2 = hidCode
+          }
           break
         case 3:
-          store.config!.key_3 = hidCode
+          if (store.config!.key_3 === hidCode) {
+            store.config!.key_3 = KeyCode.NONE
+          } else {
+            store.config!.key_3 = hidCode
+          }
           break
         case 4:
-          store.config!.key_4 = hidCode
+          if (store.config!.key_4 === hidCode) {
+            store.config!.key_4 = KeyCode.NONE
+          } else {
+            store.config!.key_4 = hidCode
+          }
           break
         case 5:
-          store.config!.key_5 = hidCode
+          if (store.config!.key_5 === hidCode) {
+            store.config!.key_5 = KeyCode.NONE
+          } else {
+            store.config!.key_5 = hidCode
+          }
           break
         default:
           break
@@ -188,9 +221,11 @@ function parsems(value: string) {
 </script>
 
 <template>
+  <!-- <n-drawer v-model:show="showDrawer" placement="left" to=".main">
+  </n-drawer> -->
   <n-modal v-model:show="showModal" transform-origin="center" :close-on-esc="false">
-    <n-card style="width: fit-content;border-radius: 8px;" :bordered="false" title="在键盘上按下要设置的键" role="dialog"
-      aria-modal="true">
+    <n-card style="width: fit-content;border-radius: 8px;" :bordered="false" :title='"在键盘上按下要设置的键\n(若未改动则重置该键)"'
+      role="dialog" aria-modal="true">
     </n-card>
   </n-modal>
   <n-spin :show="store.loading">
@@ -217,16 +252,26 @@ function parsems(value: string) {
             </n-button>
           </n-button-group>
           <n-grid :cols="20" :x-gap="18" style="margin: 50px;">
-              <n-gi :span="10">
-                <n-form-item label="灯效模式（按键）" path="lighting_mode_key">
-                  <n-select v-model:value="store.config!.lighting_mode_key" :options="LighingModeSel"/>
-                </n-form-item>
-              </n-gi>
-              <n-gi :span="10">
-                <n-form-item label="灯效模式（底部）" path="lighting_mode_btm">
-                  <n-select v-model:value="store.config!.lighting_mode_btm" :options="LighingModeSel"/>
-                </n-form-item>
-              </n-gi>
+            <n-gi :span="10">
+              <n-form-item label="灯效模式（按键）" path="lighting_mode_key">
+                <n-select v-model:value="store.config!.lighting_mode_key" :options="LighingModeSel" />
+              </n-form-item>
+            </n-gi>
+            <n-gi :span="10">
+              <n-form-item label="灯效模式（底部）" path="lighting_mode_btm">
+                <n-select v-model:value="store.config!.lighting_mode_btm" :options="LighingModeSel" />
+              </n-form-item>
+            </n-gi>
+            <n-gi :span="10">
+              <n-form-item label="消抖模式" path="keyboard_jitters_elimination_mode">
+                <n-select v-model:value="store.config!.keyboard_jitters_elimination_mode" :options="JEModeSel" />
+              </n-form-item>
+            </n-gi>
+            <n-gi :span="10">
+              <n-form-item label="消抖时长" path="keyboard_jitters_elimination_time">
+                <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" />
+              </n-form-item>
+            </n-gi>
           </n-grid>
         </div>
 
@@ -272,8 +317,7 @@ function parsems(value: string) {
                 <n-gi :span="20">
                   <n-collapse-transition :show="lightingMode != LightingMode.Off">
                     <n-form-item label="最大亮度" path="maximum_brightness">
-                      <n-slider v-model:value="store.config!.maximum_brightness" :step="1"
-                        :max="100" />
+                      <n-slider v-model:value="store.config!.maximum_brightness" :step="1" :max="100" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
@@ -281,8 +325,7 @@ function parsems(value: string) {
                   <n-collapse-transition
                     :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
                     <n-form-item label="呼吸灯最小亮度" path="breath_minimum_brightness">
-                      <n-slider v-model:value="store.config!.breath_minimum_brightness" :step="1"
-                        :max="100" />
+                      <n-slider v-model:value="store.config!.breath_minimum_brightness" :step="1" :max="100" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
@@ -290,8 +333,7 @@ function parsems(value: string) {
                   <n-collapse-transition
                     :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
                     <n-form-item label="呼吸灯维持时间（最亮点）" path="breath_maximum_light_duration">
-                      <n-slider v-model:value="store.config!.breath_maximum_light_duration" :step="1"
-                        :max="1000" />
+                      <n-slider v-model:value="store.config!.breath_maximum_light_duration" :step="1" :max="1000" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
@@ -299,16 +341,15 @@ function parsems(value: string) {
                   <n-collapse-transition
                     :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
                     <n-form-item label="呼吸灯维持时间（最暗点）" path="breath_minimum_light_duration">
-                      <n-slider v-model:value="store.config!.breath_minimum_light_duration" :step="1"
-                        :max="1000" />
+                      <n-slider v-model:value="store.config!.breath_minimum_light_duration" :step="1" :max="1000" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
                 <n-gi :span="20">
                   <n-collapse-transition
                     :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
-                    <n-form-item label="呼吸灯速度" path="breath_interval">
-                      <n-slider v-model:value="store.config!.breath_interval" :step="1" :max="20" />
+                    <n-form-item label="呼吸灯速度" path="breath_speed">
+                      <n-slider v-model:value="store.breath_speed" :step="1" :max="20" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
@@ -316,24 +357,21 @@ function parsems(value: string) {
                   <n-collapse-transition
                     :show="lightingMode == LightingMode.RainbowGradientSync || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowGradientSwitch || lightingMode == LightingMode.RainbowBreathSwitch">
                     <n-form-item label="彩虹渐变速度" path="rainbow_light_switching_speed">
-                      <n-slider v-model:value="store.config!.rainbow_light_switching_speed" :step="1"
-                        :min="1" :max="30" />
+                      <n-slider v-model:value="store.rainbow_light_switching_speed" :step="1" :min="1" :max="30" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
                 <n-gi :span="20">
                   <n-collapse-transition :show="lightingMode == LightingMode.PressAndLight">
                     <n-form-item label="即按即亮最小亮度" path="press_light_minimum_brightness">
-                      <n-slider v-model:value="store.config!.press_light_minimum_brightness" :step="1"
-                        :max="100" />
+                      <n-slider v-model:value="store.config!.press_light_minimum_brightness" :step="1" :max="100" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
                 <n-gi :span="20">
                   <n-collapse-transition :show="lightingMode == LightingMode.PressAndLight">
                     <n-form-item label="即按即亮衰减时长" path="press_light_duration">
-                      <n-slider v-model:value="store.config!.press_light_duration" :step="1" :min="0"
-                        :max="10" />
+                      <n-slider v-model:value="store.config!.press_light_duration" :step="1" :min="0" :max="10" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
@@ -354,16 +392,14 @@ function parsems(value: string) {
                 <n-gi :span="10">
                   <n-collapse-transition :show="lightingMode == LightingMode.SpeedPress">
                     <n-form-item label="颜色切换速度" path="speed_press_trans_speed">
-                      <n-slider v-model:value="store.config!.speed_press_trans_speed" :step="1"
-                        :min="0" :max="50" />
+                      <n-slider v-model:value="store.config!.speed_press_trans_speed" :step="1" :min="0" :max="20" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
                 <n-gi :span="10">
                   <n-collapse-transition :show="lightingMode == LightingMode.SpeedPress">
                     <n-form-item label="手速灯变速步长" path="press_light_step">
-                      <n-slider v-model:value="store.config!.press_light_step" :step="1" :min="1"
-                        :max="100" />
+                      <n-slider v-model:value="store.config!.press_light_step" :step="1" :min="1" :max="100" />
                     </n-form-item>
                   </n-collapse-transition>
                 </n-gi>
