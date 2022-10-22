@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 use byteorder::{BigEndian, ReadBytesExt};
-use hidapi::HidDevice;
+use hidapi_rusb::HidDevice;
 use log::*;
 use num::FromPrimitive;
 use pretty_hex::*;

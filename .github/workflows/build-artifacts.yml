@@ -20,37 +20,55 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: install nightly
+      - name: install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
+          default: true
+          override: true
           toolchain: nightly
-      - name: install webkit2gtk (ubuntu only)
+
+      - name: install libs (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y webkit2gtk-4.0
+          sudo apt-get install -y webkit2gtk-4.0 libusb-1.0-0
+
       - name: install deps
         working-directory: ./
         run: |
           yarn install
+
       - name: build artifacts
         working-directory: ./
         run: |
           yarn tauri build
+
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'ubuntu-latest'
         with:
-          name: linux
-          path: ./target/release/bundle/appimage/MeowpadConfigurator.AppImage.*
+          name: linux-deb
+          path: ./src-tauri/target/release/bundle/deb/meowpad-configurator_*.deb
+
+      - uses: actions/upload-artifact@v2
+        if: matrix.platform == 'ubuntu-latest'
+        with:
+          name: linux-appimage
+          path: ./src-tauri/target/release/bundle/appimage/meowpad-configurator_*.AppImage
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'windows-latest'
         with:
-          name: windows
-          path: ./target/release/MeowpadConfigurator.exe
+          name: windows-exe
+          path: ./src-tauri/target/release/MeowpadConfigurator.exe
+
+      - uses: actions/upload-artifact@v2
+        if: matrix.platform == 'windows-latest'
+        with:
+          name: windows-msi
+          path: ./src-tauri/target/release/bundle/msi/*
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'macos-latest'
         with:
-          name: macos
-          path: ./target/release/bundle/macos/MeowpadConfigurator.app.tar.*
+          name: macos-app
+          path: ./src-tauri/target/release/bundle/macos/MeowpadConfigurator.app
