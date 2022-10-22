@@ -1,0 +1,56 @@
+# Copyright 2019-2021 Tauri Programme within The Commons Conservancy
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: MIT
+
+name: Build Artifacts
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/build-artifacts.yml'
+      - '**'
+
+jobs:
+  build-artifacs:
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: install stable
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - name: install webkit2gtk (ubuntu only)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webkit2gtk-4.0
+      - name: install deps
+        working-directory: ./
+        run: |
+          yarn install
+      - name: build artifacts
+        working-directory: ./
+        run: |
+          yarn tauri build
+      - uses: actions/upload-artifact@v2
+        if: matrix.platform == 'ubuntu-latest'
+        with:
+          name: linux
+          path: ./target/release/bundle/appimage/MeowpadConfigurator.AppImage.*
+
+      - uses: actions/upload-artifact@v2
+        if: matrix.platform == 'windows-latest'
+        with:
+          name: windows
+          path: ./target/release/MeowpadConfigurator.exe
+
+      - uses: actions/upload-artifact@v2
+        if: matrix.platform == 'macos-latest'
+        with:
+          name: macos
+          path: ./target/release/bundle/macos/MeowpadConfigurator.app.tar.*

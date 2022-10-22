@@ -109,18 +109,36 @@ mod tests {
         use num::FromPrimitive;
         let mut r = KbReport::default();
         r.pressed(KeyCode::A);
+        r.pressed(KeyCode::A);
         r.pressed(KeyCode::B);
         r.pressed(KeyCode::C);
         r.pressed(KeyCode::LShift);
         r.pressed(KeyCode::LAlt);
-        
-        let r: [KeyCode; 4] = r.try_into().unwrap();
-        dbg!(r);
-        assert_eq!(r, [KeyCode::A, KeyCode::B, KeyCode::C, KeyCode::LShift]);
-        
+
+        let r: Vec<KeyCode> = r.into();
+        dbg!(&r);
+        assert_eq!(r, vec![KeyCode::LShift, KeyCode::LAlt, KeyCode::A, KeyCode::B, KeyCode::C]);
+
         let mut r = KbReport::default();
-        let r: [KeyCode; 4] = r.try_into().unwrap();
-        dbg!(r);
-        assert_eq!(r, [KeyCode::No, KeyCode::No, KeyCode::No, KeyCode::No]);
+        r.pressed(KeyCode::A);
+        r.pressed(KeyCode::A);
+        r.pressed(KeyCode::A);
+        r.pressed(KeyCode::A);
+        r.pressed(KeyCode::A);
+        r.pressed(KeyCode::A);
+        let r: Vec<KeyCode> = r.into();
+        dbg!(&r);
+        assert_eq!(
+            r,
+            vec![KeyCode::A]
+        );
+
+        let r = KbReport::default();
+        let r: Vec<KeyCode> = r.into();
+        dbg!(&r);
+        assert_eq!(
+            r,
+            vec![]
+        );
     }
 }
