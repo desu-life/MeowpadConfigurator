@@ -23,6 +23,8 @@ jobs:
       - name: install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
+          default: true
+          override: true
           toolchain: nightly
       - name: install libs (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
