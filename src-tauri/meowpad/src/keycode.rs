@@ -4,6 +4,7 @@ use strum_macros::EnumIter;
 
 #[allow(non_camel_case_types)]
 #[derive(
+    Default,
     EnumIter,
     Serialize_repr,
     Deserialize_repr,
@@ -20,7 +21,8 @@ use strum_macros::EnumIter;
 #[repr(u8)]
 pub enum KeyCode {
     /// The "no" key, a placeholder to express nothing.
-    No = 0x00,
+    #[default]
+    None = 0x00,
     /// Error if too much keys are pressed at the same time.
     ErrorRollOver,
     /// The POST fail error.
@@ -270,12 +272,19 @@ pub enum KeyCode {
     MediaCalc, // 0xFB
 }
 
-use std::fmt;
+use std::{borrow::BorrowMut, fmt};
 impl fmt::Display for KeyCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let code: i32 = (*self) as i32;
         f.write_fmt(format_args!("{:?} ({})", self, code))?;
         Ok(())
+    }
+}
+
+use num::FromPrimitive;
+impl From<u8> for KeyCode {
+    fn from(value: u8) -> Self {
+        KeyCode::from_u8(value).unwrap_or_default()
     }
 }
 
@@ -319,27 +328,17 @@ impl core::iter::FromIterator<KeyCode> for KbReport {
     }
 }
 
-use num::FromPrimitive;
-impl TryFrom<KbReport> for [KeyCode; 4] {
-    type Error = u8;
-
-    fn try_from(value: KbReport) -> Result<Self, Self::Error> {
-        Ok([
-            KeyCode::from_u8(unsafe { *value.0.get_unchecked(0) }).ok_or(1)?,
-            KeyCode::from_u8(unsafe { *value.0.get_unchecked(1) }).ok_or(2)?,
-            KeyCode::from_u8(unsafe { *value.0.get_unchecked(2) }).ok_or(3)?,
-            unsafe {
-                let i = *value.0.get_unchecked(3);
-                let start = KeyCode::LCtrl as u8;
-                let end = KeyCode::RGui as u8;
-                KeyCode::from_u8(
-                    (start..end)
-                        .find(|&k| (i & (1 << (k - start))) != 0)
-                        .unwrap_or_default(),
-                )
-                .ok_or(4)?
-            },
-        ])
+impl From<KbReport> for Vec<KeyCode> {
+    fn from(value: KbReport) -> Self {
+        [
+            value.get_modifier_codes(),
+            value.0[..3]
+                .iter()
+                .map(|&k| KeyCode::from(k))
+                .filter(|&k| k != KeyCode::None)
+                .collect(),
+        ]
+        .concat()
     }
 }
 
@@ -366,14 +365,29 @@ impl KbReport {
     pub fn pressed(&mut self, kc: KeyCode) {
         use KeyCode::*;
         match kc {
-            No => (),
+            None => (),
             ErrorRollOver | PostFail | ErrorUndefined => (),
             kc if kc.is_modifier() => self.0[3] |= kc.as_modifier_bit(),
-            _ => self.0[0..3]
-                .iter_mut()
-                .find(|c| **c == 0)
-                .map(|c| *c = kc as u8)
-                .unwrap(),
+            _ => {
+                let k = kc as u8;
+                let s = self.0[0..3].borrow_mut();
+                if !s.contains(&k) {
+                    s.iter_mut()
+                        .find(|c| **c == 0)
+                        .map(|c| *c = kc as u8)
+                        .unwrap_or_default()
+                }
+            }
         }
+    }
+
+    pub fn get_modifier_codes(&self) -> Vec<KeyCode> {
+        const START: u8 = KeyCode::LCtrl as u8;
+        const END: u8 = KeyCode::RGui as u8;
+        let i = unsafe { *self.0.get_unchecked(3) };
+        (START..END)
+            .filter(|&k| (i & (1 << (k - START))) != 0)
+            .map(|k| KeyCode::from(k))
+            .collect()
     }
 }

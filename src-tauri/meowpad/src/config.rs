@@ -37,13 +37,13 @@ pub enum JitterEliminationMode {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
-    pub key_1: [KeyCode; 4],
-    pub key_2: [KeyCode; 4],
-    pub key_3: [KeyCode; 4],
-    pub key_4: [KeyCode; 4],
-    pub key_5: [KeyCode; 4],
+    pub key_1: Vec<KeyCode>,
+    pub key_2: Vec<KeyCode>,
+    pub key_3: Vec<KeyCode>,
+    pub key_4: Vec<KeyCode>,
+    pub key_5: Vec<KeyCode>,
     /// LED灯颜色
     pub led_color_l: Srgb<u8>,
     /// LED灯颜色
@@ -97,11 +97,11 @@ impl TryFrom<CONFIG> for Config {
     type Error = anyhow::Error;
     fn try_from(cfg: CONFIG) -> Result<Self, Self::Error> {
         Ok(Config {
-            key_1: KbReport::from(cfg.Key.KEY_1).try_into().map_err(|_| anyhow!("解析k1时报错"))?,
-            key_2: KbReport::from(cfg.Key.KEY_2).try_into().map_err(|_| anyhow!("解析k2时报错"))?,
-            key_3: KbReport::from(cfg.Key.KEY_3).try_into().map_err(|_| anyhow!("解析k3时报错"))?,
-            key_4: KbReport::from(cfg.Key.KEY_4).try_into().map_err(|_| anyhow!("解析k4时报错"))?,
-            key_5: KbReport::from(cfg.Key.KEY_5).try_into().map_err(|_| anyhow!("解析k5时报错"))?,
+            key_1: KbReport::from(cfg.Key.KEY_1).into(),
+            key_2: KbReport::from(cfg.Key.KEY_2).into(),
+            key_3: KbReport::from(cfg.Key.KEY_3).into(),
+            key_4: KbReport::from(cfg.Key.KEY_4).into(),
+            key_5: KbReport::from(cfg.Key.KEY_5).into(),
             led_color_l: Srgb::from_u32::<Argb>(cfg.LED.LED1_COLOR),
             led_color_r: Srgb::from_u32::<Argb>(cfg.LED.LED2_COLOR),
             led_color_btm_r: Srgb::from_u32::<Argb>(cfg.LED.LED3_COLOR),

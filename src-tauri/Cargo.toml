@@ -27,10 +27,8 @@ log = "0.4.17"
 env_logger = "0.9.0"
 toml = "0.5.9"
 notify = "4.0.17"
-window-vibrancy = "0.3.0"
 meowpad = { path = "./meowpad" }
 reqwest = { version = "0.11", features = ["json"] }
-backtrace = "0.3.66"
 
 [features]
 # by default Tauri runs in production mode

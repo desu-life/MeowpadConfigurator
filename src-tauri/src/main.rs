@@ -71,13 +71,13 @@ fn init_logger(default_level: &str) {
 }
 
 #[tauri::command]
-fn get_default_config(_app: tauri::AppHandle) -> Config {
+async fn get_default_config(_app: tauri::AppHandle) -> Config {
     let config = cbor::CONFIG::default();
     config.try_into().expect("解析默认配置出错，真不应该..")
 }
 
 #[tauri::command]
-fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
+async fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
     || -> AnyResult<_> {
         let mut _d = DEVICE.lock().unwrap();
         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
@@ -91,7 +91,7 @@ fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
 }
 
 #[tauri::command]
-fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+async fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     || -> AnyResult<_> {
         let mut _d = DEVICE.lock().unwrap();
         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
@@ -113,7 +113,7 @@ fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value, String> 
 }
 
 #[tauri::command]
-fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), String> {
+async fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), String> {
     || -> AnyResult<_> {
         let mut _d = DEVICE.lock().unwrap();
         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
@@ -123,6 +123,16 @@ fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), String> {
         Ok(())
     }()
     .map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
+async fn get_version(_app: tauri::AppHandle) -> Result<Version, String> {
+    Version::get().await.map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
+async fn get_firmware_version(_app: tauri::AppHandle) -> &'static str {
+    FIRMWARE_VERSION
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -147,26 +157,24 @@ impl Version {
 use tauri::api::shell;
 
 #[tauri::command]
-async fn check_update(window: tauri::Window) -> bool {
-    if let Ok(resp) = Version::get().await {
-        if compare_version(VERSION, &resp.version) < 0 {
-            window.hide().unwrap();
-            message_dialog_f!(
-                "Meowpad Configurator",
-                "配置器未更新，请下载新版",
-                move |_| {
-                    shell::open(&window.shell_scope(), resp.download_url, None).unwrap();
-                    window.close().unwrap();
-                }
-            );
-            return false;
-        }
+async fn check_update(window: tauri::Window, version: Version) -> bool {
+    if compare_version(VERSION, &version.version) < 0 {
+        window.hide().unwrap();
+        message_dialog_f!(
+            "Meowpad Configurator",
+            "检测到配置器未更新，请下载新版",
+            move |_| {
+                shell::open(&window.shell_scope(), version.download_url, None).unwrap();
+                window.close().unwrap();
+            }
+        );
+        return false;
     }
     true
 }
 
 #[tauri::command]
-fn connect(_app: tauri::AppHandle) -> Result<(), String> {
+async fn connect(_app: tauri::AppHandle) -> Result<(), String> {
     _connect().map_err(|e| format!("{}", e))
 }
 
@@ -257,6 +265,7 @@ pub fn compare_version(version1: &str, version2: &str) -> i32 {
 }
 
 static VERSION: &str = "0.2.0";
+static FIRMWARE_VERSION: &str = "0.1.2";
 
 fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
@@ -334,7 +343,9 @@ fn main() -> AnyResult<()> {
                     save_config,
                     get_default_config,
                     get_device_info,
-                    check_update
+                    check_update,
+                    get_version,
+                    get_firmware_version
                 ])
                 .run(tauri::generate_context!())
                 .expect("error while running tauri application");

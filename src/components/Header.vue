@@ -21,8 +21,21 @@ async function connect() {
   try {
     const res = await invoke("connect")
     let info = await check_device_info()
+    console.table(info)
+    store.device_info = info
     
+    
+    if (store.device_info!.version != store.firmware_version) {
+      store.need_update_firmware = true // 需要更新固件
+      store.loading = false
+      status.value = "error"
+      status_str.value = "设备版本 " + info!.version + " 与本程序不匹配，请升级固件至 " + store.firmware_version
+      return
+    }
+
+    // 不管怎么样总之是连上了
     store.connected = true
+    
     status.value = "success"
     if (info === undefined) {
       status_str.value = "设备已连接"
@@ -39,14 +52,9 @@ async function connect() {
   store.loading = false
 }
 
-async function connect_device() {
-  
-}
-
 async function check_device_info(): Promise<IDevice | undefined> {
   try {
     const res: IDevice = await invoke("get_device_info")
-    console.table(res)
     return res
   } catch (e) {
     store.connected = false

@@ -1,3 +1,4 @@
+import { KeyCode } from './interface';
 import { IRgb } from '@/interface';
 
 function pad2(c) {
@@ -29,4 +30,19 @@ export function Rgb2Hex(color: IRgb): string {
     ];
 
     return "#" + hex.join("").toUpperCase();
+}
+
+export function IsModifierKey(key: KeyCode): boolean {
+    return (KeyCode.LCtrl <= key && key <= KeyCode.RGui)
+}
+
+
+export function compareArray<T>(a1: T[], a2: T[]): boolean {
+    if (a1 === a2) return true;
+    if ((!a1 && a2) || (a1 && ! a2)) return false;
+    if (a1.length !== a2.length) return false;
+    for (var i = 0, n = a1.length; i < n; i++) {
+        if (a1[i] !== a2[i]) return false;
+    }
+    return true;
 }

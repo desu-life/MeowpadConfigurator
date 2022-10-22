@@ -1,5 +1,7 @@
+import { IDevice } from './interface';
 import { defineStore, acceptHMRUpdate } from "pinia";
-import { IConfig, LightingMode } from "@/interface";
+import { IConfig, IVersion, LightingMode } from "@/interface";
+import { invoke } from "@tauri-apps/api/tauri";
 
 export const useStore = defineStore("main", () => {
   const count = ref(0);
@@ -18,6 +20,11 @@ export const useStore = defineStore("main", () => {
   const speed_press_low_color = ref<string | undefined>(undefined);
   const breath_speed = ref<number | undefined>(undefined);
   const rainbow_light_switching_speed = ref<number | undefined>(undefined);
+  const firmware_version = ref<string>();
+  invoke("get_firmware_version").then((v: string) => firmware_version.value = v)
+  const version_info = ref<IVersion | undefined>(undefined);
+  const device_info = ref<IDevice | undefined>(undefined);
+  const need_update_firmware = ref<boolean>(false);
 
   return {
     loading,
@@ -31,6 +38,10 @@ export const useStore = defineStore("main", () => {
     led_color_r,
     breath_speed,
     rainbow_light_switching_speed,
+    firmware_version,
+    version_info,
+    device_info,
+    need_update_firmware
   };
 });
 

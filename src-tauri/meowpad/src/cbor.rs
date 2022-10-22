@@ -1,4 +1,4 @@
-use crate::{Config, KeyCode, KbReport};
+use crate::{Config, KeyCode, KbReport, LighingMode};
 use anyhow::Result;
 use ciborium;
 use palette::rgb::channels::Argb;
@@ -176,9 +176,9 @@ impl Default for LED {
             LED3_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
             LED4_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
             LED_SPEED_LIGHT_HIGH_COLOR: Srgb::new(255, 0, 0).into_u32::<Argb>(),
-            LED_SPEED_LIGHT_LOW_COLOR: Srgb::new(0, 0, 255).into_u32::<Argb>(),
-            LED_KEY_MODE: 1,
-            LED_BTM_MODE: 1,
+            LED_SPEED_LIGHT_LOW_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            LED_KEY_MODE: LighingMode::PressAndLight as u8,
+            LED_BTM_MODE: LighingMode::RainbowGradientSwitch as u8,
             LED_LUM_MAX: 80,
             LED_LUM_BREATH_MIN: 0,
             LED_LUM_SPEED_LIGHT_MIN: 100,
@@ -189,8 +189,8 @@ impl Default for LED {
             LED_BREATH_LUM_MIN_KEEP_TIME: 0,
             LED_BREATH_LUM_TRANSITION_SPEED: 15,
             LED_PUSH_TO_GLOW_TRANSITION_SPEED: 1,
-            LED_SPEED_LIGHT_TRANSITION_SPEED: 0,
-            LED_SPEED_LIGHT_STEP_LENGTH: 20,
+            LED_SPEED_LIGHT_TRANSITION_SPEED: 1,
+            LED_SPEED_LIGHT_STEP_LENGTH: 50,
             LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: 2,
             LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: 2,
         }
