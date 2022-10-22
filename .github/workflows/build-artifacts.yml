@@ -46,29 +46,29 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'ubuntu-latest'
         with:
-          name: linux dev
+          name: linux-deb
           path: ./src-tauri/target/release/bundle/deb/meowpad-configurator_*.deb
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'ubuntu-latest'
         with:
-          name: linux appimage
+          name: linux-appimage
           path: ./src-tauri/target/release/bundle/appimage/meowpad-configurator_*.AppImage
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'windows-latest'
         with:
-          name: windows
+          name: windows-exe
           path: ./src-tauri/target/release/MeowpadConfigurator.exe
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'windows-latest'
         with:
-          name: windows installer
+          name: windows-msi
           path: ./src-tauri/target/release/bundle/msi/*
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'macos-latest'
         with:
-          name: macos
+          name: macos-app
           path: ./src-tauri/target/release/bundle/macos/MeowpadConfigurator.app
