@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: install stable
+      - name: install nightly
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
