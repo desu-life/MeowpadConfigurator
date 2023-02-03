@@ -44,7 +44,12 @@ export interface IConfig {
     speed_press_minimum_brightness: number
     press_light_step: number
     keyboard_jitters_elimination_time: number
-    keyboard_jitters_elimination_mode: JitterEliminationMode
+    keyboard_jitters_elimination_mode: JitterEliminationMode,
+    force_key_switch: boolean,
+    device_sleep_idle_time: number,
+    sleep_mode_maximum_brightness: number,
+    sleep_lighting_mode_key: LightingMode,
+    sleep_lighting_mode_btm: LightingMode,
 }
 
 export enum JitterEliminationMode {

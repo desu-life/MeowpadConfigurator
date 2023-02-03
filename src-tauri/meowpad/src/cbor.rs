@@ -1,4 +1,4 @@
-use crate::{Config, KeyCode, KbReport, LighingMode};
+use crate::{Config, KeyCode, KbReport, LightingMode};
 use anyhow::Result;
 use ciborium;
 use palette::rgb::channels::Argb;
@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::*;
 use std::io::Cursor;
 
-pub unsafe fn serialize_row<T: Sized>(src: &T) -> &[u8] {
+#[inline]
+pub unsafe fn serialize_raw<T: Sized>(src: &T) -> &[u8] {
     ::std::slice::from_raw_parts((src as *const T) as *const u8, ::std::mem::size_of::<T>())
 }
 
@@ -30,6 +31,8 @@ pub struct KEYBOARD {
     /// 0 / 1   0是按下按键先消抖后发码
     #[serde(rename = "jm")]
     pub JittersEliminationMode: u8,
+    #[serde(rename = "fkw")]
+    pub FORCE_KEY_SWITCH: u8,
 }
 
 /// speed 0-10
@@ -85,6 +88,14 @@ pub struct LED {
     pub LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: u16,
     #[serde(rename = "rbsc2")]
     pub LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: u16,
+    #[serde(rename = "dsit")]
+    pub DEVICE_SLEEP_IDLE_TIME: u16,
+    #[serde(rename = "llsm")]
+    pub LED_LUM_SLEEP_MAX: u8,
+    #[serde(rename = "lksm")]
+    pub LED_KEY_SLEEP_MODE: u8,
+    #[serde(rename = "lbsm")]
+    pub LED_BTM_SLEEP_MODE: u8,
 }
 
 #[repr(C)]
@@ -109,10 +120,6 @@ impl CONFIG {
         ciborium::ser::into_writer(&self, &mut data).unwrap();
         data
     }
-
-    pub unsafe fn from_raw(src: Vec<u8>) -> Self {
-        std::ptr::read(src.as_ptr() as *const _)
-    }
 }
 
 impl Default for KEYBOARD {
@@ -125,6 +132,7 @@ impl Default for KEYBOARD {
             KEY_5: KeyCode::Grave.to_report().into(),
             JittersEliminationTime: 100,
             JittersEliminationMode: 1,
+            FORCE_KEY_SWITCH: false as u8
         }
     }
 }
@@ -139,7 +147,8 @@ impl From<Config> for CONFIG {
                 KEY_4: cfg.key_4.into_iter().collect::<KbReport>().into(),
                 KEY_5: cfg.key_5.into_iter().collect::<KbReport>().into(),
                 JittersEliminationTime: cfg.keyboard_jitters_elimination_time,
-                JittersEliminationMode: cfg.keyboard_jitters_elimination_mode as u8
+                JittersEliminationMode: cfg.keyboard_jitters_elimination_mode as u8,
+                FORCE_KEY_SWITCH: cfg.force_key_switch.into()
             },
             LED: LED {
                 LED1_COLOR: cfg.led_color_l.into_u32::<Argb>(),
@@ -162,6 +171,10 @@ impl From<Config> for CONFIG {
                 LED_PUSH_TO_GLOW_TRANSITION_SPEED: cfg.press_light_duration.as_millis() as u16,
                 LED_SPEED_LIGHT_TRANSITION_SPEED: cfg.speed_press_trans_speed.as_millis() as u16,
                 LED_SPEED_LIGHT_STEP_LENGTH: cfg.speed_press_step,
+                DEVICE_SLEEP_IDLE_TIME: cfg.device_sleep_idle_time.as_secs() as u16,
+                LED_LUM_SLEEP_MAX: cfg.sleep_mode_maximum_brightness,
+                LED_KEY_SLEEP_MODE: cfg.sleep_lighting_mode_key as u8,
+                LED_BTM_SLEEP_MODE: cfg.sleep_lighting_mode_btm as u8,
                 ..Default::default()
             },
         }
@@ -177,8 +190,8 @@ impl Default for LED {
             LED4_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
             LED_SPEED_LIGHT_HIGH_COLOR: Srgb::new(255, 0, 0).into_u32::<Argb>(),
             LED_SPEED_LIGHT_LOW_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            LED_KEY_MODE: LighingMode::PressAndLight as u8,
-            LED_BTM_MODE: LighingMode::RainbowGradientSwitch as u8,
+            LED_KEY_MODE: LightingMode::PressAndLight as u8,
+            LED_BTM_MODE: LightingMode::RainbowGradientSwitch as u8,
             LED_LUM_MAX: 80,
             LED_LUM_BREATH_MIN: 0,
             LED_LUM_SPEED_LIGHT_MIN: 100,
@@ -193,6 +206,10 @@ impl Default for LED {
             LED_SPEED_LIGHT_STEP_LENGTH: 50,
             LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: 2,
             LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: 2,
+            DEVICE_SLEEP_IDLE_TIME: 60,
+            LED_LUM_SLEEP_MAX: 100,
+            LED_KEY_SLEEP_MODE: LightingMode::Off as u8,
+            LED_BTM_SLEEP_MODE: LightingMode::Off as u8,
         }
     }
 }
