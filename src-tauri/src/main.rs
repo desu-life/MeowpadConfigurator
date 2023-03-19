@@ -208,47 +208,51 @@ fn _connect() -> AnyResult<()> {
 }
 
 fn find_device() -> Option<Meowpad> {
-    // connect
+    // 获取设备列表
     let api = unsafe { HID_API.borrow_mut() };
     api.refresh_devices().unwrap();
-    let (vid, pid) = (0x5D3E, (0x7490, 29841));
-    let meowpad = api
-        .device_list()
-        .filter(|d| d.vendor_id() == vid && (d.product_id() == pid.0 || d.product_id() == pid.1))
-        .filter_map(|d| {
-            let is_wooting = d.product_id() == pid.1;
-            let device = match d.open_device(api) {
-                Ok(d) => Meowpad::new(
-                    d,
-                    is_wooting,
-                    path::cache_dir()
-                        .map(|mut p| {
-                            p.push(".meowkey");
-                            p
-                        })
-                        .unwrap_or_else(|| PathBuf::from(".meowkey")),
-                ),
-                Err(_) => return None,
-            };
-            // 测试连接
-            match device.ping() {
-                Ok(r) if !r => return None,
-                Err(_) => return None,
-                _ => (),
-            }
-            info!("连接到设备");
-            debug!("Name: {}", d.product_string().unwrap_or("None"));
-            debug!(
-                "Manufacturer: {}",
-                d.manufacturer_string().unwrap_or("None")
-            );
-            debug!("Addr: {}", d.path().to_string_lossy());
-            debug!("{:?}", d);
-            Some(device)
-        })
-        .next();
 
-    meowpad
+    // 期望的设备VID和PID
+    const VID: u16 = 0x5D3E;
+    const PID_1: u16 = 0x7490;
+    const PID_2: u16 = 29841;
+
+    // 缓存路径
+    let cache_path = path::cache_dir()
+        .map(|mut p| {
+            p.push(".meowkey");
+            p
+        })
+        .unwrap_or_else(|| PathBuf::from(".meowkey"));
+
+    // 迭代设备列表，查找符合条件的设备
+    api.device_list().find_map(|d| {
+        // 过滤设备
+        if !(d.vendor_id() == VID && (d.product_id() == PID_1 || d.product_id() == PID_2)) {
+            return None;
+        }
+
+        // 连接设备
+        let is_hs = d.product_id() == PID_2;
+        let device = match d.open_device(api) {
+            Ok(d) => Meowpad::new(d, is_hs, cache_path.clone()),
+            Err(_) => return None,
+        };
+
+        // 测试连接
+        match device.ping() {
+            Ok(r) if !r => None,
+            Err(_) => None,
+            _ => {
+                info!("连接到设备");
+                debug!("Name: {}", d.product_string().unwrap_or_default());
+                debug!("Manufacturer: {}", d.manufacturer_string().unwrap_or_default());
+                debug!("Addr: {}", d.path().to_string_lossy());
+                debug!("{:?}", d);
+                Some(device)
+            }
+        }
+    })
 }
 
 pub fn compare_version(version1: &str, version2: &str) -> i32 {
