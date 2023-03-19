@@ -319,7 +319,7 @@ fn main() -> AnyResult<()> {
             d.load_config().unwrap();
             info!("当前设备配置：{:?}", d.config());
             let mut f = std::fs::File::create("meowpad.toml")?;
-            f.write_all(&toml::to_vec(&d.config())?)?;
+            f.write_all(toml::to_string_pretty(&d.config())?.as_bytes())?;
 
             let (tx, rx) = mpsc::channel();
             let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2)).unwrap();
