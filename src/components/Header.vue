@@ -67,7 +67,7 @@ async function check_device_info(): Promise<IDevice | undefined> {
 async function calibration_key() {
   store.loading = true
   status.value = "info"
-  status_str.value = "开始校准，请按下任意键"
+  status_str.value = "请同时按下两个按键并保持2秒后松开，即可完成校准过程"
   try {
     await invoke("calibration_key")
   } catch (e) {
@@ -77,6 +77,17 @@ async function calibration_key() {
     console.error(e)
   }
   store.loading = false
+  setTimeout(async () => {
+    // 清空显示
+    if (status_str.value = "请同时按下两个按键并保持2秒后松开，即可完成校准过程") {
+      status.value = "success"
+      if (store.device_info === undefined) {
+        status_str.value = "设备已连接"
+      } else {
+        status_str.value = "设备已连接，固件版本：" + store.device_info!.version
+      }
+    }
+  }, 5000)
 }
 
 async function get_default_config() {
@@ -123,7 +134,7 @@ async function get_config() {
     status_str.value = es
     console.error(es)
     if (es.includes("Semantic") || es.includes("Syntax") || es.includes("Unexpected")) {
-      status_str.value = "检测到触盘配置数据错误，将在五秒后自动重置"
+      status_str.value = "检测到设备配置数据错误，将在五秒后自动重置"
       setTimeout(async () => {
         await get_default_config()
         await sync_config()
@@ -170,7 +181,7 @@ async function sync_config() {
       <n-button class="mr-4" :disabled="store.loading" @click="connect" >连接设备</n-button>
     </div>
     <div v-else>
-      <n-button class="mr-4" :disabled="store.loading" v-if="(store.config!.key_trigger_degree != undefined && store.config!.key_release_degree != undefined)" @click="calibration_key" >校准触盘</n-button>
+      <n-button class="mr-4" :disabled="store.loading"  @click="calibration_key" >校准设备</n-button>
       <n-button class="mr-4" :disabled="store.loading" @click="get_default_config" >默认值</n-button>
       <n-button class="mr-4" :disabled="store.loading" @click="sync_config" >同步配置</n-button>
     </div>
