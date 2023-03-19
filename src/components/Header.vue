@@ -181,7 +181,7 @@ async function sync_config() {
       <n-button class="mr-4" :disabled="store.loading" @click="connect" >连接设备</n-button>
     </div>
     <div v-else>
-      <n-button class="mr-4" :disabled="store.loading"  @click="calibration_key" >校准设备</n-button>
+      <n-button class="mr-4" :disabled="store.loading" v-if="(store.config!.key_trigger_degree != undefined && store.config!.key_release_degree != undefined)" @click="calibration_key" >校准设备</n-button>
       <n-button class="mr-4" :disabled="store.loading" @click="get_default_config" >默认值</n-button>
       <n-button class="mr-4" :disabled="store.loading" @click="sync_config" >同步配置</n-button>
     </div>
