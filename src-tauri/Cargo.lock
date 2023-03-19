@@ -1873,6 +1873,7 @@ dependencies = [
  "notify",
  "once_cell",
  "pretty-hex",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

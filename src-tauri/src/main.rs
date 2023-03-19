@@ -147,7 +147,7 @@ async fn get_firmware_version(_app: tauri::AppHandle) -> &'static str {
     FIRMWARE_VERSION
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Version {
     version: String,
     download_url: String,
@@ -158,7 +158,7 @@ struct Version {
 impl Version {
     async fn get() -> reqwest::Result<Version> {
         CLIENT
-            .get("https://desu.life/device/configurator_version")
+            .get("https://desu.life/device/configurator_version/")
             .send()
             .await?
             .json::<Version>()
@@ -170,7 +170,8 @@ use tauri::api::shell;
 
 #[tauri::command]
 async fn check_update(window: tauri::Window, version: Version) -> bool {
-    if compare_version(VERSION, &version.version) < 0 {
+    if compare_version(VERSION, &version.version) == std::cmp::Ordering::Less {
+        warn!("最新版本信息：\n{:#?}", version);
         window.hide().unwrap();
         message_dialog_f!(
             "Meowpad Configurator",
@@ -255,34 +256,36 @@ fn find_device() -> Option<Meowpad> {
     })
 }
 
-pub fn compare_version(version1: &str, version2: &str) -> i32 {
-    use std::cmp::Ordering::{Greater, Less};
 
-    let (mut it_1, mut it_2) = (version1.split('.'), version2.split('.'));
-    loop {
-        let (s1, s2) = (it_1.next(), it_2.next());
-        if s1.is_none() && s2.is_none() {
-            break;
-        }
+pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
+    use std::cmp::Ordering::*;
 
-        let s1 = s1.unwrap_or("0").trim_start_matches('0');
-        let s2 = s2.unwrap_or("0").trim_start_matches('0');
-        if s1.len() != s2.len() {
-            return (s1.len() as i32 - s2.len() as i32).signum();
-        }
+    // 检查版本号的格式是否正确
+    let re = regex::Regex::new(r"^\d+(\.\d+)*$").unwrap();
+    if !re.is_match(version1) || !re.is_match(version2) {
+        panic!("Invalid version format");
+    }
 
-        for (c1, c2) in s1.chars().zip(s2.chars()) {
-            match c1.cmp(&c2) {
-                Greater => return 1,
-                Less => return -1,
-                _ => (),
-            }
+    // 将版本号转换为数字向量
+    let v1: Vec<u64> = version1.split('.').map(|s| s.parse().unwrap()).collect();
+    let v2: Vec<u64> = version2.split('.').map(|s| s.parse().unwrap()).collect();
+
+    // 比较数字向量
+    for i in 0..std::cmp::max(v1.len(), v2.len()) {
+        let n1 = v1.get(i).unwrap_or(&0);
+        let n2 = v2.get(i).unwrap_or(&0);
+        match n1.cmp(n2) {
+            Greater => return Greater,
+            Less => return Less,
+            Equal => (),
         }
     }
-    0
+
+    // 版本号相等
+    Equal
 }
 
-static VERSION: &str = "0.2.4";
+static VERSION: &str = "0.2.5";
 static FIRMWARE_VERSION: &str = "0.1.3";
 
 fn main() -> AnyResult<()> {
