@@ -282,8 +282,8 @@ pub fn compare_version(version1: &str, version2: &str) -> i32 {
     0
 }
 
-static VERSION: &str = "0.2.2";
-static FIRMWARE_VERSION: &str = "0.1.2";
+static VERSION: &str = "0.2.4";
+static FIRMWARE_VERSION: &str = "0.1.3";
 
 fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
