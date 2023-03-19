@@ -23,6 +23,7 @@ pub enum LightingMode {
     RainbowGradientSync = 6,
     PressAndLight = 7,
     SpeedPress = 8,
+    根据按压力度决定LED发光程度 = 9,
 }
 
 /// 0是按下按键先消抖后发码
@@ -92,11 +93,14 @@ pub struct Config {
     pub keyboard_jitters_elimination_time: u16,
     pub keyboard_jitters_elimination_mode: JitterEliminationMode,
     pub force_key_switch: bool,
-    #[serde_as(as = "DurationMilliSeconds<u64>")]
-    pub device_sleep_idle_time: Duration,
+    #[serde_as(as = "DurationSeconds")]
+    pub device_sleep_idle_time: Duration, // 最大65536秒
     pub sleep_mode_maximum_brightness: u8,
     pub sleep_lighting_mode_key: LightingMode,
     pub sleep_lighting_mode_btm: LightingMode,
+    pub key_trigger_degree: Option<u8>,       // 0-100
+    pub key_release_degree: Option<u8>,       // 0-100
+    pub dead_zone: Option<u8>,               // 0-30
 }
 
 impl TryFrom<CONFIG> for Config {
@@ -151,6 +155,9 @@ impl TryFrom<CONFIG> for Config {
                 .ok_or(anyhow!("解析key灯效模式时报错"))?,
             sleep_lighting_mode_btm: LightingMode::from_u8(cfg.LED.LED_BTM_SLEEP_MODE)
                 .ok_or(anyhow!("解析btm灯效模式时报错"))?,
+            key_release_degree: cfg.Key.KeyReleaseDegree,
+            key_trigger_degree: cfg.Key.KeyTriggerDegree,
+            dead_zone: cfg.Key.DeadZone
         })
     }
 }

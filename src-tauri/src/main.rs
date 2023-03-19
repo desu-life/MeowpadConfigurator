@@ -71,8 +71,21 @@ fn init_logger(default_level: &str) {
 }
 
 #[tauri::command]
+async fn calibration_key(_app: tauri::AppHandle) -> Result<(), String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        d.calibration_key()?;
+        Ok(())
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
 async fn get_default_config(_app: tauri::AppHandle) -> Config {
-    let config = cbor::CONFIG::default();
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().unwrap();
+    let config = d.default_config();
     config.try_into().expect("解析默认配置出错，真不应该..")
 }
 
@@ -95,15 +108,14 @@ async fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value, St
     || -> AnyResult<_> {
         let mut _d = DEVICE.lock().unwrap();
         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        let name = d
-            .get_device_name()
+        d.get_device_name()
             .map_err(|e| anyhow!("获取设备名时出错, {}", e))?;
-        let version = d
-            .get_firmware_version()
+        d.get_firmware_version()
             .map_err(|e| anyhow!("获取设备版本时出错, {}", e))?;
+        let name = d.device_name.as_ref().unwrap();
+        let version = d.firmware_version.as_ref().unwrap();
         info!("设备名称：{}", name);
         info!("固件版本：{}", version);
-
         Ok(serde_json::json!({
             "name": name,
             "version": version
@@ -199,14 +211,16 @@ fn find_device() -> Option<Meowpad> {
     // connect
     let api = unsafe { HID_API.borrow_mut() };
     api.refresh_devices().unwrap();
-    let (vid, pid) = (0x5D3E, 0x7490);
+    let (vid, pid) = (0x5D3E, (0x7490, 29841));
     let meowpad = api
         .device_list()
-        .filter(|d| d.vendor_id() == vid && d.product_id() == pid)
+        .filter(|d| d.vendor_id() == vid && (d.product_id() == pid.0 || d.product_id() == pid.1))
         .filter_map(|d| {
+            let is_wooting = d.product_id() == pid.1;
             let device = match d.open_device(api) {
                 Ok(d) => Meowpad::new(
                     d,
+                    is_wooting,
                     path::cache_dir()
                         .map(|mut p| {
                             p.push(".meowkey");
@@ -264,7 +278,7 @@ pub fn compare_version(version1: &str, version2: &str) -> i32 {
     0
 }
 
-static VERSION: &str = "0.2.0";
+static VERSION: &str = "0.2.2";
 static FIRMWARE_VERSION: &str = "0.1.2";
 
 fn main() -> AnyResult<()> {
@@ -287,8 +301,10 @@ fn main() -> AnyResult<()> {
             _connect()?;
             let mut _d = DEVICE.lock().unwrap();
             let mut d = _d.take().unwrap();
-            info!("设备名称：{}", d.get_device_name()?);
-            info!("固件版本：{}", d.get_firmware_version()?);
+            d.get_device_name()?;
+            d.get_firmware_version()?;
+            info!("设备名称：{:?}", d.device_name);
+            info!("固件版本：{:?}", d.firmware_version);
             d.reset_config()?;
             warn!("重置配置成功")
         }
@@ -296,9 +312,11 @@ fn main() -> AnyResult<()> {
             _connect()?;
             let mut _d = DEVICE.lock().unwrap();
             let mut d = _d.take().unwrap();
-            info!("设备名称：{}", d.get_device_name()?);
-            info!("固件版本：{}", d.get_firmware_version()?);
-            d.load_config()?;
+            d.get_device_name()?;
+            d.get_firmware_version()?;
+            info!("设备名称：{:?}", d.device_name);
+            info!("固件版本：{:?}", d.firmware_version);
+            d.load_config().unwrap();
             info!("当前设备配置：{:?}", d.config());
             let mut f = std::fs::File::create("meowpad.toml")?;
             f.write_all(&toml::to_vec(&d.config())?)?;
@@ -345,7 +363,8 @@ fn main() -> AnyResult<()> {
                     get_device_info,
                     check_update,
                     get_version,
-                    get_firmware_version
+                    get_firmware_version,
+                    calibration_key
                 ])
                 .run(tauri::generate_context!())
                 .expect("error while running tauri application");

@@ -49,7 +49,7 @@ const LighingMode = [
   {
     key: LightingMode.SpeedPress,
     label: '手速计'
-  },
+  }
 ]
 
 const JEModeSel = [
@@ -99,8 +99,59 @@ const LighingModeSel = [
   {
     value: LightingMode.PressAndLight,
     label: '触发模式'
+  }
+]
+
+const LighingModeSelWooting = [
+  {
+    value: LightingMode.Off,
+    label: "关闭"
+  },
+  {
+    value: LightingMode.Solid,
+    label: "常亮"
+  },
+  {
+    value: LightingMode.Breath,
+    label: '呼吸'
+  },
+  {
+    value: LightingMode.SpeedPress,
+    label: '手速计'
+  },
+  {
+    value: LightingMode.RainbowBreathSwitch,
+    label: '彩虹呼吸'
+  },
+  {
+    value: LightingMode.RainbowGradientSwitch,
+    label: '彩虹渐变'
+  },
+  {
+    value: LightingMode.RainbowBreathSync,
+    label: '彩虹呼吸（同步）'
+  },
+  {
+    value: LightingMode.RainbowGradientSync,
+    label: '彩虹渐变（同步）'
+  },
+  {
+    value: LightingMode.PressAndLight,
+    label: '触发模式'
+  },
+  {
+    value: LightingMode.根据按压力度决定LED发光程度,
+    label: '压感模式'
   },
 ]
+
+function GetLighingModeSel() {
+  if (store.config!.key_trigger_degree != undefined && store.config!.key_release_degree != undefined) {
+    return LighingModeSelWooting
+  } else {
+    return LighingModeSel
+  }
+}
 
 function needkey(key: KeyCode) {
   if (!presskeycodes.value.includes(key)) {
@@ -257,41 +308,43 @@ function formatKeys(keycodes: KeyCode[]) {
     </n-card>
   </n-modal>
   <n-spin :show="store.loading">
-    <n-form class="h-96" ref="formRef" :label-width="80" label-placement="top" :model="store.config" size="medium"
+    <n-form ref="formRef" :label-width="80" label-placement="top" :model="store.config" size="medium"
       style="margin-bottom: 40px;" v-if="store.config != undefined">
       <div>
         <transition mode="out-in" enter-active-class="animate__animated animate__fadeIn animate__slower"
           leave-active-class="animate__animated animate__fadeOut" style="animation-duration: 0.2s;">
           <div v-if="configType !== 1">
-            <n-button-group>
-              <n-button size="large" @click="setKeys(1)" :disabled="showModal">
-                {{ formatKeys(store.config!.key_1) }}
-              </n-button>
-              <n-button size="large" @click="setKeys(2)" :disabled="showModal">
-                {{ formatKeys(store.config!.key_2) }}
-              </n-button>
-            </n-button-group>
-            <br>
-            <n-button-group>
-              <n-button @click="setKeys(3)" :disabled="showModal">
-                {{ formatKeys(store.config!.key_3) }}
-              </n-button>
-              <n-button @click="setKeys(4)" :disabled="showModal">
-                {{ formatKeys(store.config!.key_4) }}
-              </n-button>
-              <n-button @click="setKeys(5)" :disabled="showModal">
-                {{ formatKeys(store.config!.key_5) }}
-              </n-button>
-            </n-button-group>
-            <n-grid :cols="20" :x-gap="18" style="margin: 50px;">
+            <div style="padding-bottom: 10px;">
+              <n-button-group>
+                <n-button size="large" @click="setKeys(1)" :disabled="showModal">
+                  {{ formatKeys(store.config!.key_1) }}
+                </n-button>
+                <n-button size="large" @click="setKeys(2)" :disabled="showModal">
+                  {{ formatKeys(store.config!.key_2) }}
+                </n-button>
+              </n-button-group>
+              <br>
+              <n-button-group>
+                <n-button @click="setKeys(3)" :disabled="showModal">
+                  {{ formatKeys(store.config!.key_3) }}
+                </n-button>
+                <n-button @click="setKeys(4)" :disabled="showModal">
+                  {{ formatKeys(store.config!.key_4) }}
+                </n-button>
+                <n-button @click="setKeys(5)" :disabled="showModal">
+                  {{ formatKeys(store.config!.key_5) }}
+                </n-button>
+              </n-button-group>
+            </div>
+            <n-grid :cols="20" :x-gap="18" style="width: 80vw;">
               <n-gi :span="10">
                 <n-form-item label="灯效模式（按键）" path="lighting_mode_key">
-                  <n-select v-model:value="store.config!.lighting_mode_key" :options="LighingModeSel" />
+                  <n-select v-model:value="store.config!.lighting_mode_key" :options="GetLighingModeSel()" />
                 </n-form-item>
               </n-gi>
               <n-gi :span="10">
                 <n-form-item label="灯效模式（底部）" path="lighting_mode_btm">
-                  <n-select v-model:value="store.config!.lighting_mode_btm" :options="LighingModeSel" />
+                  <n-select v-model:value="store.config!.lighting_mode_btm" :options="GetLighingModeSel()" />
                 </n-form-item>
               </n-gi>
               <n-gi :span="10">
@@ -299,9 +352,47 @@ function formatKeys(keycodes: KeyCode[]) {
                   <n-select v-model:value="store.config!.keyboard_jitters_elimination_mode" :options="JEModeSel" />
                 </n-form-item>
               </n-gi>
-              <n-gi :span="10">
+              <n-gi :span="5">
                 <n-form-item label="消抖时长" path="keyboard_jitters_elimination_time">
-                  <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" />
+                  <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="0" :max="65535" />
+                </n-form-item>
+              </n-gi>
+              <n-gi :span="5">
+                <n-form-item label="睡眠模式等待时长" path="device_sleep_idle_time">
+                  <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="0" :max="65535"/>
+                </n-form-item>
+              </n-gi>
+              <n-gi :span="10" v-if="store.config!.device_sleep_idle_time != 0">
+                <n-form-item label="睡眠中灯效模式（按键）" path="sleep_lighting_mode_key">
+                  <n-select v-model:value="store.config!.sleep_lighting_mode_key" :options="GetLighingModeSel()" />
+                </n-form-item>
+              </n-gi>
+              <n-gi :span="10" v-if="store.config!.device_sleep_idle_time != 0">
+                <n-form-item label="睡眠中灯效模式（底部）" path="sleep_lighting_mode_btm">
+                  <n-select v-model:value="store.config!.sleep_lighting_mode_btm" :options="GetLighingModeSel()" />
+                </n-form-item>
+              </n-gi>
+              <n-gi :span="5">
+                <n-form-item label="触发键程" path="key_trigger_degree">
+                  <n-input-number v-model:value="store.config!.key_trigger_degree" :min="0" :max="100" placeholder="无数据"
+                    :disabled="store.config!.key_trigger_degree == undefined" />
+                </n-form-item>
+              </n-gi>
+              <n-gi :span="5">
+                <n-form-item label="释放键程" path="key_release_degree">
+                  <n-input-number v-model:value="store.config!.key_release_degree" :min="0" :max="100" placeholder="无数据"
+                    :disabled="store.config!.key_release_degree == undefined" />
+                </n-form-item>
+              </n-gi>
+              <n-gi :span="5">
+                <n-form-item label="按键死区" path="dead_zone">
+                  <n-input-number v-model:value="store.config!.dead_zone" :min="0" :max="30" placeholder="无数据"
+                    :disabled="store.config!.dead_zone == undefined" />
+                </n-form-item>
+              </n-gi>
+              <n-gi :span="10">
+                <n-form-item label="强双模式" path="force_key_switch">
+                  <n-switch v-model:value="store.config!.force_key_switch" />
                 </n-form-item>
               </n-gi>
             </n-grid>
@@ -309,7 +400,7 @@ function formatKeys(keycodes: KeyCode[]) {
 
 
           <div v-else>
-            <n-grid :cols="24" :x-gap="18">
+            <n-grid :cols="24" :x-gap="18" style="width: 82vw;">
               <n-gi :span="4" class="border-4 border-indigo-200 border-r-indigo-500">
                 <n-form-item label="灯效模式" path="lighting_mode">
                   <n-menu v-model:value="lightingMode" :options="LighingMode" inverted :indent="18"
@@ -445,9 +536,9 @@ function formatKeys(keycodes: KeyCode[]) {
           </div>
         </transition>
         <div style="position: fixed;
-        z-index: 10;
-        bottom: 40px;
-        right: calc(40px);">
+            z-index: 10;
+            bottom: 40px;
+            right: calc(40px);">
           <n-tooltip trigger="hover" :delay="400" :duration="200">
             <template #trigger>
               <n-button round type="warning" @click="switchConfig">
@@ -478,12 +569,13 @@ function formatKeys(keycodes: KeyCode[]) {
           设备固件版本不匹配，请更新设备固件后再试
           <br>
           你可以前往
-          <n-a :href="store.version_info!.latest_firmware_download_url" target="_blank" :title="store.version_info!.latest_firmware_download_url">
+          <n-a :href="store.version_info!.latest_firmware_download_url" target="_blank"
+            :title="store.version_info!.latest_firmware_download_url">
             这里
           </n-a>
           下载最新的固件，在
           <n-a href="https://info.desu.life/?p=338" target="_blank" title="https://info.desu.life/?p=338">
-          这里
+            这里
           </n-a>
           查看固件更新教程
         </template>

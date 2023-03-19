@@ -15,6 +15,9 @@ type Config = CONFIG;
 
 pub struct Meowpad {
     pub config: Option<Config>,
+    pub device_name: Option<String>,
+    pub firmware_version: Option<String>,
+    pub is_wooting: bool,
     device: HidDevice,
     key: Vec<u8>,
 }
@@ -26,14 +29,14 @@ impl Debug for Meowpad {
 }
 
 impl Meowpad {
-    pub fn new(device: HidDevice, path: impl AsRef<std::path::Path>) -> Meowpad {
+    pub fn new(device: HidDevice, is_wooting: bool, path: impl AsRef<std::path::Path>) -> Meowpad {
         let path = path.as_ref();
         let mut data = match fs::read(path) {
             Ok(data) => {
                 if data.len() != 64 || !data.starts_with(&[0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF]) {
                     warn!("错误的密钥，正在重置");
                     fs::remove_file(path).expect("错误的密钥 / 重置密钥失败");
-                    return Self::new(device, path);
+                    return Self::new(device, is_wooting, path);
                 }
                 data
             }
@@ -53,8 +56,15 @@ impl Meowpad {
         Meowpad {
             key,
             device,
+            is_wooting,
             config: None,
+            device_name: None,
+            firmware_version: None,
         }
+    }
+
+    pub fn default_config(&self) -> Config {
+        Config::default(self.is_wooting)
     }
 
     pub fn config(&self) -> Config {
@@ -79,11 +89,12 @@ impl Meowpad {
         }
     }
 
-    pub fn get_device_name(&self) -> Result<String> {
+    pub fn get_device_name(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::GetDeviceName, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
-            Ok(String::from_utf8(packet.data)?)
+            self.device_name = Some(String::from_utf8(packet.data)?);
+            Ok(())
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
@@ -91,11 +102,12 @@ impl Meowpad {
         }
     }
 
-    pub fn get_firmware_version(&self) -> Result<String> {
+    pub fn get_firmware_version(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::GetFirmwareVersion, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
-            Ok(String::from_utf8(packet.data)?)
+            self.firmware_version = Some(String::from_utf8(packet.data)?);
+            Ok(())
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
@@ -118,9 +130,22 @@ impl Meowpad {
     }
 
     pub fn reset_config(&mut self) -> Result<()> {
-        self.config = Some(Config::default());
+        self.config = Some(Config::default(self.is_wooting));
         self.write_config()?;
         Ok(())
+    }
+
+    pub fn calibration_key(&self) -> Result<()> {
+        if !self.is_wooting { return Ok(()) }
+        self.write(Packet::new(PacketID::CalibrationKey, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(anyhow!("在校准轴体时出错"))
+        }
     }
 
     pub fn flush(&self) -> Result<()> {
@@ -152,6 +177,7 @@ impl Meowpad {
 
     fn write(&self, packet: Packet) -> Result<()> {
         debug!("发送：{:?}", packet);
+        debug!("总数据大小：{}", packet.data.len());
         for v in packet.build_packets() {
             self.write_head()?;
             debug!("raw：{:?}", v.hex_dump());

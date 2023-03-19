@@ -16,7 +16,7 @@ pub enum PacketID {
     GetConfig = 6,
     GetFirmwareVersion = 7,
     GetDeviceName = 8,
-    Next = 9,
+    CalibrationKey = 9,
 }
 
 impl std::fmt::Display for PacketID {
@@ -62,8 +62,10 @@ impl Packet {
     }
 
     pub fn build_packets(self) -> PacketBuilder {
+        let vec = self.build_vec();
         PacketBuilder {
-            inner: self.build_vec(),
+            len: vec.len(),
+            inner: vec,
             pos: 0,
         }
         .into_iter()
@@ -88,6 +90,7 @@ impl IntoIterator for Packet {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PacketBuilder {
     inner: Vec<u8>,
+    len: usize,
     pos: usize,
 }
 
@@ -101,7 +104,7 @@ impl Iterator for PacketBuilder {
     // We use Self::Item in the return type, so we can change
     // the type without having to update the function signatures.
     fn next(&mut self) -> Option<Self::Item> {
-        if self.inner.len() > self.pos {
+        if self.len > self.pos {
             let mut arr = [0u8; 65];
             let mut arr_iter = arr.iter_mut().skip(1);
             if self.pos >= 64 {

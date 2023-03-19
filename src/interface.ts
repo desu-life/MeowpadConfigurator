@@ -50,6 +50,9 @@ export interface IConfig {
     sleep_mode_maximum_brightness: number,
     sleep_lighting_mode_key: LightingMode,
     sleep_lighting_mode_btm: LightingMode,
+    key_trigger_degree: number | undefined,       // 0-100
+    key_release_degree: number | undefined,       // 0-100
+    dead_zone: number | undefined,               // 0-30
 }
 
 export enum JitterEliminationMode {
@@ -67,6 +70,7 @@ export enum LightingMode {
     RainbowGradientSync = 6,
     PressAndLight = 7,
     SpeedPress = 8,
+    根据按压力度决定LED发光程度 = 9,
 }
 
 // export enum KeyCode {

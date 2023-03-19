@@ -33,6 +33,12 @@ pub struct KEYBOARD {
     pub JittersEliminationMode: u8,
     #[serde(rename = "fkw")]
     pub FORCE_KEY_SWITCH: u8,
+    #[serde(rename = "td", skip_serializing_if = "Option::is_none")]
+    pub KeyTriggerDegree: Option<u8>,
+    #[serde(rename = "rd", skip_serializing_if = "Option::is_none")]
+    pub KeyReleaseDegree: Option<u8>,
+    #[serde(rename = "dz", skip_serializing_if = "Option::is_none")]
+    pub DeadZone: Option<u8>,
 }
 
 /// speed 0-10
@@ -122,17 +128,36 @@ impl CONFIG {
     }
 }
 
-impl Default for KEYBOARD {
-    fn default() -> Self {
-        Self {
-            KEY_1: KeyCode::Z.to_report().into(),
-            KEY_2: KeyCode::X.to_report().into(),
-            KEY_3: KeyCode::Escape.to_report().into(),
-            KEY_4: KeyCode::F2.to_report().into(),
-            KEY_5: KeyCode::Grave.to_report().into(),
-            JittersEliminationTime: 100,
-            JittersEliminationMode: 1,
-            FORCE_KEY_SWITCH: false as u8
+impl KEYBOARD {
+    fn default(is_wooting: bool) -> Self {
+        if is_wooting {
+            Self {
+                KEY_1: KeyCode::Z.to_report().into(),
+                KEY_2: KeyCode::X.to_report().into(),
+                KEY_3: KeyCode::Escape.to_report().into(),
+                KEY_4: KeyCode::F2.to_report().into(),
+                KEY_5: KeyCode::Grave.to_report().into(),
+                JittersEliminationTime: 100,
+                JittersEliminationMode: 1,
+                FORCE_KEY_SWITCH: false as u8,
+                KeyReleaseDegree: Some(25),
+                KeyTriggerDegree: Some(20),
+                DeadZone: Some(10)
+            }
+        } else {
+            Self {
+                KEY_1: KeyCode::Z.to_report().into(),
+                KEY_2: KeyCode::X.to_report().into(),
+                KEY_3: KeyCode::Escape.to_report().into(),
+                KEY_4: KeyCode::F2.to_report().into(),
+                KEY_5: KeyCode::Grave.to_report().into(),
+                JittersEliminationTime: 100,
+                JittersEliminationMode: 1,
+                FORCE_KEY_SWITCH: false as u8,
+                KeyReleaseDegree: None,
+                KeyTriggerDegree: None,
+                DeadZone: None
+            }
         }
     }
 }
@@ -148,7 +173,10 @@ impl From<Config> for CONFIG {
                 KEY_5: cfg.key_5.into_iter().collect::<KbReport>().into(),
                 JittersEliminationTime: cfg.keyboard_jitters_elimination_time,
                 JittersEliminationMode: cfg.keyboard_jitters_elimination_mode as u8,
-                FORCE_KEY_SWITCH: cfg.force_key_switch.into()
+                FORCE_KEY_SWITCH: cfg.force_key_switch.into(),
+                KeyReleaseDegree: cfg.key_release_degree,
+                KeyTriggerDegree: cfg.key_trigger_degree,
+                DeadZone: cfg.dead_zone,
             },
             LED: LED {
                 LED1_COLOR: cfg.led_color_l.into_u32::<Argb>(),
@@ -214,10 +242,10 @@ impl Default for LED {
     }
 }
 
-impl Default for CONFIG {
-    fn default() -> Self {
+impl CONFIG {
+    pub fn default(is_wooting: bool) -> Self {
         Self {
-            Key: KEYBOARD::default(),
+            Key: KEYBOARD::default(is_wooting),
             LED: LED::default(),
         }
     }

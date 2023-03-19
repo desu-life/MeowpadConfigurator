@@ -25,13 +25,13 @@ async function connect() {
     store.device_info = info
     
     
-    if (store.device_info!.version != store.firmware_version) {
-      store.need_update_firmware = true // 需要更新固件
-      store.loading = false
-      status.value = "error"
-      status_str.value = "设备版本 " + info!.version + " 与本程序不匹配，请升级固件至 " + store.firmware_version
-      return
-    }
+    // if (store.device_info!.version != store.firmware_version) {
+    //   store.need_update_firmware = true // 需要更新固件
+    //   store.loading = false
+    //   status.value = "error"
+    //   status_str.value = "设备版本 " + info!.version + " 与本程序不匹配，请升级固件至 " + store.firmware_version
+    //   return
+    // }
 
     // 不管怎么样总之是连上了
     store.connected = true
@@ -62,6 +62,21 @@ async function check_device_info(): Promise<IDevice | undefined> {
     status_str.value = "获取设备信息失败，错误原因：" + e
     console.error(e)
   }
+}
+
+async function calibration_key() {
+  store.loading = true
+  status.value = "info"
+  status_str.value = "开始校准，请按下任意键"
+  try {
+    await invoke("calibration_key")
+  } catch (e) {
+    store.connected = false
+    status.value = "error"
+    status_str.value = "连接出错，错误原因：" + e
+    console.error(e)
+  }
+  store.loading = false
 }
 
 async function get_default_config() {
@@ -107,7 +122,7 @@ async function get_config() {
     status.value = "error"
     status_str.value = es
     console.error(es)
-    if (es.includes("Semantic") || es.includes("Syntax")) {
+    if (es.includes("Semantic") || es.includes("Syntax") || es.includes("Unexpected")) {
       status_str.value = "检测到触盘配置数据错误，将在五秒后自动重置"
       setTimeout(async () => {
         await get_default_config()
@@ -155,6 +170,7 @@ async function sync_config() {
       <n-button class="mr-4" :disabled="store.loading" @click="connect" >连接设备</n-button>
     </div>
     <div v-else>
+      <n-button class="mr-4" :disabled="store.loading" v-if="(store.config!.key_trigger_degree != undefined && store.config!.key_release_degree != undefined)" @click="calibration_key" >校准触盘</n-button>
       <n-button class="mr-4" :disabled="store.loading" @click="get_default_config" >默认值</n-button>
       <n-button class="mr-4" :disabled="store.loading" @click="sync_config" >同步配置</n-button>
     </div>
