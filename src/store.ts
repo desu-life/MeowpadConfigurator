@@ -12,6 +12,7 @@ export const useStore = defineStore("main", () => {
   const loading = ref(false);
   const connected = ref(false);
   const config = ref<IConfig | undefined>(undefined);
+  const raw_config = ref<string | undefined>(undefined);
   const led_color_l = ref<string | null>(null);
   const led_color_r = ref<string | null>(null);
   const led_color_btm_l = ref<string | undefined>(undefined);
@@ -25,10 +26,16 @@ export const useStore = defineStore("main", () => {
   const version_info = ref<IVersion | undefined>(undefined);
   const device_info = ref<IDevice | undefined>(undefined);
   const need_update_firmware = ref<boolean>(false);
+  const is_hs = ref<boolean>(false);
+  const debug_mode = ref<boolean>(false);
+  const in_debug = ref<boolean>(false);
+  const can_sync = ref<boolean>(false);
+  const debug_str = ref<string>("");
 
   return {
     loading,
     config,
+    raw_config,
     connected,
     led_color_btm_l,
     led_color_btm_r,
@@ -41,7 +48,12 @@ export const useStore = defineStore("main", () => {
     firmware_version,
     version_info,
     device_info,
-    need_update_firmware
+    need_update_firmware,
+    is_hs,
+    debug_mode,
+    debug_str,
+    in_debug,
+    can_sync
   };
 });
 

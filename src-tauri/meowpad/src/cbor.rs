@@ -39,6 +39,8 @@ pub struct KEYBOARD {
     pub KeyReleaseDegree: Option<u8>,
     #[serde(rename = "dz", skip_serializing_if = "Option::is_none")]
     pub DeadZone: Option<u8>,
+    #[serde(rename = "r", skip_serializing_if = "Option::is_none")]
+    pub KeyScanRate: Option<u8>,
 }
 
 /// speed 0-10
@@ -142,7 +144,8 @@ impl KEYBOARD {
                 FORCE_KEY_SWITCH: false as u8,
                 KeyReleaseDegree: Some(25),
                 KeyTriggerDegree: Some(20),
-                DeadZone: Some(10)
+                DeadZone: Some(10),
+                KeyScanRate: Some(0)
             }
         } else {
             Self {
@@ -156,7 +159,8 @@ impl KEYBOARD {
                 FORCE_KEY_SWITCH: false as u8,
                 KeyReleaseDegree: None,
                 KeyTriggerDegree: None,
-                DeadZone: None
+                DeadZone: None,
+                KeyScanRate: None
             }
         }
     }
@@ -177,6 +181,7 @@ impl From<Config> for CONFIG {
                 KeyReleaseDegree: cfg.key_release_degree,
                 KeyTriggerDegree: cfg.key_trigger_degree,
                 DeadZone: cfg.dead_zone,
+                KeyScanRate: cfg.key_scan_rate,
             },
             LED: LED {
                 LED1_COLOR: cfg.led_color_l.into_u32::<Argb>(),
