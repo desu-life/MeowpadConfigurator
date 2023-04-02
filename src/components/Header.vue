@@ -133,7 +133,7 @@ async function get_config() {
     store.speed_press_low_color = Rgb2Hex(res.speed_press_low_color)
     store.breath_speed = 20 - res.breath_interval
     store.rainbow_light_switching_speed = 30 - res.rainbow_light_switching_interval
-    store.is_hs = (store.config!.key_trigger_degree != undefined && store.config!.key_release_degree != undefined && store.config!.key_scan_rate != undefined)
+    store.is_hs = await invoke("is_hs")
   } catch (e) {
     const es = e as string
     status.value = "error"

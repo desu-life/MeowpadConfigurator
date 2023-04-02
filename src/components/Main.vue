@@ -436,12 +436,17 @@ function formatKeys(keycodes: KeyCode[]) {
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="消抖时长" path="keyboard_jitters_elimination_time">
-                  <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="0" :max="65535" />
+                  <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="0"
+                    :max="10000"></n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="睡眠模式等待时长" path="device_sleep_idle_time">
-                  <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="0" :max="65535" />
+                  <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="0" :max="65535">
+                    <template #suffix>
+                      秒
+                    </template>
+                  </n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="10" v-if="store.config!.device_sleep_idle_time != 0">
@@ -455,24 +460,36 @@ function formatKeys(keycodes: KeyCode[]) {
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
-                <n-form-item label="触发键程" path="key_trigger_degree" v-if="store.config!.key_trigger_degree != undefined">
-                  <n-input-number v-model:value="store.config!.key_trigger_degree" :min="0" :max="100"
-                    placeholder="无数据" />
+                <n-form-item label="触发键程" path="key_trigger_degree" v-if="store.is_hs">
+                  <n-input-number v-model:value="store.config!.key_trigger_degree" :min="10" :max="100"
+                    placeholder="无数据" >
+                    <template #suffix>
+                      %
+                    </template>
+                  </n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
-                <n-form-item label="释放键程" path="key_release_degree" v-if="store.config!.key_release_degree != undefined">
-                  <n-input-number v-model:value="store.config!.key_release_degree" :min="0" :max="100"
-                    placeholder="无数据" />
+                <n-form-item label="释放键程" path="key_release_degree" v-if="store.is_hs">
+                  <n-input-number v-model:value="store.config!.key_release_degree" :min="10" :max="100"
+                    placeholder="无数据" >
+                    <template #suffix>
+                      %
+                    </template>
+                  </n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
-                <n-form-item label="按键死区" path="dead_zone" v-if="store.config!.dead_zone != undefined">
-                  <n-input-number v-model:value="store.config!.dead_zone" :min="0" :max="30" placeholder="无数据" />
+                <n-form-item label="按键死区" path="dead_zone" v-if="store.is_hs">
+                  <n-input-number v-model:value="store.config!.dead_zone" :min="8" :max="30" placeholder="无数据" >
+                    <template #suffix>
+                      %
+                    </template>
+                  </n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
-                <n-form-item label="扫描速率" path="key_scan_rate" v-if="store.config!.key_scan_rate != undefined">
+                <n-form-item label="扫描速率" path="key_scan_rate" v-if="store.is_hs">
                   <n-select v-model:value="store.config!.key_scan_rate" :options="keyscanlist" />
                 </n-form-item>
               </n-gi>
@@ -622,9 +639,9 @@ function formatKeys(keycodes: KeyCode[]) {
           </div>
         </transition>
         <div style="position: fixed;
-                z-index: 10;
-                bottom: 40px;
-                right: calc(40px);">
+                    z-index: 10;
+                    bottom: 40px;
+                    right: calc(40px);">
           <n-tooltip trigger="hover" :delay="400" :duration="200">
             <template #trigger>
               <n-button round type="warning" @click="switchConfig">

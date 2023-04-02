@@ -210,6 +210,16 @@ async fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), Strin
 }
 
 #[tauri::command]
+async fn is_hs(_app: tauri::AppHandle) -> Result<bool, String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        Ok(d.is_hs)
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
 async fn get_version(_app: tauri::AppHandle) -> Result<Version, String> {
     Version::get().await.map_err(|e| format!("{}", e))
 }
@@ -451,7 +461,8 @@ fn main() -> AnyResult<()> {
                     get_adc_record,
                     get_raw_config,
                     save_raw_config,
-                    check_raw_config
+                    check_raw_config,
+                    is_hs
                 ])
                 .run(tauri::generate_context!())
                 .expect("error while running tauri application");
