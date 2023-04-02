@@ -6,6 +6,7 @@ import { useStore } from '@/store'
 import { Keyboard24Regular, Lightbulb24Regular } from '@vicons/fluent'
 import { LightingMode, KeyCode, jsToHid, IRgb, JitterEliminationMode } from "@/interface";
 import { Rgb2Hex, Hex2Rgb, IsModifierKey, compareArray } from '@/utils';
+import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 
 // defineProps<{ msg: string }>()
 
@@ -19,6 +20,19 @@ const showDrawer = ref(true)
 const lightingMode = ref(LightingMode.Solid)
 const pressedkeycodes = ref<KeyCode[]>([])
 const presskeycodes = ref<KeyCode[]>([])
+const input_status = ref<FormValidationStatus | undefined>(undefined)
+
+async function check_raw_config(value: string): Promise<void> {
+  const res: boolean = await invoke("check_raw_config", { config: value })
+  if (res) {
+    store.can_sync = true
+    input_status.value = undefined
+  } else {
+    store.can_sync = false
+    input_status.value = "error"
+  }
+}
+
 
 
 const LighingMode = [
@@ -60,6 +74,57 @@ const JEModeSel = [
   {
     value: JitterEliminationMode.Active,
     label: "稳定模式（先消抖）"
+  }
+]
+
+const keyscanlist = [
+  {
+    value: 0,
+    label: "无限制"
+  },
+  {
+    value: 1,
+    label: "1000hz"
+  },
+  {
+    value: 2,
+    label: "500hz"
+  },
+  {
+    value: 3,
+    label: "333hz"
+  },
+  {
+    value: 4,
+    label: "250hz"
+  },
+  {
+    value: 5,
+    label: "200hz"
+  },
+  {
+    value: 6,
+    label: "166hz"
+  },
+  {
+    value: 7,
+    label: "125hz"
+  },
+  {
+    value: 8,
+    label: "100hz"
+  },
+  {
+    value: 9,
+    label: "90hz"
+  },
+  {
+    value: 10,
+    label: "76hz"
+  },
+  {
+    value: 11,
+    label: "62hz"
   }
 ]
 
@@ -146,7 +211,7 @@ const LighingModeSelWooting = [
 ]
 
 function GetLighingModeSel() {
-  if (store.config!.key_trigger_degree != undefined && store.config!.key_release_degree != undefined) {
+  if (store.is_hs) {
     return LighingModeSelWooting
   } else {
     return LighingModeSel
@@ -308,8 +373,25 @@ function formatKeys(keycodes: KeyCode[]) {
     </n-card>
   </n-modal>
   <n-spin :show="store.loading">
+    <div v-if="store.debug_mode" class="debug">
+      <n-alert title="警告" type="warning" style="margin-bottom: 10px;">
+        在这里，任何操作都有可能引起设备出错或者损坏，如果你不知道你在做什么，请不要进行任何操作。
+      </n-alert>
+      <div v-if="store.connected">
+        <div v-if="store.in_debug" style="font-size: large;">
+          {{ store.debug_str }}
+        </div>
+        <div v-else-if="store.raw_config != undefined">
+          <n-input type="textarea" v-model:value="store.raw_config" :on-input="check_raw_config" :status="input_status"
+            :autosize="{
+              minRows: 3,
+              maxRows: 15
+            }" />
+        </div>
+      </div>
+    </div>
     <n-form ref="formRef" :label-width="80" label-placement="top" :model="store.config" size="medium"
-      style="margin-bottom: 40px;" v-if="store.config != undefined">
+      style="margin-bottom: 40px;" v-else-if="store.config != undefined && store.connected">
       <div>
         <transition mode="out-in" enter-active-class="animate__animated animate__fadeIn animate__slower"
           leave-active-class="animate__animated animate__fadeOut" style="animation-duration: 0.2s;">
@@ -354,12 +436,17 @@ function formatKeys(keycodes: KeyCode[]) {
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="消抖时长" path="keyboard_jitters_elimination_time">
-                  <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="0" :max="65535" />
+                  <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="0"
+                    :max="10000"></n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="睡眠模式等待时长" path="device_sleep_idle_time">
-                  <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="0" :max="65535"/>
+                  <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="0" :max="65535">
+                    <template #suffix>
+                      秒
+                    </template>
+                  </n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="10" v-if="store.config!.device_sleep_idle_time != 0">
@@ -373,21 +460,37 @@ function formatKeys(keycodes: KeyCode[]) {
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
-                <n-form-item label="触发键程" path="key_trigger_degree">
-                  <n-input-number v-model:value="store.config!.key_trigger_degree" :min="0" :max="100" placeholder="无数据"
-                    :disabled="store.config!.key_trigger_degree == undefined" />
+                <n-form-item label="触发键程" path="key_trigger_degree" v-if="store.is_hs">
+                  <n-input-number v-model:value="store.config!.key_trigger_degree" :min="10" :max="100"
+                    placeholder="无数据" >
+                    <template #suffix>
+                      %
+                    </template>
+                  </n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
-                <n-form-item label="释放键程" path="key_release_degree">
-                  <n-input-number v-model:value="store.config!.key_release_degree" :min="0" :max="100" placeholder="无数据"
-                    :disabled="store.config!.key_release_degree == undefined" />
+                <n-form-item label="释放键程" path="key_release_degree" v-if="store.is_hs">
+                  <n-input-number v-model:value="store.config!.key_release_degree" :min="10" :max="100"
+                    placeholder="无数据" >
+                    <template #suffix>
+                      %
+                    </template>
+                  </n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
-                <n-form-item label="按键死区" path="dead_zone">
-                  <n-input-number v-model:value="store.config!.dead_zone" :min="0" :max="30" placeholder="无数据"
-                    :disabled="store.config!.dead_zone == undefined" />
+                <n-form-item label="按键死区" path="dead_zone" v-if="store.is_hs">
+                  <n-input-number v-model:value="store.config!.dead_zone" :min="8" :max="30" placeholder="无数据" >
+                    <template #suffix>
+                      %
+                    </template>
+                  </n-input-number>
+                </n-form-item>
+              </n-gi>
+              <n-gi :span="5">
+                <n-form-item label="扫描速率" path="key_scan_rate" v-if="store.is_hs">
+                  <n-select v-model:value="store.config!.key_scan_rate" :options="keyscanlist" />
                 </n-form-item>
               </n-gi>
               <n-gi :span="10">
@@ -536,9 +639,9 @@ function formatKeys(keycodes: KeyCode[]) {
           </div>
         </transition>
         <div style="position: fixed;
-            z-index: 10;
-            bottom: 40px;
-            right: calc(40px);">
+                    z-index: 10;
+                    bottom: 40px;
+                    right: calc(40px);">
           <n-tooltip trigger="hover" :delay="400" :duration="200">
             <template #trigger>
               <n-button round type="warning" @click="switchConfig">
@@ -585,3 +688,11 @@ function formatKeys(keycodes: KeyCode[]) {
     </n-empty>
   </n-spin>
 </template>
+
+<style lang="scss">
+.debug {
+  width: 100%;
+  height: 100%;
+  min-height: 80vh;
+}
+</style>

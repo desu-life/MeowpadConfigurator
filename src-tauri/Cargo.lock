@@ -1863,7 +1863,7 @@ dependencies = [
 
 [[package]]
 name = "meowpad_configurator"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "anyhow",
  "env_logger",
@@ -1873,6 +1873,7 @@ dependencies = [
  "notify",
  "once_cell",
  "pretty-hex",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

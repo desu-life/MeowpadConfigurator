@@ -101,6 +101,19 @@ pub struct Config {
     pub key_trigger_degree: Option<u8>,       // 0-100
     pub key_release_degree: Option<u8>,       // 0-100
     pub dead_zone: Option<u8>,               // 0-30
+    /// 0=无限制 
+    /// 1=1000hz 
+    /// 2=500hz 
+    /// 3=333hz
+    /// 4=250hz 
+    /// 5=200hz
+    /// 6=166hz 
+    /// 7=125hz 
+    /// 8=100hz 
+    /// 9=90hz 
+    /// 10=76hz 
+    /// 11=62hz
+    pub key_scan_rate: Option<u8>
 }
 
 impl TryFrom<CONFIG> for Config {
@@ -157,7 +170,8 @@ impl TryFrom<CONFIG> for Config {
                 .ok_or(anyhow!("解析btm灯效模式时报错"))?,
             key_release_degree: cfg.Key.KeyReleaseDegree,
             key_trigger_degree: cfg.Key.KeyTriggerDegree,
-            dead_zone: cfg.Key.DeadZone
+            dead_zone: cfg.Key.DeadZone,
+            key_scan_rate: cfg.Key.KeyScanRate,
         })
     }
 }

@@ -2,6 +2,7 @@
 //     all(not(debug_assertions), target_os = "windows"),
 //     windows_subsystem = "windows"
 // )]
+#![feature(cstr_from_bytes_until_nul)]
 
 use anyhow::{anyhow, Result as AnyResult};
 use hidapi_rusb::HidApi;
@@ -12,14 +13,17 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 use std::borrow::BorrowMut;
 use std::env;
+use std::ffi::CStr;
 use std::fs;
 use std::io::Write;
 use std::panic;
 use std::path::PathBuf;
 use std::sync::{mpsc, Mutex};
+use std::thread;
 use std::time::Duration;
 use tauri::api::path;
 use tauri::Manager;
+use tauri::Window;
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
@@ -82,6 +86,44 @@ async fn calibration_key(_app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn get_adc_record(_app: tauri::AppHandle) -> Result<(), String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        d.get_adc_record()?;
+        Ok(())
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
+async fn debug_mode(window: Window) {
+    thread::spawn(move || {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败")).unwrap();
+        let mut meowpad = d.debug_mode().unwrap();
+        while let Some(pkt) = meowpad.next() {
+            if !pkt.is_empty() {
+                let cstr = CStr::from_bytes_until_nul(pkt).unwrap();
+                window.emit("debug", cstr.to_string_lossy()).unwrap();
+            }
+        }
+        window.emit("exit-debug", 0).unwrap();
+    });
+}
+
+#[tauri::command]
+async fn erase_firmware(_app: tauri::AppHandle) -> Result<(), String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        d.erase_firmware()?;
+        Ok(())
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
 async fn get_default_config(_app: tauri::AppHandle) -> Config {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().unwrap();
@@ -99,6 +141,36 @@ async fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
         d.config()
             .try_into()
             .map_err(|e| anyhow!("处理配置时出错, {}", e))
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
+async fn get_raw_config(_app: tauri::AppHandle) -> Result<String, String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        d.load_config()
+            .map_err(|e| anyhow!("获取配置时出错, {}", e))?;
+        toml::to_string(&d.config()).map_err(|e| anyhow!("错误配置, {}", e))
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
+async fn check_raw_config(_app: tauri::AppHandle, config: String) -> bool {
+    toml::from_str::<meowpad::cbor::CONFIG>(&config).is_ok()
+}
+
+#[tauri::command]
+async fn save_raw_config(_app: tauri::AppHandle, config: String) -> Result<(), String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        d.config = Some(toml::from_str(&config).map_err(|e| anyhow!("错误配置, {}", e))?);
+        d.write_config()?;
+        d.flush()?;
+        Ok(())
     }()
     .map_err(|e| format!("{}", e))
 }
@@ -138,6 +210,16 @@ async fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), Strin
 }
 
 #[tauri::command]
+async fn is_hs(_app: tauri::AppHandle) -> Result<bool, String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        Ok(d.is_hs)
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+#[tauri::command]
 async fn get_version(_app: tauri::AppHandle) -> Result<Version, String> {
     Version::get().await.map_err(|e| format!("{}", e))
 }
@@ -147,7 +229,7 @@ async fn get_firmware_version(_app: tauri::AppHandle) -> &'static str {
     FIRMWARE_VERSION
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Version {
     version: String,
     download_url: String,
@@ -158,7 +240,7 @@ struct Version {
 impl Version {
     async fn get() -> reqwest::Result<Version> {
         CLIENT
-            .get("https://desu.life/device/configurator_version")
+            .get("https://desu.life/device/configurator_version/")
             .send()
             .await?
             .json::<Version>()
@@ -170,7 +252,8 @@ use tauri::api::shell;
 
 #[tauri::command]
 async fn check_update(window: tauri::Window, version: Version) -> bool {
-    if compare_version(VERSION, &version.version) < 0 {
+    if compare_version(VERSION, &version.version) == std::cmp::Ordering::Less {
+        warn!("最新版本信息：\n{:#?}", version);
         window.hide().unwrap();
         message_dialog_f!(
             "Meowpad Configurator",
@@ -246,7 +329,10 @@ fn find_device() -> Option<Meowpad> {
             _ => {
                 info!("连接到设备");
                 debug!("Name: {}", d.product_string().unwrap_or_default());
-                debug!("Manufacturer: {}", d.manufacturer_string().unwrap_or_default());
+                debug!(
+                    "Manufacturer: {}",
+                    d.manufacturer_string().unwrap_or_default()
+                );
                 debug!("Addr: {}", d.path().to_string_lossy());
                 debug!("{:?}", d);
                 Some(device)
@@ -255,35 +341,36 @@ fn find_device() -> Option<Meowpad> {
     })
 }
 
-pub fn compare_version(version1: &str, version2: &str) -> i32 {
-    use std::cmp::Ordering::{Greater, Less};
+pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
+    use std::cmp::Ordering::*;
 
-    let (mut it_1, mut it_2) = (version1.split('.'), version2.split('.'));
-    loop {
-        let (s1, s2) = (it_1.next(), it_2.next());
-        if s1.is_none() && s2.is_none() {
-            break;
-        }
+    // 检查版本号的格式是否正确
+    let re = regex::Regex::new(r"^\d+(\.\d+)*$").unwrap();
+    if !re.is_match(version1) || !re.is_match(version2) {
+        panic!("Invalid version format");
+    }
 
-        let s1 = s1.unwrap_or("0").trim_start_matches('0');
-        let s2 = s2.unwrap_or("0").trim_start_matches('0');
-        if s1.len() != s2.len() {
-            return (s1.len() as i32 - s2.len() as i32).signum();
-        }
+    // 将版本号转换为数字向量
+    let v1: Vec<u64> = version1.split('.').map(|s| s.parse().unwrap()).collect();
+    let v2: Vec<u64> = version2.split('.').map(|s| s.parse().unwrap()).collect();
 
-        for (c1, c2) in s1.chars().zip(s2.chars()) {
-            match c1.cmp(&c2) {
-                Greater => return 1,
-                Less => return -1,
-                _ => (),
-            }
+    // 比较数字向量
+    for i in 0..std::cmp::max(v1.len(), v2.len()) {
+        let n1 = v1.get(i).unwrap_or(&0);
+        let n2 = v2.get(i).unwrap_or(&0);
+        match n1.cmp(n2) {
+            Greater => return Greater,
+            Less => return Less,
+            Equal => (),
         }
     }
-    0
+
+    // 版本号相等
+    Equal
 }
 
-static VERSION: &str = "0.2.4";
-static FIRMWARE_VERSION: &str = "0.1.3";
+static VERSION: &str = "0.2.5";
+static FIRMWARE_VERSION: &str = "0.1.4";
 
 fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
@@ -368,7 +455,14 @@ fn main() -> AnyResult<()> {
                     check_update,
                     get_version,
                     get_firmware_version,
-                    calibration_key
+                    calibration_key,
+                    debug_mode,
+                    erase_firmware,
+                    get_adc_record,
+                    get_raw_config,
+                    save_raw_config,
+                    check_raw_config,
+                    is_hs
                 ])
                 .run(tauri::generate_context!())
                 .expect("error while running tauri application");

@@ -53,6 +53,7 @@ export interface IConfig {
     key_trigger_degree: number | undefined,       // 0-100
     key_release_degree: number | undefined,       // 0-100
     dead_zone: number | undefined,               // 0-30
+    key_scan_rate: number | undefined,               // 0-30
 }
 
 export enum JitterEliminationMode {

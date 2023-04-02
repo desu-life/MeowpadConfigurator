@@ -13,6 +13,15 @@ use std::{fmt::Debug, fs, io::Cursor, thread, time::Duration};
 
 type Config = CONFIG;
 
+pub struct DebugMeowpad<'a>(&'a HidDevice, [u8; 64]);
+
+impl<'a> DebugMeowpad<'a> {
+    pub fn next(&mut self) -> Option<&[u8]> {
+        let size = self.0.read_timeout(&mut self.1, 5).ok()?;
+        Some(&self.1[..size])
+    }
+}
+
 pub struct Meowpad {
     pub config: Option<Config>,
     pub device_name: Option<String>,
@@ -107,6 +116,36 @@ impl Meowpad {
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
             self.firmware_version = Some(String::from_utf8(packet.data)?);
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(anyhow!("Unexcepted Response"))
+        }
+    }
+
+    pub fn erase_firmware(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::EraseFirmware, []))?;
+        Ok(())
+    }
+
+    pub fn debug_mode(&mut self) -> Result<DebugMeowpad> {
+        self.write(Packet::new(PacketID::DebugMode, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            Ok(DebugMeowpad(&self.device, [0u8; 64]))
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(anyhow!("Unexcepted Response"))
+        }
+    }
+
+    pub fn get_adc_record(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::GetAdcRecord, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            dbg!(packet);
             Ok(())
         } else {
             dbg!(packet.id);

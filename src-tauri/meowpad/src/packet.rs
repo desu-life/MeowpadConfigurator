@@ -17,6 +17,9 @@ pub enum PacketID {
     GetFirmwareVersion = 7,
     GetDeviceName = 8,
     CalibrationKey = 9,
+    EraseFirmware = 10,
+    DebugMode = 11,
+    GetAdcRecord = 12
 }
 
 impl std::fmt::Display for PacketID {
