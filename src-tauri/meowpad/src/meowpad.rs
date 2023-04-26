@@ -203,7 +203,7 @@ impl Meowpad {
         debug!("发送头包：{:?}", self.key.hex_dump());
         self.device.write(&self.key)?;
         thread::sleep(Duration::from_millis(50));
-        let packet = self.read_timeout(1000)?;
+        let packet = self.read()?;
         if packet.id == PacketID::Ok {
             Ok(())
         } else {
