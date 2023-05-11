@@ -239,7 +239,7 @@ impl Default for LED {
             LED_SPEED_LIGHT_STEP_LENGTH: 50,
             LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: 2,
             LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: 2,
-            DEVICE_SLEEP_IDLE_TIME: 60,
+            DEVICE_SLEEP_IDLE_TIME: 120,
             LED_LUM_SLEEP_MAX: 100,
             LED_KEY_SLEEP_MODE: LightingMode::Off as u8,
             LED_BTM_SLEEP_MODE: LightingMode::Off as u8,
