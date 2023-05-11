@@ -134,6 +134,12 @@ async function get_config() {
     store.breath_speed = 20 - res.breath_interval
     store.rainbow_light_switching_speed = 30 - res.rainbow_light_switching_interval
     store.is_hs = await invoke("is_hs")
+    if (store.version_info !== undefined) {
+      if (store.is_hs)
+        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url 
+      else
+        store.version_info.latest_firmware_download_url = store.version_info.v1_latest_firmware_download_url
+    }
   } catch (e) {
     const es = e as string
     status.value = "error"
@@ -155,6 +161,13 @@ async function get_config_raw() {
   try {
     const res: string = await invoke("get_raw_config")
     store.raw_config = res
+    store.is_hs = await invoke("is_hs")
+    if (store.version_info !== undefined) {
+      if (store.is_hs)
+        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url 
+      else
+        store.version_info.latest_firmware_download_url = store.version_info.v1_latest_firmware_download_url
+    }
   } catch (e) {
     const es = e as string
     status.value = "error"
@@ -230,6 +243,8 @@ function debug() {
   })
 }
 
+const regex = /(\d)\/d:(\d*),f:(\d*)\*/gm;
+
 async function debug_mode() {
   try {
     await invoke("debug_mode")
@@ -240,6 +255,26 @@ async function debug_mode() {
       // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
       // event.payload is the payload object
       store.debug_str = event.payload as string;
+      let m;
+      
+      while ((m = regex.exec(store.debug_str)) !== null) {
+          // This is necessary to avoid infinite loops with zero-width matches
+          if (m.index === regex.lastIndex) {
+              regex.lastIndex++;
+          }
+          
+          // The result can be accessed through the `m`-variable.
+          store.adc_data[m[1] - 1].dyn = parseInt(m[2])
+          store.adc_data[m[1] - 1].fixed = parseInt(m[3])
+          // store.adc_data[m[1] - 1].min = parseInt(m[3])
+
+          if (store.adc_data[m[1] - 1].dyn > store.adc_data[m[1] - 1].max)
+            store.adc_data[m[1] - 1].max = store.adc_data[m[1] - 1].dyn
+          
+          if (store.adc_data[m[1] - 1].dyn < store.adc_data[m[1] - 1].min)
+            store.adc_data[m[1] - 1].min = store.adc_data[m[1] - 1].dyn
+      }
+      
     })
     const unlisten_exit_debug = await listen('exit-debug', (event) => {
       unlisten_debug()

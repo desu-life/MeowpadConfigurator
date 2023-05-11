@@ -11,11 +11,20 @@ export interface IDevice {
     version: string
 }
 
+export interface IHsData {
+    dyn: number;
+    min: number;
+    max: number;
+    fixed: number;
+}
+
 export interface IVersion {
     version: string
     download_url: string
     latest_firmware_version: string
-    latest_firmware_download_url: string
+    latest_firmware_download_url: string | undefined
+    v1_latest_firmware_download_url: string
+    v1_hs_latest_firmware_download_url: string
 }
 
 export interface IConfig { 

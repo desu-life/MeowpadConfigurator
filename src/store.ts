@@ -1,4 +1,4 @@
-import { IDevice } from './interface';
+import { IDevice, IHsData } from './interface';
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { IConfig, IVersion, LightingMode } from "@/interface";
 import { invoke } from "@tauri-apps/api/tauri";
@@ -31,6 +31,20 @@ export const useStore = defineStore("main", () => {
   const in_debug = ref<boolean>(false);
   const can_sync = ref<boolean>(false);
   const debug_str = ref<string>("");
+  const adc_data = ref<IHsData[]>([
+    {
+      dyn: 0,
+      max: 0,
+      min: 10000,
+      fixed: 0,
+    },
+    {
+      dyn: 0,
+      max: 0,
+      min: 10000,
+      fixed: 0,
+    }
+  ]);
 
   return {
     loading,
@@ -53,7 +67,8 @@ export const useStore = defineStore("main", () => {
     debug_mode,
     debug_str,
     in_debug,
-    can_sync
+    can_sync,
+    adc_data
   };
 });
 

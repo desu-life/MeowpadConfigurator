@@ -362,6 +362,10 @@ function formatKeys(keycodes: KeyCode[]) {
   const keys = keycodes.map((k) => KeyCode[k]).join(' + ')
   return keys === '' ? '无' : keys
 }
+
+function calcPencentage(index: number) {
+  return ((store.adc_data[index].dyn - store.adc_data[index].min) / (store.adc_data[index].max - store.adc_data[index].min)) * 100
+}
 </script>
 
 <template>
@@ -380,6 +384,17 @@ function formatKeys(keycodes: KeyCode[]) {
       <div v-if="store.connected">
         <div v-if="store.in_debug" style="font-size: large;">
           {{ store.debug_str }}
+          <div style="
+              transform: rotate(-90deg);
+              bottom: 80px;
+              min-width: 320px;
+              position: fixed;
+          ">
+            <n-progress style="margin: 50px;" type="line" :percentage="calcPencentage(0)" :show-indicator="false"
+              :height="12" />
+            <n-progress style="margin: 50px;" type="line" :percentage="calcPencentage(1)" :show-indicator="false"
+              :height="12" />
+          </div>
         </div>
         <div v-else-if="store.raw_config != undefined">
           <n-input type="textarea" v-model:value="store.raw_config" :on-input="check_raw_config" :status="input_status"
@@ -436,13 +451,13 @@ function formatKeys(keycodes: KeyCode[]) {
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="消抖时长" path="keyboard_jitters_elimination_time">
-                  <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="0"
+                  <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="1"
                     :max="10000"></n-input-number>
                 </n-form-item>
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="睡眠模式等待时长" path="device_sleep_idle_time">
-                  <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="0" :max="65535">
+                  <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="1" :max="65535">
                     <template #suffix>
                       秒
                     </template>
@@ -461,8 +476,7 @@ function formatKeys(keycodes: KeyCode[]) {
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="触发键程" path="key_trigger_degree" v-if="store.is_hs">
-                  <n-input-number v-model:value="store.config!.key_trigger_degree" :min="10" :max="100"
-                    placeholder="无数据" >
+                  <n-input-number v-model:value="store.config!.key_trigger_degree" :min="1" :max="100" placeholder="无数据">
                     <template #suffix>
                       %
                     </template>
@@ -471,8 +485,7 @@ function formatKeys(keycodes: KeyCode[]) {
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="释放键程" path="key_release_degree" v-if="store.is_hs">
-                  <n-input-number v-model:value="store.config!.key_release_degree" :min="10" :max="100"
-                    placeholder="无数据" >
+                  <n-input-number v-model:value="store.config!.key_release_degree" :min="1" :max="100" placeholder="无数据">
                     <template #suffix>
                       %
                     </template>
@@ -481,7 +494,7 @@ function formatKeys(keycodes: KeyCode[]) {
               </n-gi>
               <n-gi :span="5">
                 <n-form-item label="按键死区" path="dead_zone" v-if="store.is_hs">
-                  <n-input-number v-model:value="store.config!.dead_zone" :min="8" :max="30" placeholder="无数据" >
+                  <n-input-number v-model:value="store.config!.dead_zone" :min="1" :max="100" placeholder="无数据">
                     <template #suffix>
                       %
                     </template>
@@ -639,9 +652,9 @@ function formatKeys(keycodes: KeyCode[]) {
           </div>
         </transition>
         <div style="position: fixed;
-                    z-index: 10;
-                    bottom: 40px;
-                    right: calc(40px);">
+                      z-index: 10;
+                      bottom: 40px;
+                      right: calc(40px);">
           <n-tooltip trigger="hover" :delay="400" :duration="200">
             <template #trigger>
               <n-button round type="warning" @click="switchConfig">

@@ -86,12 +86,11 @@ async fn calibration_key(_app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn get_adc_record(_app: tauri::AppHandle) -> Result<(), String> {
+async fn get_adc_record(_app: tauri::AppHandle) -> Result<Vec<u8>, String> {
     || -> AnyResult<_> {
         let mut _d = DEVICE.lock().unwrap();
         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.get_adc_record()?;
-        Ok(())
+        d.get_adc_record()
     }()
     .map_err(|e| format!("{}", e))
 }
@@ -234,7 +233,8 @@ struct Version {
     version: String,
     download_url: String,
     latest_firmware_version: String,
-    latest_firmware_download_url: String,
+    v1_latest_firmware_download_url: String,
+    v1_hs_latest_firmware_download_url: String,
 }
 
 impl Version {

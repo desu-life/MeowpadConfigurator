@@ -141,12 +141,12 @@ impl Meowpad {
         }
     }
 
-    pub fn get_adc_record(&mut self) -> Result<()> {
+    pub fn get_adc_record(&mut self) -> Result<Vec<u8>> {
         self.write(Packet::new(PacketID::GetAdcRecord, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
-            dbg!(packet);
-            Ok(())
+            dbg!(packet.data.hex_dump());
+            Ok(packet.data)
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
