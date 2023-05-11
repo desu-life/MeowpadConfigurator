@@ -369,8 +369,8 @@ pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
     Equal
 }
 
-static VERSION: &str = "0.2.5";
-static FIRMWARE_VERSION: &str = "0.1.4";
+static VERSION: &str = "0.2.6";
+static FIRMWARE_VERSION: &str = "0.1.5";
 
 fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
