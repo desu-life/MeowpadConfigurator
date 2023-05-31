@@ -141,12 +141,14 @@ impl Meowpad {
         }
     }
 
-    pub fn get_adc_record(&mut self) -> Result<Vec<u8>> {
-        self.write(Packet::new(PacketID::GetAdcRecord, []))?;
+    /// 返回值第一个u8是触发推荐值，第二个是释放推荐值，第三个是死区推荐值
+    pub fn get_auto_config(&mut self) -> Result<(u8, u8, u8)> {
+        assert!(self.is_hs, "调用错误，此方法为hs版专属");
+        self.write(Packet::new(PacketID::AutoConfig, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
             dbg!(packet.data.hex_dump());
-            Ok(packet.data)
+            Ok((packet.data[0], packet.data[1], packet.data[2]))
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
@@ -175,8 +177,20 @@ impl Meowpad {
     }
 
     pub fn calibration_key(&self) -> Result<()> {
-        if !self.is_hs { return Ok(()) }
+        assert!(self.is_hs, "调用错误，此方法为hs版专属");
         self.write(Packet::new(PacketID::CalibrationKey, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(anyhow!("在校准轴体时出错"))
+        }
+    }
+
+    pub fn get_calibration_key_result(&self) -> Result<()> {
+        assert!(self.is_hs, "调用错误，此方法为hs版专属");
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
             Ok(())
