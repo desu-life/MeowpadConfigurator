@@ -5,6 +5,11 @@ function pad2(c) {
     return c.length == 1 ? '0' + c : '' + c;
 }
 
+export function formatKeys(keycodes: KeyCode[]) {
+  const keys = keycodes.map((k) => KeyCode[k]).join(' + ')
+  return keys === '' ? '无' : keys
+}
+
 export function Hex2Rgb(hex: string): IRgb {
     var match
     if (match = /^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex)) {

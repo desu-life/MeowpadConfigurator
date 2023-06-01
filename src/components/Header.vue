@@ -25,8 +25,8 @@ async function connect() {
     let info = await check_device_info()
     console.table(info)
     store.device_info = info
-    
-    
+
+
     if (store.device_info!.version != store.firmware_version) {
       store.need_update_firmware = true // 需要更新固件
       store.loading = false
@@ -37,7 +37,7 @@ async function connect() {
 
     // 不管怎么样总之是连上了
     store.connected = true
-    
+
     status.value = "success"
     if (info === undefined) {
       status_str.value = "设备已连接"
@@ -136,7 +136,7 @@ async function get_config() {
     store.is_hs = await invoke("is_hs")
     if (store.version_info !== undefined) {
       if (store.is_hs)
-        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url 
+        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
       else
         store.version_info.latest_firmware_download_url = store.version_info.v1_latest_firmware_download_url
     }
@@ -164,7 +164,7 @@ async function get_config_raw() {
     store.is_hs = await invoke("is_hs")
     if (store.version_info !== undefined) {
       if (store.is_hs)
-        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url 
+        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
       else
         store.version_info.latest_firmware_download_url = store.version_info.v1_latest_firmware_download_url
     }
@@ -256,25 +256,25 @@ async function debug_mode() {
       // event.payload is the payload object
       store.debug_str = event.payload as string;
       let m;
-      
-      while ((m = regex.exec(store.debug_str)) !== null) {
-          // This is necessary to avoid infinite loops with zero-width matches
-          if (m.index === regex.lastIndex) {
-              regex.lastIndex++;
-          }
-          
-          // The result can be accessed through the `m`-variable.
-          store.adc_data[m[1] - 1].dyn = parseInt(m[2])
-          store.adc_data[m[1] - 1].fixed = parseInt(m[3])
-          // store.adc_data[m[1] - 1].min = parseInt(m[3])
 
-          if (store.adc_data[m[1] - 1].dyn > store.adc_data[m[1] - 1].max)
-            store.adc_data[m[1] - 1].max = store.adc_data[m[1] - 1].dyn
-          
-          if (store.adc_data[m[1] - 1].dyn < store.adc_data[m[1] - 1].min)
-            store.adc_data[m[1] - 1].min = store.adc_data[m[1] - 1].dyn
+      while ((m = regex.exec(store.debug_str)) !== null) {
+        // This is necessary to avoid infinite loops with zero-width matches
+        if (m.index === regex.lastIndex) {
+          regex.lastIndex++;
+        }
+
+        // The result can be accessed through the `m`-variable.
+        store.adc_data[m[1] - 1].dyn = parseInt(m[2])
+        store.adc_data[m[1] - 1].fixed = parseInt(m[3])
+        // store.adc_data[m[1] - 1].min = parseInt(m[3])
+
+        if (store.adc_data[m[1] - 1].dyn > store.adc_data[m[1] - 1].max)
+          store.adc_data[m[1] - 1].max = store.adc_data[m[1] - 1].dyn
+
+        if (store.adc_data[m[1] - 1].dyn < store.adc_data[m[1] - 1].min)
+          store.adc_data[m[1] - 1].min = store.adc_data[m[1] - 1].dyn
       }
-      
+
     })
     const unlisten_exit_debug = await listen('exit-debug', (event) => {
       unlisten_debug()
@@ -317,23 +317,24 @@ async function erase_firmware() {
   <div class="justify-self-end h-full flex items-center">
     <div v-if="store.debug_mode">
       <div v-if="!store.connected">
-        <n-button class="mr-4" :disabled="store.loading" @click="connect" >连接设备</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="connect">连接设备</n-button>
       </div>
       <div v-else>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="erase_firmware" >清除固件</n-button>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="debug_mode" >进入调试模式</n-button>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug || !store.can_sync" @click="sync_config_raw" >同步配置</n-button>
+        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="erase_firmware">清除固件</n-button>
+        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="debug_mode">进入调试模式</n-button>
+        <n-button class="mr-4" :disabled="store.loading || store.in_debug || !store.can_sync"
+          @click="sync_config_raw">同步配置</n-button>
       </div>
     </div>
     <div v-else>
       <div v-if="!store.connected">
-        <n-button class="mr-4" :disabled="store.loading" @click="debug" >开发者模式</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="connect" >连接设备</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="debug">开发者模式</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="connect">连接设备</n-button>
       </div>
       <div v-else>
-        <n-button class="mr-4" :disabled="store.loading" v-if="store.is_hs" @click="calibration_key" >校准设备</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="get_default_config" >默认值</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="sync_config" >同步配置</n-button>
+        <n-button class="mr-4" :disabled="store.loading" v-if="store.is_hs" @click="calibration_key">校准设备</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="get_default_config">默认值</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="sync_config">同步配置</n-button>
       </div>
     </div>
   </div>

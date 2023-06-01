@@ -6,6 +6,7 @@ import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 import { loadEnv } from "vite";
 import { resolve } from "path";
 import vue from "@vitejs/plugin-vue";
+import vueJsx from "@vitejs/plugin-vue-jsx";
 import { format } from "date-fns";
 import pkg from "./package.json";
 const { dependencies, devDependencies, name, version } = pkg;
@@ -28,6 +29,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     esbuild: {},
     plugins: [
       vue(),
+      vueJsx(),
       AutoImport({
         imports: [
           'vue',
