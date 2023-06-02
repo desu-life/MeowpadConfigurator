@@ -8,8 +8,9 @@ import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
 import ColorSetting from '@/components/ColorSetting.vue'
 import DeviceSetting from '@/components/DeviceSetting.vue'
-// defineProps<{ msg: string }>()
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const store = useStore()
 const formRef = ref<FormInst | null>(null)
 const message = useMessage()
@@ -89,16 +90,13 @@ function calcPencentage(index: number) {
       <div>
         <transition mode="out-in" name="tab-transition">
           <div v-if="configType !== 1">
-            <DeviceSetting ></DeviceSetting>
+            <DeviceSetting></DeviceSetting>
           </div>
           <div v-else>
             <ColorSetting></ColorSetting>
           </div>
         </transition>
-        <div style="position: fixed;
-                            z-index: 10;
-                            bottom: 40px;
-                            right: calc(40px);">
+        <div class="switch-btn">
           <n-tooltip trigger="hover" :delay="400" :duration="200">
             <template #trigger>
               <n-button round type="warning" @click="switchConfig">
@@ -126,12 +124,19 @@ function calcPencentage(index: number) {
     <div v-else-if="store.need_update_firmware">
       <FirmwareUpdate></FirmwareUpdate>
     </div>
-    <n-empty description="请先连接设备" size="huge" v-else>
+    <n-empty :description="t('message.no_device')" size="huge" v-else>
     </n-empty>
   </n-spin>
 </template>
 
 <style lang="scss">
+.switch-btn {
+  position: fixed;
+  z-index: 10;
+  bottom: 40px;
+  right: calc(40px);
+}
+
 .debug {
   width: 100%;
   height: 100%;

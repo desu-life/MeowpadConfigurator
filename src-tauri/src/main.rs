@@ -86,6 +86,18 @@ async fn calibration_key(_app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn get_calibration_key_result(_app: tauri::AppHandle, timeout: i32) -> Result<(), String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        d.get_calibration_key_result(timeout)?;
+        Ok(())
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+
+#[tauri::command]
 async fn get_auto_config(_app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     || -> AnyResult<_> {
         let mut _d = DEVICE.lock().unwrap();
@@ -461,6 +473,7 @@ fn main() -> AnyResult<()> {
                     get_version,
                     get_firmware_version,
                     calibration_key,
+                    get_calibration_key_result,
                     debug_mode,
                     erase_firmware,
                     get_auto_config,

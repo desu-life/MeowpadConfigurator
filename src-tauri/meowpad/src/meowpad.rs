@@ -147,7 +147,6 @@ impl Meowpad {
         self.write(Packet::new(PacketID::AutoConfig, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
-            dbg!(packet.data.hex_dump());
             Ok((packet.data[0], packet.data[1], packet.data[2]))
         } else {
             dbg!(packet.id);
@@ -189,11 +188,13 @@ impl Meowpad {
         }
     }
 
-    pub fn get_calibration_key_result(&self) -> Result<()> {
+    pub fn get_calibration_key_result(&self, timeout: i32) -> Result<()> {
         assert!(self.is_hs, "调用错误，此方法为hs版专属");
-        let packet = self.read()?; // 读取
+        let packet = self.read_timeout(timeout)?; // 读取
         if packet.id == PacketID::Ok {
             Ok(())
+        } else if packet.id == PacketID::Null {
+            Err(anyhow!("校准超时"))
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
