@@ -1,7 +1,7 @@
 //index.ts
 import { createI18n } from 'vue-i18n'        //引入vue-i18n组件
-import zh from './zh'
-import en from './en'
+import zh from './zh.json'
+import en from './en.json'
 
 export const SUPPORT_LOCALES = ['zh', 'en']
 
@@ -19,7 +19,7 @@ function setupI18n() {
         legacy: false,
         messages: messages
     })
-    setI18nLanguage(i18n, "en")
+    setI18nLanguage(i18n, "zh")
     return i18n
 }
 

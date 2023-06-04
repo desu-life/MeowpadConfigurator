@@ -15,8 +15,8 @@ const { t } = useI18n();
 const dialog = useDialog()
 const store = useStore()
 const status = ref<Type | undefined>(undefined)
-const status_str = ref(t("message.device_disconnected"))
-const reset = ref(false)
+const status_str = ref(t("device_disconnected"))
+const show_calibrate_msg = ref(false)
 
 const state = ref({
   options: [
@@ -34,13 +34,13 @@ const state = ref({
 
 function handleChange(e: string) {
   setI18nLanguage(i18n, e)
-  status_str.value = t("message.device_disconnected")
+  status_str.value = t("device_disconnected")
 }
 
 async function connect() {
   store.loading = true
   status.value = "warning"
-  status_str.value = "连接中"
+  status_str.value = t('connecting')
   try {
     const res = await invoke("connect")
     let info = await check_device_info()
@@ -52,7 +52,7 @@ async function connect() {
       store.need_update_firmware = true // 需要更新固件
       store.loading = false
       status.value = "error"
-      status_str.value = "设备版本 " + info!.version + " 与本程序不匹配，请升级固件至 " + store.firmware_version
+      status_str.value = t('bad_firmware_version', { version: info!.version })
       return
     }
 
@@ -61,14 +61,14 @@ async function connect() {
 
     status.value = "success"
     if (info === undefined) {
-      status_str.value = "设备已连接"
+      status_str.value = t('connected')
     } else {
-      status_str.value = "设备已连接，固件版本：" + info!.version
+      status_str.value = t('connected_device', { version: info!.version })
     }
   } catch (e) {
     store.connected = false
     status.value = "error"
-    status_str.value = "连接失败，错误原因：" + e
+    status_str.value = t('connection_broke', { e: e })
     console.error(e)
   }
   if (store.debug_mode)
@@ -85,37 +85,37 @@ async function check_device_info(): Promise<IDevice | undefined> {
   } catch (e) {
     store.connected = false
     status.value = "error"
-    status_str.value = "获取设备信息失败，错误原因：" + e
+    status_str.value = t('unknown_device_e', { e: e })
     console.error(e)
   }
 }
 
 async function calibration_key() {
   store.loading = true
-  status.value = "info"
-  status_str.value = "请同时按下两个按键并保持2秒后松开，即可完成校准过程"
   try {
     await invoke("calibration_key")
   } catch (e) {
     store.connected = false
     status.value = "error"
-    status_str.value = "连接出错，错误原因：" + e
+    status_str.value = t('connection_broke', { e: e })
     console.error(e)
     store.loading = false
     return
   }
+  store.loading = false
+  show_calibrate_msg.value = true
   try {
     await invoke("get_calibration_key_result", { "timeout": 5000 })
   } catch (e) {
     status.value = "error"
-    status_str.value = "校准失败，错误原因：" + e
+    status_str.value = t('cali_failed', { e: e })
     console.error(e)
-    store.loading = false
+    show_calibrate_msg.value = false
     return
   }
   status.value = "success"
-  status_str.value = "校准完成"
-  store.loading = false
+  status_str.value = t('cali_finished')
+  show_calibrate_msg.value = false
 }
 
 async function get_default_config() {
@@ -133,10 +133,10 @@ async function get_default_config() {
     store.rainbow_light_switching_speed = 30 - res.rainbow_light_switching_interval
     store.config = res
     status.value = "success"
-    status_str.value = "已重置配置，同步以提交更改"
+    status_str.value = t('reset_success')
   } catch (e) {
     status.value = "error"
-    status_str.value = "获取默认值失败，错误原因：" + e
+    status_str.value = t('reset_failed', { e: e })
     console.error(e)
   }
   store.loading = false
@@ -169,7 +169,7 @@ async function get_config() {
     status_str.value = es
     console.error(es)
     if (es.includes("Semantic") || es.includes("Syntax") || es.includes("Unexpected")) {
-      status_str.value = "检测到设备配置数据错误，将在五秒后自动重置"
+      status_str.value = t('device_config_error')
       setTimeout(async () => {
         await get_default_config()
         await sync_config()
@@ -197,7 +197,7 @@ async function get_config_raw() {
     status_str.value = es
     console.error(es)
     if (es.includes("Semantic") || es.includes("Syntax") || es.includes("Unexpected")) {
-      status_str.value = "检测到设备配置数据错误，将在五秒后自动重置"
+      status_str.value = t('device_config_error')
       setTimeout(async () => {
         await get_default_config()
         await sync_config()
@@ -211,7 +211,7 @@ async function get_config_raw() {
 async function sync_config() {
   store.loading = true
   status.value = "warning"
-  status_str.value = "正在同步配置"
+  status_str.value = t('syncing_config')
   try {
     store.config!.led_color_l = Hex2Rgb(store.led_color_l!)
     store.config!.led_color_r = Hex2Rgb(store.led_color_r!)
@@ -223,12 +223,12 @@ async function sync_config() {
     store.config!.rainbow_light_switching_interval = 30 - store.rainbow_light_switching_speed!
     await invoke('save_config', { config: store.config })
     status.value = "success"
-    status_str.value = "同步配置成功"
+    status_str.value = t('sync_success')
   } catch (e) {
     store.config = undefined
     store.connected = false
     status.value = "error"
-    status_str.value = "同步配置失败，错误原因：" + e
+    status_str.value = t('sync_error', { e: e })
     console.error(e)
   }
   store.loading = false
@@ -237,16 +237,16 @@ async function sync_config() {
 async function sync_config_raw() {
   store.loading = true
   status.value = "warning"
-  status_str.value = "正在同步配置"
+  status_str.value = t('syncing_config')
   try {
     await invoke('save_raw_config', { config: store.raw_config })
     status.value = "success"
-    status_str.value = "同步配置成功"
+    status_str.value = t('sync_success')
   } catch (e) {
     store.raw_config = undefined
     store.connected = false
     status.value = "error"
-    status_str.value = "同步配置失败，错误原因：" + e
+    status_str.value = t('sync_error', { e: e })
     console.error(e)
   }
   store.loading = false
@@ -255,10 +255,10 @@ async function sync_config_raw() {
 
 function debug() {
   dialog.warning({
-    title: '警告',
-    content: '请确定是否进入开发者模式，进入后将无法正常使用设备，且可能导致设备损坏',
-    positiveText: '确定',
-    negativeText: '不确定',
+    title: t('warning'),
+    content: t('developer_warning'),
+    positiveText: t('confirm'),
+    negativeText: t('unconfirm'),
     maskClosable: false,
     onPositiveClick: () => {
       store.debug_mode = true
@@ -273,7 +273,7 @@ async function debug_mode() {
     await invoke("debug_mode")
     store.in_debug = true
     status.value = "warning"
-    status_str.value = "已进入调试模式，若要退出请自行断开设备"
+    status_str.value = t('enter_debug_mode')
     const unlisten_debug = await listen('debug', (event) => {
       // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
       // event.payload is the payload object
@@ -306,13 +306,13 @@ async function debug_mode() {
       store.in_debug = false
       store.raw_config = undefined
       status.value = undefined
-      status_str.value = t("message.device_disconnected")
+      status_str.value = t("device_disconnected")
     })
   } catch (e) {
     store.connected = false
     store.in_debug = false
     status.value = "error"
-    status_str.value = "连接失败，错误原因：" + e
+    status_str.value = t('connection_broke', { e: e })
     console.error(e)
   }
 }
@@ -322,11 +322,11 @@ async function erase_firmware() {
     await invoke("erase_firmware")
     store.connected = false
     status.value = undefined
-    status_str.value = t("message.device_disconnected")
+    status_str.value = t("device_disconnected")
   } catch (e) {
     store.connected = false
     status.value = "error"
-    status_str.value = "连接失败，错误原因：" + e
+    status_str.value = t('connection_broke', { e: e })
     console.error(e)
   }
 }
@@ -334,6 +334,11 @@ async function erase_firmware() {
 </script>
 
 <template>
+  <n-modal v-model:show="show_calibrate_msg" transform-origin="center">
+    <n-card style="width: fit-content;border-radius: 8px;align-items: center;" :bordered="false"
+      :title="$t('cali_msg')" role="dialog" aria-modal="true">
+    </n-card>
+  </n-modal>
   <div class="justify-self-start h-full flex items-center">
     <n-select v-if="!store.connected" class="ml-4" @update:value="handleChange" v-model:value="state.currentLang" placeholder="Language" :options="state.options"></n-select>
       <n-button class="ml-4 pointer-events-none" :loading="store.loading" :type="status">{{ status_str }}</n-button>
@@ -341,24 +346,24 @@ async function erase_firmware() {
   <div class="justify-self-end h-full flex items-center">
     <div v-if="store.debug_mode">
       <div v-if="!store.connected">
-        <n-button class="mr-4" :disabled="store.loading" @click="connect">{{ t("message.connect") }}</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
       </div>
       <div v-else>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="erase_firmware">清除固件</n-button>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="debug_mode">进入调试模式</n-button>
+        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
+        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="debug_mode">{{ $t('debug_mode') }}</n-button>
         <n-button class="mr-4" :disabled="store.loading || store.in_debug || !store.can_sync"
-          @click="sync_config_raw">同步配置</n-button>
+          @click="sync_config_raw">{{ $t('sync_config') }}</n-button>
       </div>
     </div>
     <div v-else>
       <div v-if="!store.connected">
-        <n-button class="mr-4" :disabled="store.loading" @click="debug">{{ t("message.developer_mode") }}</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="connect">{{ t("message.connect") }}</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="debug">{{ t("developer_mode") }}</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
       </div>
       <div v-else>
-        <n-button class="mr-4" :disabled="store.loading" v-if="store.is_hs" @click="calibration_key">校准设备</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="get_default_config">默认值</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="sync_config">同步配置</n-button>
+        <n-button class="mr-4" :disabled="store.loading" v-if="store.is_hs" @click="calibration_key">{{ $t('cali_device') }}</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="get_default_config">{{ $t('default_config') }}</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="sync_config">{{ $t('sync_config') }}</n-button>
       </div>
     </div>
   </div>

@@ -67,11 +67,10 @@ function calcPencentage(index: number) {
 </script>
 
 <template>
-  <n-spin :show="store.loading">
+  <n-spin :show="store.loading" style="max-width: 640px;">
     <div v-if="store.debug_mode" class="debug">
-      <n-alert title="警告" type="warning" style="margin-bottom: 10px;">
-        在这里，任何操作都有可能引起设备出错或者损坏，如果你不知道你在做什么，请不要进行任何操作。
-      </n-alert>
+      <n-alert :title="$t('warning')" type="warning" style="margin-bottom: 10px;">
+        {{ $t('developer_warning_2') }} </n-alert>
       <div v-if="store.connected">
         <div v-if="store.in_debug" style="font-size: large;">
           {{ store.debug_str }}
@@ -111,20 +110,19 @@ function calcPencentage(index: number) {
                 </template>
                 <transition mode="out-in" enter-active-class="animate__animated animate__fadeIn animate__slower"
                   leave-active-class="animate__animated animate__fadeOut" style="animation-duration: 0.15s;">
-                  <span v-if="configType === 1">返回</span>
-                  <span v-else>灯效配置</span>
+                  <span v-if="configType === 1">{{ $t('back') }}</span>
+                  <span v-else>{{ $t('light_config') }}</span>
                 </transition>
               </n-button>
             </template>
-            切换页面
-          </n-tooltip>
+            {{ $t('switch_tab') }} </n-tooltip>
         </div>
       </div>
     </n-form>
     <div v-else-if="store.need_update_firmware">
       <FirmwareUpdate></FirmwareUpdate>
     </div>
-    <n-empty :description="t('message.no_device')" size="huge" v-else>
+    <n-empty :description="t('no_device')" size="huge" v-else>
     </n-empty>
   </n-spin>
 </template>
