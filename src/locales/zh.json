@@ -29,7 +29,7 @@
   "sync_config": "同步配置",
   "cali_device": "校准设备",
   "default_config": "默认值",
-  "recommend_config_help": "检测到推荐配置，是否使用？",
+  "recommend_config_help": "自动检测推荐配置并应用？",
   "yes": "是",
   "no": "否",
   "applied_recommend_config": "已采用推荐配置值，请自行同步配置。",
@@ -88,5 +88,6 @@
   "speed_press_low_color": "低速状态颜色",
   "speed_press_trans_speed": "颜色切换速度",
   "press_light_step": "颜色变速步长",
-  "no_option": "无选项"
+  "no_option": "无选项",
+  "tip": "提示"
 }

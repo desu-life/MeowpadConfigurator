@@ -29,7 +29,7 @@
   "sync_config": "Sync Configuration",
   "cali_device": "Calibrate Device",
   "default_config": "Default",
-  "recommend_config_help": "Recommended configuration detected, would you like to use it?",
+  "recommend_config_help": "Automatically detect and apply recommended configuration?",
   "yes": "Yes",
   "no": "No",
   "applied_recommend_config": "Recommended configuration values adopted, please sync the configuration manually.",
@@ -88,5 +88,6 @@
   "speed_press_low_color": "Low Speed Color",
   "speed_press_trans_speed": "Color Transition Speed",
   "press_light_step": "Color Variation Step",
-  "no_option": "No Options"
+  "no_option": "No Options",
+  "tip": "Tip"
 }

@@ -20,7 +20,7 @@ async function set_auto_config(): Promise<void> {
   const res: any = await invoke("get_auto_config", {})
   console.log(res)
   dialog.warning({
-    title: t('warning'),
+    title: t('tip'),
     content: () => t('recommend_config_help'),
     positiveText: t('yes'),
     negativeText: t('no'),
