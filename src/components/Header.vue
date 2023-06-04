@@ -4,17 +4,38 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { listen } from '@tauri-apps/api/event'
 import { Type } from "naive-ui/es/button/src/interface"
 import { useStore } from '@/store'
+import { useI18n } from "vue-i18n";
+import { setI18nLanguage, i18n } from '@/locales/index'
 import { IConfig, IDevice } from "@/interface";
 import { Rgb2Hex, Hex2Rgb } from '@/utils';
 import { useDialog } from 'naive-ui'
-// defineProps<{ msg: string }>()
 
 
+const { t } = useI18n();
 const dialog = useDialog()
 const store = useStore()
 const status = ref<Type | undefined>(undefined)
-const status_str = ref("设备未连接")
+const status_str = ref(t("message.device_disconnected"))
 const reset = ref(false)
+
+const state = ref({
+  options: [
+    {
+      value: 'zh',
+      label: '简体中文',
+    },
+    {
+      value: 'en',
+      label: 'English',
+    },
+  ],
+  currentLang: i18n.global.locale.value
+})
+
+function handleChange(e: string) {
+  setI18nLanguage(i18n, e)
+  status_str.value = t("message.device_disconnected")
+}
 
 async function connect() {
   store.loading = true
@@ -25,8 +46,8 @@ async function connect() {
     let info = await check_device_info()
     console.table(info)
     store.device_info = info
-    
-    
+
+
     if (store.device_info!.version != store.firmware_version) {
       store.need_update_firmware = true // 需要更新固件
       store.loading = false
@@ -37,7 +58,7 @@ async function connect() {
 
     // 不管怎么样总之是连上了
     store.connected = true
-    
+
     status.value = "success"
     if (info === undefined) {
       status_str.value = "设备已连接"
@@ -80,19 +101,21 @@ async function calibration_key() {
     status.value = "error"
     status_str.value = "连接出错，错误原因：" + e
     console.error(e)
+    store.loading = false
+    return
   }
+  try {
+    await invoke("get_calibration_key_result", { "timeout": 5000 })
+  } catch (e) {
+    status.value = "error"
+    status_str.value = "校准失败，错误原因：" + e
+    console.error(e)
+    store.loading = false
+    return
+  }
+  status.value = "success"
+  status_str.value = "校准完成"
   store.loading = false
-  setTimeout(async () => {
-    // 清空显示
-    if (status_str.value = "请同时按下两个按键并保持2秒后松开，即可完成校准过程") {
-      status.value = "success"
-      if (store.device_info === undefined) {
-        status_str.value = "设备已连接"
-      } else {
-        status_str.value = "设备已连接，固件版本：" + store.device_info!.version
-      }
-    }
-  }, 5000)
 }
 
 async function get_default_config() {
@@ -136,7 +159,7 @@ async function get_config() {
     store.is_hs = await invoke("is_hs")
     if (store.version_info !== undefined) {
       if (store.is_hs)
-        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url 
+        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
       else
         store.version_info.latest_firmware_download_url = store.version_info.v1_latest_firmware_download_url
     }
@@ -164,7 +187,7 @@ async function get_config_raw() {
     store.is_hs = await invoke("is_hs")
     if (store.version_info !== undefined) {
       if (store.is_hs)
-        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url 
+        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
       else
         store.version_info.latest_firmware_download_url = store.version_info.v1_latest_firmware_download_url
     }
@@ -256,25 +279,25 @@ async function debug_mode() {
       // event.payload is the payload object
       store.debug_str = event.payload as string;
       let m;
-      
-      while ((m = regex.exec(store.debug_str)) !== null) {
-          // This is necessary to avoid infinite loops with zero-width matches
-          if (m.index === regex.lastIndex) {
-              regex.lastIndex++;
-          }
-          
-          // The result can be accessed through the `m`-variable.
-          store.adc_data[m[1] - 1].dyn = parseInt(m[2])
-          store.adc_data[m[1] - 1].fixed = parseInt(m[3])
-          // store.adc_data[m[1] - 1].min = parseInt(m[3])
 
-          if (store.adc_data[m[1] - 1].dyn > store.adc_data[m[1] - 1].max)
-            store.adc_data[m[1] - 1].max = store.adc_data[m[1] - 1].dyn
-          
-          if (store.adc_data[m[1] - 1].dyn < store.adc_data[m[1] - 1].min)
-            store.adc_data[m[1] - 1].min = store.adc_data[m[1] - 1].dyn
+      while ((m = regex.exec(store.debug_str)) !== null) {
+        // This is necessary to avoid infinite loops with zero-width matches
+        if (m.index === regex.lastIndex) {
+          regex.lastIndex++;
+        }
+
+        // The result can be accessed through the `m`-variable.
+        store.adc_data[m[1] - 1].dyn = parseInt(m[2])
+        store.adc_data[m[1] - 1].fixed = parseInt(m[3])
+        // store.adc_data[m[1] - 1].min = parseInt(m[3])
+
+        if (store.adc_data[m[1] - 1].dyn > store.adc_data[m[1] - 1].max)
+          store.adc_data[m[1] - 1].max = store.adc_data[m[1] - 1].dyn
+
+        if (store.adc_data[m[1] - 1].dyn < store.adc_data[m[1] - 1].min)
+          store.adc_data[m[1] - 1].min = store.adc_data[m[1] - 1].dyn
       }
-      
+
     })
     const unlisten_exit_debug = await listen('exit-debug', (event) => {
       unlisten_debug()
@@ -283,7 +306,7 @@ async function debug_mode() {
       store.in_debug = false
       store.raw_config = undefined
       status.value = undefined
-      status_str.value = "设备未连接"
+      status_str.value = t("message.device_disconnected")
     })
   } catch (e) {
     store.connected = false
@@ -299,7 +322,7 @@ async function erase_firmware() {
     await invoke("erase_firmware")
     store.connected = false
     status.value = undefined
-    status_str.value = "设备未连接"
+    status_str.value = t("message.device_disconnected")
   } catch (e) {
     store.connected = false
     status.value = "error"
@@ -312,28 +335,30 @@ async function erase_firmware() {
 
 <template>
   <div class="justify-self-start h-full flex items-center">
-    <n-button class="ml-4 pointer-events-none" :loading="store.loading" :type="status">{{ status_str }}</n-button>
+    <n-select v-if="!store.connected" class="ml-4" @update:value="handleChange" v-model:value="state.currentLang" placeholder="Language" :options="state.options"></n-select>
+      <n-button class="ml-4 pointer-events-none" :loading="store.loading" :type="status">{{ status_str }}</n-button>
   </div>
   <div class="justify-self-end h-full flex items-center">
     <div v-if="store.debug_mode">
       <div v-if="!store.connected">
-        <n-button class="mr-4" :disabled="store.loading" @click="connect" >连接设备</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="connect">{{ t("message.connect") }}</n-button>
       </div>
       <div v-else>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="erase_firmware" >清除固件</n-button>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="debug_mode" >进入调试模式</n-button>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug || !store.can_sync" @click="sync_config_raw" >同步配置</n-button>
+        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="erase_firmware">清除固件</n-button>
+        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="debug_mode">进入调试模式</n-button>
+        <n-button class="mr-4" :disabled="store.loading || store.in_debug || !store.can_sync"
+          @click="sync_config_raw">同步配置</n-button>
       </div>
     </div>
     <div v-else>
       <div v-if="!store.connected">
-        <n-button class="mr-4" :disabled="store.loading" @click="debug" >开发者模式</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="connect" >连接设备</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="debug">{{ t("message.developer_mode") }}</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="connect">{{ t("message.connect") }}</n-button>
       </div>
       <div v-else>
-        <n-button class="mr-4" :disabled="store.loading" v-if="store.is_hs" @click="calibration_key" >校准设备</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="get_default_config" >默认值</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="sync_config" >同步配置</n-button>
+        <n-button class="mr-4" :disabled="store.loading" v-if="store.is_hs" @click="calibration_key">校准设备</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="get_default_config">默认值</n-button>
+        <n-button class="mr-4" :disabled="store.loading" @click="sync_config">同步配置</n-button>
       </div>
     </div>
   </div>

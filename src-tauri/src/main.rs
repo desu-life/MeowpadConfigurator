@@ -2,7 +2,6 @@
 //     all(not(debug_assertions), target_os = "windows"),
 //     windows_subsystem = "windows"
 // )]
-#![feature(cstr_from_bytes_until_nul)]
 
 use anyhow::{anyhow, Result as AnyResult};
 use hidapi_rusb::HidApi;
@@ -11,6 +10,7 @@ use meowpad::*;
 use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use once_cell::sync::Lazy;
 use reqwest::Client;
+use serde_json::json;
 use std::borrow::BorrowMut;
 use std::env;
 use std::ffi::CStr;
@@ -86,11 +86,28 @@ async fn calibration_key(_app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn get_adc_record(_app: tauri::AppHandle) -> Result<Vec<u8>, String> {
+async fn get_calibration_key_result(_app: tauri::AppHandle, timeout: i32) -> Result<(), String> {
     || -> AnyResult<_> {
         let mut _d = DEVICE.lock().unwrap();
         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.get_adc_record()
+        d.get_calibration_key_result(timeout)?;
+        Ok(())
+    }()
+    .map_err(|e| format!("{}", e))
+}
+
+
+#[tauri::command]
+async fn get_auto_config(_app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    || -> AnyResult<_> {
+        let mut _d = DEVICE.lock().unwrap();
+        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+        let res = d.get_auto_config()?;
+        Ok(json!({
+            "KeyTriggerDegree": res.0,
+            "KeyReleaseDegree": res.1,
+            "DeadZone": res.2,
+        }))
     }()
     .map_err(|e| format!("{}", e))
 }
@@ -369,8 +386,8 @@ pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
     Equal
 }
 
-static VERSION: &str = "0.2.5";
-static FIRMWARE_VERSION: &str = "0.1.4";
+static VERSION: &str = "0.3.0";
+static FIRMWARE_VERSION: &str = "0.1.6";
 
 fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
@@ -456,9 +473,10 @@ fn main() -> AnyResult<()> {
                     get_version,
                     get_firmware_version,
                     calibration_key,
+                    get_calibration_key_result,
                     debug_mode,
                     erase_firmware,
-                    get_adc_record,
+                    get_auto_config,
                     get_raw_config,
                     save_raw_config,
                     check_raw_config,
