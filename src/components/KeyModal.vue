@@ -17,7 +17,7 @@ const emits = defineEmits(['update:show'])
 <template>
   <n-modal :show="show" @update:show="(value) => emits('update:show', value)" transform-origin="center" :close-on-esc="false" :on-after-leave="leaveFunc">
     <n-card style="width: fit-content;border-radius: 8px;align-items: center;" :bordered="false"
-      :title='"在键盘上按下要设置的键\n(若为原来的键则设置为空)"' role="dialog" aria-modal="true">
+      :title="$t('key_modal_title')" role="dialog" aria-modal="true">
       {{ formatKeys(pressedkeycodes) }}
     </n-card>
   </n-modal>

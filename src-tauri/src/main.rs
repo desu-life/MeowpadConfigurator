@@ -153,10 +153,10 @@ async fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
         let mut _d = DEVICE.lock().unwrap();
         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
         d.load_config()
-            .map_err(|e| anyhow!("获取配置时出错, {}", e))?;
+            .map_err(|e| anyhow!("(错误) error, {}", e))?;
         d.config()
             .try_into()
-            .map_err(|e| anyhow!("处理配置时出错, {}", e))
+            .map_err(|e| anyhow!("(错误) error, {}", e))
     }()
     .map_err(|e| format!("{}", e))
 }
@@ -167,7 +167,7 @@ async fn get_raw_config(_app: tauri::AppHandle) -> Result<String, String> {
         let mut _d = DEVICE.lock().unwrap();
         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
         d.load_config()
-            .map_err(|e| anyhow!("获取配置时出错, {}", e))?;
+            .map_err(|e| anyhow!("(错误) error, {}", e))?;
         toml::to_string(&d.config()).map_err(|e| anyhow!("错误配置, {}", e))
     }()
     .map_err(|e| format!("{}", e))
@@ -393,7 +393,7 @@ fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
         use std::backtrace::Backtrace;
         let emessage = format!(
-            "发生了未捕获的异常，错误信息如下：\n{}\n{}",
+            "Unexcepted Error：\n{}\n{}",
             e,
             Backtrace::force_capture()
         );

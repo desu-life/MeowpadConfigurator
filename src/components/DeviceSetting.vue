@@ -5,7 +5,9 @@ import { formatKeys, IsModifierKey, compareArray } from '@/utils'
 import KeyModal from '@/components/KeyModal.vue'
 import { invoke } from "@tauri-apps/api/tauri";
 import { h } from 'vue'
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const store = useStore()
 const message = useMessage()
 const dialog = useDialog()
@@ -18,15 +20,15 @@ async function set_auto_config(): Promise<void> {
   const res: any = await invoke("get_auto_config", {})
   console.log(res)
   dialog.warning({
-    title: '警告',
-    content: () => '检测到推荐配置，是否使用？',
-    positiveText: '是',
-    negativeText: '否',
+    title: t('warning'),
+    content: () => t('recommend_config_help'),
+    positiveText: t('yes'),
+    negativeText: t('no'),
     onPositiveClick: () => {
       store.config!.dead_zone = res["DeadZone"]
       store.config!.key_release_degree = res["KeyReleaseDegree"]
       store.config!.key_trigger_degree = res["KeyTriggerDegree"]
-      message.success('已采用推荐配置值，请自行同步配置。')
+      message.success(t('applied_recommend_config'))
     },
     onNegativeClick: () => {
 
@@ -38,11 +40,11 @@ async function set_auto_config(): Promise<void> {
 const JEModeSel = [
   {
     value: JitterEliminationMode.Lazy,
-    label: "激进模式（先发送）"
+    label: t('lazy_mode')
   },
   {
     value: JitterEliminationMode.Active,
-    label: "稳定模式（先消抖）"
+    label: t('active_mode')
   }
 ]
 
@@ -50,7 +52,7 @@ const JEModeSel = [
 const keyscanlist = [
   {
     value: 0,
-    label: "无限制"
+    label: t('nolimit')
   },
   {
     value: 1,
@@ -102,82 +104,82 @@ const keyscanlist = [
 const LighingModeSel = [
   {
     value: LightingMode.Off,
-    label: "关闭"
+    label: t('off')
   },
   {
     value: LightingMode.Solid,
-    label: "常亮"
+    label: t('solid')
   },
   {
     value: LightingMode.Breath,
-    label: '呼吸'
+    label: t('breath')
   },
   {
     value: LightingMode.SpeedPress,
-    label: '手速计'
+    label: t('speed_press')
   },
   {
     value: LightingMode.RainbowBreathSwitch,
-    label: '彩虹呼吸'
+    label: t('rainbow_breath_switch')
   },
   {
     value: LightingMode.RainbowGradientSwitch,
-    label: '彩虹渐变'
+    label: t('rainbow_gradient_switch')
   },
   {
     value: LightingMode.RainbowBreathSync,
-    label: '彩虹呼吸（同步）'
+    label: t('rainbow_breath_sync')
   },
   {
     value: LightingMode.RainbowGradientSync,
-    label: '彩虹渐变（同步）'
+    label: t('rainbow_gradient_sync')
   },
   {
     value: LightingMode.PressAndLight,
-    label: '触发模式'
+    label: t('press_and_light')
   }
 ]
 
 const LighingModeSelWooting = [
-  {
+{
     value: LightingMode.Off,
-    label: "关闭"
+    label: t('off')
   },
   {
     value: LightingMode.Solid,
-    label: "常亮"
+    label: t('solid')
   },
   {
     value: LightingMode.Breath,
-    label: '呼吸'
+    label: t('breath')
   },
   {
     value: LightingMode.SpeedPress,
-    label: '手速计'
+    label: t('speed_press')
   },
   {
     value: LightingMode.RainbowBreathSwitch,
-    label: '彩虹呼吸'
+    label: t('rainbow_breath_switch')
   },
   {
     value: LightingMode.RainbowGradientSwitch,
-    label: '彩虹渐变'
+    label: t('rainbow_gradient_switch')
   },
   {
     value: LightingMode.RainbowBreathSync,
-    label: '彩虹呼吸（同步）'
+    label: t('rainbow_breath_sync')
   },
   {
     value: LightingMode.RainbowGradientSync,
-    label: '彩虹渐变（同步）'
+    label: t('rainbow_gradient_sync')
   },
   {
     value: LightingMode.PressAndLight,
-    label: '触发模式'
+    label: t('press_and_light')
   },
   {
     value: LightingMode.根据按压力度决定LED发光程度,
-    label: '压感模式'
+    label: t('ya-gan-mo-shi')
   },
 ]
 
@@ -199,7 +201,7 @@ function needkey(key: KeyCode) {
       if (presskeycodes.value.filter((k) => !IsModifierKey(k)).length < 3) {
         return true
       } else {
-        message.error("最多只能选择3个普通按键")
+        message.error(t('most_3_key_error'))
       }
     }
   }
@@ -306,26 +308,25 @@ function setKeys(keyNum: number) {
 
       <div style="max-width: 400px;min-width: 200px;">
         <n-button type="error" class="badge" @click="set_auto_config">
-          帮助？
-        </n-button>
-        <n-form-item label="按键死区" path="dead_zone" label-placement="left" :show-feedback="false" v-if="store.is_hs">
-          <n-input-number v-model:value="store.config!.dead_zone" :min="1" :max="100" placeholder="无数据">
+          {{ $t('need_help') }} </n-button>
+        <n-form-item :label="$t('dead_zone')" path="dead_zone" label-placement="left" :show-feedback="false" v-if="store.is_hs">
+          <n-input-number v-model:value="store.config!.dead_zone" :min="1" :max="100" :placeholder="$t('no_data')">
             <template #suffix>
               %
             </template>
           </n-input-number>
         </n-form-item>
-        <n-form-item label="触发键程" path="key_trigger_degree" label-placement="left" :show-feedback="false"
+        <n-form-item :label="$t('key_trigger_degree')" path="key_trigger_degree" label-placement="left" :show-feedback="false"
           v-if="store.is_hs">
-          <n-input-number v-model:value="store.config!.key_trigger_degree" :min="1" :max="100" placeholder="无数据">
+          <n-input-number v-model:value="store.config!.key_trigger_degree" :min="1" :max="100" :placeholder="$t('no_data')">
             <template #suffix>
               %
             </template>
           </n-input-number>
         </n-form-item>
-        <n-form-item label="释放键程" path="key_release_degree" label-placement="left" :show-feedback="false"
+        <n-form-item :label="$t('key_release_degree')" path="key_release_degree" label-placement="left" :show-feedback="false"
           v-if="store.is_hs">
-          <n-input-number v-model:value="store.config!.key_release_degree" :min="1" :max="100" placeholder="无数据">
+          <n-input-number v-model:value="store.config!.key_release_degree" :min="1" :max="100" :placeholder="$t('no_data')">
             <template #suffix>
               %
             </template>
@@ -343,52 +344,52 @@ function setKeys(keyNum: number) {
   <n-grid :cols="20" :x-gap="18" style="width: 80vw;">
 
     <n-gi :span="10">
-      <n-form-item label="消抖模式" path="keyboard_jitters_elimination_mode">
+      <n-form-item :label="$t('keyboard_jitters_elimination_mode')" path="keyboard_jitters_elimination_mode">
         <n-select v-model:value="store.config!.keyboard_jitters_elimination_mode" :options="JEModeSel" />
       </n-form-item>
     </n-gi>
     <n-gi :span="5">
-      <n-form-item label="消抖时长" path="keyboard_jitters_elimination_time">
+      <n-form-item :label="$t('keyboard_jitters_elimination_time')" path="keyboard_jitters_elimination_time">
         <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="1"
           :max="10000"></n-input-number>
       </n-form-item>
     </n-gi>
     <n-gi :span="5">
-      <n-form-item label="扫描速率" path="key_scan_rate">
+      <n-form-item :label="$t('key_scan_rate')" path="key_scan_rate">
         <n-select v-model:value="store.config!.key_scan_rate" :options="keyscanlist" />
       </n-form-item>
     </n-gi>
     <n-gi :span="10">
-      <n-form-item label="灯效模式（按键）" path="lighting_mode_key">
+      <n-form-item :label="$t('lighting_mode_key')" path="lighting_mode_key">
         <n-select v-model:value="store.config!.lighting_mode_key" :options="GetLighingModeSel()" />
       </n-form-item>
     </n-gi>
     <n-gi :span="10">
-      <n-form-item label="灯效模式（底部）" path="lighting_mode_btm">
+      <n-form-item :label="$t('lighting_mode_btm')" path="lighting_mode_btm">
         <n-select v-model:value="store.config!.lighting_mode_btm" :options="GetLighingModeSel()" />
       </n-form-item>
     </n-gi>
     <n-gi :span="4">
-      <n-form-item label="睡眠等待时长" path="device_sleep_idle_time">
+      <n-form-item :label="$t('device_sleep_idle_time')" path="device_sleep_idle_time">
         <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="1" :max="65535">
           <template #suffix>
-            秒
+            {{ $t('sec') }} 
           </template>
         </n-input-number>
       </n-form-item>
     </n-gi>
     <n-gi :span="8" v-if="store.config!.device_sleep_idle_time != 0">
-      <n-form-item label="睡眠中灯效模式（按键）" path="sleep_lighting_mode_key">
+      <n-form-item :label="$t('sleep_lighting_mode_key')" path="sleep_lighting_mode_key">
         <n-select v-model:value="store.config!.sleep_lighting_mode_key" :options="GetLighingModeSel()" />
       </n-form-item>
     </n-gi>
     <n-gi :span="8" v-if="store.config!.device_sleep_idle_time != 0">
-      <n-form-item label="睡眠中灯效模式（底部）" path="sleep_lighting_mode_btm">
+      <n-form-item :label="$t('sleep_lighting_mode_btm')" path="sleep_lighting_mode_btm">
         <n-select v-model:value="store.config!.sleep_lighting_mode_btm" :options="GetLighingModeSel()" />
       </n-form-item>
     </n-gi>
     <n-gi :span="5">
-      <n-form-item label="强双模式" path="force_key_switch" :show-feedback="false">
+      <n-form-item :label="$t('force_key_switch')" path="force_key_switch" :show-feedback="false">
         <n-switch v-model:value="store.config!.force_key_switch" />
       </n-form-item>
     </n-gi>
