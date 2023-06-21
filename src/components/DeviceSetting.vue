@@ -350,8 +350,12 @@ function setKeys(keyNum: number) {
     </n-gi>
     <n-gi :span="5">
       <n-form-item :label="$t('keyboard_jitters_elimination_time')" path="keyboard_jitters_elimination_time">
-        <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="1"
-          :max="10000"></n-input-number>
+        <n-input-number v-model:value="store.config!.keyboard_jitters_elimination_time" :min="0"
+          :max="50">
+          <template #suffix>
+            ms
+          </template>
+        </n-input-number>
       </n-form-item>
     </n-gi>
     <n-gi :span="5">
@@ -371,7 +375,7 @@ function setKeys(keyNum: number) {
     </n-gi>
     <n-gi :span="4">
       <n-form-item :label="$t('device_sleep_idle_time')" path="device_sleep_idle_time">
-        <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="1" :max="65535">
+        <n-input-number v-model:value="store.config!.device_sleep_idle_time" :min="0" :max="65535">
           <template #suffix>
             {{ $t('sec') }} 
           </template>

@@ -245,6 +245,11 @@ async fn get_firmware_version(_app: tauri::AppHandle) -> &'static str {
     FIRMWARE_VERSION
 }
 
+#[tauri::command]
+async fn get_firmware_version_hs(_app: tauri::AppHandle) -> &'static str {
+    FIRMWARE_VERSION_HS
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Version {
     version: String,
@@ -386,8 +391,9 @@ pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
     Equal
 }
 
-static VERSION: &str = "0.3.0";
-static FIRMWARE_VERSION: &str = "0.1.6";
+static VERSION: &str = "0.3.1";
+static FIRMWARE_VERSION_HS: &str = "1.0.0";
+static FIRMWARE_VERSION: &str = "0.1.7";
 
 fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
@@ -415,6 +421,17 @@ fn main() -> AnyResult<()> {
             info!("固件版本：{:?}", d.firmware_version);
             d.reset_config()?;
             warn!("重置配置成功")
+        }
+        "--erase" => {
+            _connect()?;
+            let mut _d = DEVICE.lock().unwrap();
+            let mut d = _d.take().unwrap();
+            d.get_device_name()?;
+            d.get_firmware_version()?;
+            info!("设备名称：{:?}", d.device_name);
+            info!("固件版本：{:?}", d.firmware_version);
+            d.erase_firmware()?;
+            warn!("重置固件成功")
         }
         "--console" => {
             _connect()?;
@@ -472,6 +489,7 @@ fn main() -> AnyResult<()> {
                     check_update,
                     get_version,
                     get_firmware_version,
+                    get_firmware_version_hs,
                     calibration_key,
                     get_calibration_key_result,
                     debug_mode,

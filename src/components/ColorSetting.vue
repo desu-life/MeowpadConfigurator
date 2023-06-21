@@ -192,17 +192,10 @@ function CanCanChangeColor() {
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
-        <n-gi :span="10">
+        <n-gi :span="20">
           <n-collapse-transition :show="lightingMode == LightingMode.SpeedPress">
             <n-form-item :label="$t('speed_press_trans_speed')" path="speed_press_trans_speed">
-              <n-slider v-model:value="store.config!.speed_press_trans_speed" :step="1" :min="0" :max="20" />
-            </n-form-item>
-          </n-collapse-transition>
-        </n-gi>
-        <n-gi :span="10">
-          <n-collapse-transition :show="lightingMode == LightingMode.SpeedPress">
-            <n-form-item :label="$t('press_light_step')" path="press_light_step">
-              <n-slider v-model:value="store.config!.press_light_step" :step="1" :min="20" :max="100" />
+              <n-slider v-model:value="store.config!.speed_press_trans_speed" :step="1" :min="10" :max="40" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
