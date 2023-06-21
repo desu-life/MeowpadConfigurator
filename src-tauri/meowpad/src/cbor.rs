@@ -139,12 +139,12 @@ impl KEYBOARD {
                 KEY_3: KeyCode::Escape.to_report().into(),
                 KEY_4: KeyCode::F2.to_report().into(),
                 KEY_5: KeyCode::Grave.to_report().into(),
-                JittersEliminationTime: 100,
+                JittersEliminationTime: 20,
                 JittersEliminationMode: 1,
                 FORCE_KEY_SWITCH: false as u8,
                 KeyReleaseDegree: Some(25),
-                KeyTriggerDegree: Some(20),
-                DeadZone: Some(10),
+                KeyTriggerDegree: Some(25),
+                DeadZone: Some(20),
                 KeyScanRate: Some(0)
             }
         } else {
@@ -154,7 +154,7 @@ impl KEYBOARD {
                 KEY_3: KeyCode::Escape.to_report().into(),
                 KEY_4: KeyCode::F2.to_report().into(),
                 KEY_5: KeyCode::Grave.to_report().into(),
-                JittersEliminationTime: 100,
+                JittersEliminationTime: 20,
                 JittersEliminationMode: 1,
                 FORCE_KEY_SWITCH: false as u8,
                 KeyReleaseDegree: None,
@@ -235,7 +235,7 @@ impl Default for LED {
             LED_BREATH_LUM_MIN_KEEP_TIME: 0,
             LED_BREATH_LUM_TRANSITION_SPEED: 15,
             LED_PUSH_TO_GLOW_TRANSITION_SPEED: 1,
-            LED_SPEED_LIGHT_TRANSITION_SPEED: 1,
+            LED_SPEED_LIGHT_TRANSITION_SPEED: 20,
             LED_SPEED_LIGHT_STEP_LENGTH: 50,
             LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: 2,
             LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: 2,

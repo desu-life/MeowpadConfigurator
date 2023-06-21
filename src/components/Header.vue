@@ -46,9 +46,10 @@ async function connect() {
     let info = await check_device_info()
     console.table(info)
     store.device_info = info
+    store.is_hs = await invoke("is_hs")
 
-
-    if (store.device_info!.version != store.firmware_version) {
+    let firmware_version = store.is_hs ? await invoke("get_firmware_version_hs") : await invoke("get_firmware_version")
+    if (store.device_info!.version != firmware_version) {
       store.need_update_firmware = true // 需要更新固件
       store.loading = false
       status.value = "error"
@@ -156,7 +157,6 @@ async function get_config() {
     store.speed_press_low_color = Rgb2Hex(res.speed_press_low_color)
     store.breath_speed = 20 - res.breath_interval
     store.rainbow_light_switching_speed = 30 - res.rainbow_light_switching_interval
-    store.is_hs = await invoke("is_hs")
     if (store.version_info !== undefined) {
       if (store.is_hs)
         store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
@@ -184,7 +184,6 @@ async function get_config_raw() {
   try {
     const res: string = await invoke("get_raw_config")
     store.raw_config = res
-    store.is_hs = await invoke("is_hs")
     if (store.version_info !== undefined) {
       if (store.is_hs)
         store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
@@ -277,27 +276,8 @@ async function debug_mode() {
     const unlisten_debug = await listen('debug', (event) => {
       // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
       // event.payload is the payload object
+      console.log(event.event, event.payload)
       store.debug_str = event.payload as string;
-      let m;
-
-      while ((m = regex.exec(store.debug_str)) !== null) {
-        // This is necessary to avoid infinite loops with zero-width matches
-        if (m.index === regex.lastIndex) {
-          regex.lastIndex++;
-        }
-
-        // The result can be accessed through the `m`-variable.
-        store.adc_data[m[1] - 1].dyn = parseInt(m[2])
-        store.adc_data[m[1] - 1].fixed = parseInt(m[3])
-        // store.adc_data[m[1] - 1].min = parseInt(m[3])
-
-        if (store.adc_data[m[1] - 1].dyn > store.adc_data[m[1] - 1].max)
-          store.adc_data[m[1] - 1].max = store.adc_data[m[1] - 1].dyn
-
-        if (store.adc_data[m[1] - 1].dyn < store.adc_data[m[1] - 1].min)
-          store.adc_data[m[1] - 1].min = store.adc_data[m[1] - 1].dyn
-      }
-
     })
     const unlisten_exit_debug = await listen('exit-debug', (event) => {
       unlisten_debug()

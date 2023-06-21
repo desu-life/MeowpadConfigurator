@@ -217,7 +217,6 @@ impl Meowpad {
     fn write_head(&self) -> Result<()> {
         debug!("发送头包：{:?}", self.key.hex_dump());
         self.device.write(&self.key)?;
-        thread::sleep(Duration::from_millis(50));
         let packet = self.read()?;
         if packet.id == PacketID::Ok {
             Ok(())
@@ -236,7 +235,6 @@ impl Meowpad {
             self.write_head()?;
             debug!("raw：{:?}", v.hex_dump());
             self.device.write(&v)?;
-            thread::sleep(Duration::from_millis(50));
         }
         Ok(())
     }

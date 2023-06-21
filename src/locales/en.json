@@ -54,7 +54,7 @@
   "no_data": "No Data",
   "keyboard_jitters_elimination_mode": "Debounce Mode",
   "keyboard_jitters_elimination_time": "Debounce Time",
-  "key_scan_rate": "Scan Rate",
+  "key_scan_rate": "Report Rate",
   "lighting_mode_key": "Lighting Mode (Keys)",
   "lighting_mode_btm": "Lighting Mode (Bottom)",
   "device_sleep_idle_time": "Sleep Idle Time",

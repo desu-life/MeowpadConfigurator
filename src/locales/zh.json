@@ -54,7 +54,7 @@
   "key_release_degree": "释放键程",
   "keyboard_jitters_elimination_mode": "消抖模式",
   "keyboard_jitters_elimination_time": "消抖时长",
-  "key_scan_rate": "扫描速率",
+  "key_scan_rate": "回报速率",
   "lighting_mode_key": "灯效模式（按键）",
   "lighting_mode_btm": "灯效模式（底部）",
   "device_sleep_idle_time": "睡眠等待时长",
