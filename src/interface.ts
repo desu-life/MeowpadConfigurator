@@ -21,7 +21,8 @@ export interface IHsData {
 export interface IVersion {
     version: string
     download_url: string
-    latest_firmware_version: string
+    v1_latest_firmware_version: string
+    v1_hs_latest_firmware_version: string
     latest_firmware_download_url: string | undefined
     v1_latest_firmware_download_url: string
     v1_hs_latest_firmware_download_url: string

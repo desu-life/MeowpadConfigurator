@@ -254,8 +254,9 @@ async fn get_firmware_version_hs(_app: tauri::AppHandle) -> &'static str {
 struct Version {
     version: String,
     download_url: String,
-    latest_firmware_version: String,
+    v1_latest_firmware_version: String,
     v1_latest_firmware_download_url: String,
+    v1_hs_latest_firmware_version: String,
     v1_hs_latest_firmware_download_url: String,
 }
 
