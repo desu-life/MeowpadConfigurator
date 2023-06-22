@@ -106,7 +106,7 @@ async function calibration_key() {
   store.loading = false
   show_calibrate_msg.value = true
   try {
-    await invoke("get_calibration_key_result", { "timeout": 5000 })
+    await invoke("get_calibration_key_result", { "timeout": -1 })
   } catch (e) {
     status.value = "error"
     status_str.value = t('cali_failed', { e: e })
