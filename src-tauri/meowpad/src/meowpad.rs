@@ -9,7 +9,7 @@ use log::*;
 use num::FromPrimitive;
 use pretty_hex::*;
 use rand::RngCore;
-use std::{fmt::Debug, fs, io::Cursor, thread, time::Duration};
+use std::{fmt::Debug, fs, io::Cursor};
 
 type Config = CONFIG;
 
