@@ -123,6 +123,18 @@ impl Meowpad {
             Err(anyhow!("Unexcepted Response"))
         }
     }
+    
+    pub fn set_middle_point(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::SetMiddlePoint, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(anyhow!("Unexcepted Response"))
+        }
+    }
 
     pub fn erase_firmware(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::EraseFirmware, []))?;

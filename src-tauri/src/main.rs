@@ -434,6 +434,17 @@ fn main() -> AnyResult<()> {
             d.erase_firmware()?;
             warn!("重置固件成功")
         }
+        "--set-middle-point" => {
+            _connect()?;
+            let mut _d = DEVICE.lock().unwrap();
+            let mut d = _d.take().unwrap();
+            d.get_device_name()?;
+            d.get_firmware_version()?;
+            info!("设备名称：{:?}", d.device_name);
+            info!("固件版本：{:?}", d.firmware_version);
+            d.set_middle_point()?;
+            warn!("设置中点")
+        }
         "--console" => {
             _connect()?;
             let mut _d = DEVICE.lock().unwrap();

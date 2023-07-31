@@ -20,6 +20,7 @@ pub enum PacketID {
     EraseFirmware = 10,
     DebugMode = 11,
     AutoConfig = 12,
+    SetMiddlePoint = 13,
 }
 
 impl std::fmt::Display for PacketID {

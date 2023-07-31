@@ -139,7 +139,7 @@ impl KEYBOARD {
                 KEY_3: KeyCode::Escape.to_report().into(),
                 KEY_4: KeyCode::F2.to_report().into(),
                 KEY_5: KeyCode::Grave.to_report().into(),
-                JittersEliminationTime: 20,
+                JittersEliminationTime: 5,
                 JittersEliminationMode: 1,
                 FORCE_KEY_SWITCH: false as u8,
                 KeyReleaseDegree: Some(25),
