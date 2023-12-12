@@ -1,5 +1,19 @@
 // export declare type LightingMode = 'Off' | 'Solid' | 'Breath' | 'RainbowBreath' | 'RainbowGradient' | "PressAndLight" | "SpeedPress";
 
+export declare type Error = 'DeviceDissconnected' | 'DeviceNotFound' | 'Network' | 'Meowpad' | 'Iap';
+
+
+export interface IError {
+    type: Error
+    data?: any
+}
+
+export interface IKeymap {
+    name?:  string;
+    width: number;
+    index?: number;
+}
+
 export interface IRgb {
     red: number
     green: number
@@ -9,13 +23,6 @@ export interface IRgb {
 export interface IDevice {
     name: string
     version: string
-}
-
-export interface IHsData {
-    dyn: number;
-    min: number;
-    max: number;
-    fixed: number;
 }
 
 export interface IVersion {
@@ -28,60 +35,51 @@ export interface IVersion {
     v1_hs_latest_firmware_download_url: string
 }
 
-export interface IConfig { 
-    key_1: KeyCode[]
-    key_2: KeyCode[]
-    key_3: KeyCode[]
-    key_4: KeyCode[]
-    key_5: KeyCode[]
-    led_color_l: IRgb
-    led_color_r: IRgb
-    led_color_btm_l: IRgb
-    led_color_btm_r: IRgb
-    lighting_mode_key: LightingMode
-    lighting_mode_btm: LightingMode
-    maximum_brightness: number
-    breath_minimum_brightness: number
-    breath_maximum_light_duration: number
-    breath_minimum_light_duration: number
-    breath_interval: number
-    press_light_minimum_brightness: number
-    press_light_duration: number
-    rainbow_light_switching_interval: number
-    speed_press_high_color: IRgb
-    speed_press_low_color: IRgb
-    speed_press_trans_speed: number
-    speed_press_minimum_brightness: number
-    press_light_step: number
-    keyboard_jitters_elimination_time: number
-    keyboard_jitters_elimination_mode: JitterEliminationMode,
-    force_key_switch: boolean,
-    device_sleep_idle_time: number,
-    sleep_mode_maximum_brightness: number,
-    sleep_lighting_mode_key: LightingMode,
-    sleep_lighting_mode_btm: LightingMode,
-    key_trigger_degree: number | undefined,       // 0-100
-    key_release_degree: number | undefined,       // 0-100
-    dead_zone: number | undefined,               // 0-30
-    key_scan_rate: number | undefined,               // 0-30
+export interface IKeyRTStatus {
+    adc_value: number
+    linear_value: number
+    press_percentage: number
+    key_state: KeyState
 }
 
-export enum JitterEliminationMode {
-    Active = 0,
-    Lazy = 1,
+export interface IKeyConfig {
+    press_percentage: number
+    release_percentage: number
+    dead_zone: number
+    key_data: KeyCode[]
+}
+
+export interface IConfig {
+    keys: IKeyConfig[]
+    led_colors: IRgb[]
+    lighting_mode_key: LightingMode
+    max_brightness: number
+    jitters_elimination_time: number
+    continuous_report: boolean
+    kalman_filter: boolean
+    sleep_time: number
+}
+
+export enum KeyState {
+    Pressed = 0,
+    Released = 1,
+    Calibrating = 2
+}
+
+export enum Toggle {
+    On = 1,
+    Off = 0,
 }
 
 export enum LightingMode {
     Off = 0,
-    Solid = 1,
-    Breath = 2,
-    RainbowBreathSwitch = 3,
-    RainbowBreathSync = 4,
-    RainbowGradientSwitch = 5,
-    RainbowGradientSync = 6,
-    PressAndLight = 7,
-    SpeedPress = 8,
-    根据按压力度决定LED发光程度 = 9,
+    Debug = 1,
+    Error = 2,
+
+    Solid = 3,
+    RainbowMode = 4,
+    RainbowFlowMode = 5,
+    PressRadianceMode = 6,
 }
 
 // export enum KeyCode {
@@ -314,7 +312,7 @@ export enum KeyCode {
     /// `0` and `)`.
     Kb0,
     Enter,
-    Escape,
+    Esc,
     BSpace,
     Tab,
     Space,
@@ -540,7 +538,7 @@ export let jsToHid = {
     "End": 0x4d,
     "Enter": 0x28,
     "Equal": 0x2e,
-    "Escape": 0x29,
+    "Esc": 0x29,
     "F1": 0x3a,
     "F2": 0x3b,
     "F3": 0x3c,

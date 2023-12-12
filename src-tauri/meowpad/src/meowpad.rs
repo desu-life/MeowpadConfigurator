@@ -1,34 +1,39 @@
 use crate::{
     cbor::CONFIG,
     packet::{Packet, PacketID},
+    error::*,
 };
-use anyhow::{anyhow, Result};
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use hidapi_rusb::HidDevice;
 use log::*;
 use num::FromPrimitive;
 use pretty_hex::*;
-use rand::RngCore;
-use std::{fmt::Debug, fs, io::Cursor};
+use std::{fmt::Debug, io::{Cursor, Write}, thread, time::Duration};
+use num_derive::{FromPrimitive, ToPrimitive};
 
 type Config = CONFIG;
 
-pub struct DebugMeowpad<'a>(&'a HidDevice, [u8; 64]);
+#[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default, FromPrimitive, ToPrimitive)]
+pub enum KeyState {
+    #[default]
+    Pressed,
+    Released,
+    Calibrating
+}
 
-impl<'a> DebugMeowpad<'a> {
-    pub fn next(&mut self) -> Option<&[u8]> {
-        let size = self.0.read_timeout(&mut self.1, 5).ok()?;
-        Some(&self.1[..size])
-    }
+#[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default)]
+pub struct KeyRTStatus {
+    pub adc_value: u16,
+    pub linear_value: u16,
+    pub press_percentage: u8,
+    pub key_state: KeyState,
 }
 
 pub struct Meowpad {
     pub config: Option<Config>,
     pub device_name: Option<String>,
     pub firmware_version: Option<String>,
-    pub is_hs: bool,
     device: HidDevice,
-    key: Vec<u8>,
 }
 
 impl Debug for Meowpad {
@@ -38,34 +43,11 @@ impl Debug for Meowpad {
 }
 
 impl Meowpad {
-    pub fn new(device: HidDevice, is_hs: bool, path: impl AsRef<std::path::Path>) -> Meowpad {
-        let path = path.as_ref();
-        let mut data = match fs::read(path) {
-            Ok(data) => {
-                if data.len() != 64 || !data.starts_with(&[0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF]) {
-                    warn!("错误的密钥，正在重置");
-                    fs::remove_file(path).expect("错误的密钥 / 重置密钥失败");
-                    return Self::new(device, is_hs, path);
-                }
-                data
-            }
-            Err(_) => {
-                let mut data = vec![0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF];
-                let mut tmp = [0u8; 58];
-                rand::thread_rng().fill_bytes(&mut tmp);
-                data.append(&mut tmp.to_vec());
-                fs::write(path, &data).expect("初始化数据失败");
-                data
-            }
-        };
+    pub fn new(device: HidDevice) -> Meowpad {
 
-        let mut key = vec![0];
-        key.append(&mut data);
         device.set_blocking_mode(true).unwrap();
         Meowpad {
-            key,
             device,
-            is_hs,
             config: None,
             device_name: None,
             firmware_version: None,
@@ -73,7 +55,7 @@ impl Meowpad {
     }
 
     pub fn default_config(&self) -> Config {
-        Config::default(self.is_hs)
+        Config::default()
     }
 
     pub fn config(&self) -> Config {
@@ -107,7 +89,27 @@ impl Meowpad {
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            Err(anyhow!("Unexcepted Response"))
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
+    pub fn debug(&mut self) -> Result<[KeyRTStatus; 4]> {
+        self.write(Packet::new(PacketID::Debug, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            let mut keys: [KeyRTStatus; 4] = Default::default();
+            let mut cur = Cursor::new(packet.data);
+            for key in keys.iter_mut() {
+                key.adc_value = cur.read_u16::<BigEndian>()?;
+                key.linear_value = cur.read_u16::<BigEndian>()?;
+                key.press_percentage = cur.read_u16::<BigEndian>()? as u8;
+                key.key_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
+            }
+            Ok(keys)
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
         }
     }
 
@@ -120,50 +122,7 @@ impl Meowpad {
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            Err(anyhow!("Unexcepted Response"))
-        }
-    }
-    
-    pub fn set_middle_point(&mut self) -> Result<()> {
-        self.write(Packet::new(PacketID::SetMiddlePoint, []))?;
-        let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
-            Ok(())
-        } else {
-            dbg!(packet.id);
-            dbg!(packet.data.hex_dump());
-            Err(anyhow!("Unexcepted Response"))
-        }
-    }
-
-    pub fn erase_firmware(&mut self) -> Result<()> {
-        self.write(Packet::new(PacketID::EraseFirmware, []))?;
-        Ok(())
-    }
-
-    pub fn debug_mode(&mut self) -> Result<DebugMeowpad> {
-        self.write(Packet::new(PacketID::DebugMode, []))?;
-        let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
-            Ok(DebugMeowpad(&self.device, [0u8; 64]))
-        } else {
-            dbg!(packet.id);
-            dbg!(packet.data.hex_dump());
-            Err(anyhow!("Unexcepted Response"))
-        }
-    }
-
-    /// 返回值第一个u8是触发推荐值，第二个是释放推荐值，第三个是死区推荐值
-    pub fn get_auto_config(&mut self) -> Result<(u8, u8, u8)> {
-        assert!(self.is_hs, "调用错误，此方法为hs版专属");
-        self.write(Packet::new(PacketID::AutoConfig, []))?;
-        let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
-            Ok((packet.data[0], packet.data[1], packet.data[2]))
-        } else {
-            dbg!(packet.id);
-            dbg!(packet.data.hex_dump());
-            Err(anyhow!("Unexcepted Response"))
+            Err(Error::UnexceptedResponse(packet))
         }
     }
 
@@ -177,18 +136,29 @@ impl Meowpad {
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            Err(anyhow!("在写入配置时出错"))
+            Err(Error::UnexceptedResponse(packet))
         }
     }
 
     pub fn reset_config(&mut self) -> Result<()> {
-        self.config = Some(Config::default(self.is_hs));
+        self.config = Some(self.default_config());
         self.write_config()?;
         Ok(())
     }
 
+    pub fn reset_middle_point(&self) -> Result<()> {
+        self.write(Packet::new(PacketID::SetMiddlePoint, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::Other("在校准轴体时出错"))
+        }
+    }
+
     pub fn calibration_key(&self) -> Result<()> {
-        assert!(self.is_hs, "调用错误，此方法为hs版专属");
         self.write(Packet::new(PacketID::CalibrationKey, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
@@ -196,47 +166,19 @@ impl Meowpad {
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            Err(anyhow!("在校准轴体时出错"))
+            Err(Error::Other("在校准轴体时出错"))
         }
     }
 
-    pub fn get_calibration_key_result(&self, timeout: i32) -> Result<()> {
-        assert!(self.is_hs, "调用错误，此方法为hs版专属");
-        let packet = self.read_timeout(timeout)?; // 读取
-        if packet.id == PacketID::Ok {
-            Ok(())
-        } else if packet.id == PacketID::Null {
-            Err(anyhow!("校准超时"))
-        } else {
-            dbg!(packet.id);
-            dbg!(packet.data.hex_dump());
-            Err(anyhow!("在校准轴体时出错"))
-        }
-    }
-
-    pub fn flush(&self) -> Result<()> {
-        self.write(Packet::new(PacketID::FlushConfig, []))?;
+    pub fn erase_firmware(&self)  -> Result<()> {
+        self.write(Packet::new(PacketID::EraseFirmware, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
             Ok(())
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            Err(anyhow!("在刷新配置时出错"))
-        }
-    }
-
-    fn write_head(&self) -> Result<()> {
-        debug!("发送头包：{:?}", self.key.hex_dump());
-        self.device.write(&self.key)?;
-        let packet = self.read()?;
-        if packet.id == PacketID::Ok {
-            Ok(())
-        } else {
-            dbg!(packet.id);
-            dbg!(packet.data.hex_dump());
-            warn!("密钥不正确，请重新插拔meowpad以重置");
-            Err(anyhow!("密钥不正确，请重新插拔meowpad以重置"))
+            Err(Error::Other("数据交互时出错"))
         }
     }
 
@@ -244,9 +186,9 @@ impl Meowpad {
         debug!("发送：{:?}", packet);
         debug!("总数据大小：{}", packet.data.len());
         for v in packet.build_packets() {
-            self.write_head()?;
             debug!("raw：{:?}", v.hex_dump());
             self.device.write(&v)?;
+            thread::sleep(Duration::from_millis(50));
         }
         Ok(())
     }
@@ -254,7 +196,8 @@ impl Meowpad {
     fn read_timeout(&self, timeout: i32) -> Result<Packet> {
         let mut buf = Cursor::new([0u8; 64]);
         self.device.read_timeout(buf.get_mut(), timeout)?;
-        let packet_id = PacketID::from_u8(buf.read_u8()?).ok_or(anyhow!("解析数据包ID时报错"))?;
+        // debug!("收到数据包: {:?}", buf.get_ref().hex_dump());
+        let packet_id = PacketID::from_u8(buf.read_u8()?).ok_or(Error::InvalidPacket)?;
         let packet_len = buf.read_u16::<BigEndian>()? as usize;
         let mut data = Vec::with_capacity(packet_len);
         let mut read_bytes = 0;
@@ -271,7 +214,6 @@ impl Meowpad {
                         // reset buffer
                         unsafe { std::ptr::write_volatile(buf.get_mut(), [0u8; 64]) }
                         buf.set_position(0);
-                        self.write(Packet::new(packet_id, [packet_num]))?;
                         self.device.read_timeout(buf.get_mut(), timeout)?;
                         packet_num += 1;
                     }
@@ -289,7 +231,8 @@ impl Meowpad {
     pub fn read(&self) -> Result<Packet> {
         let mut buf = Cursor::new([0u8; 64]);
         self.device.read(buf.get_mut())?;
-        let packet_id = PacketID::from_u8(buf.read_u8()?).ok_or(anyhow!("解析数据包ID时报错"))?;
+        debug!("收到数据包: {:?}", buf.get_ref().hex_dump());
+        let packet_id = PacketID::from_u8(buf.read_u8()?).ok_or(Error::InvalidPacket)?;
         let packet_len = buf.read_u16::<BigEndian>()? as usize;
         let mut data = Vec::with_capacity(packet_len);
         let mut read_bytes = 0;

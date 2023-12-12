@@ -1,5 +1,4 @@
-use crate::{Config, KeyCode, KbReport, LightingMode};
-use anyhow::Result;
+use crate::{Config, KbReport, KeyCode, LightingMode, KeyConfig};
 use ciborium;
 use palette::rgb::channels::Argb;
 use palette::Srgb;
@@ -15,32 +14,29 @@ pub unsafe fn serialize_raw<T: Sized>(src: &T) -> &[u8] {
 #[repr(C)]
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[allow(non_snake_case)]
+pub struct KeyRTConfig {
+    #[serde(rename = "pp")]
+    pub PressPercentage: u8,
+    #[serde(rename = "rp")]
+    pub ReleasePercentage: u8,
+    #[serde(rename = "dz")]
+    pub DeadZone: u8,
+    #[serde(rename = "kd")]
+    pub KeyData: [u8; 6],
+}
+
+#[repr(C)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[allow(non_snake_case)]
 pub struct KEYBOARD {
-    #[serde(rename = "k1")]
-    pub KEY_1: [u8; 4],
-    #[serde(rename = "k2")]
-    pub KEY_2: [u8; 4],
-    #[serde(rename = "k3")]
-    pub KEY_3: [u8; 4],
-    #[serde(rename = "k4")]
-    pub KEY_4: [u8; 4],
-    #[serde(rename = "k5")]
-    pub KEY_5: [u8; 4],
+    #[serde(rename = "ks")]
+    pub KeyConfigs: [KeyRTConfig; 4],
     #[serde(rename = "jet")]
     pub JittersEliminationTime: u16,
-    /// 0 / 1   0是按下按键先消抖后发码
-    #[serde(rename = "jm")]
-    pub JittersEliminationMode: u8,
-    #[serde(rename = "fkw")]
-    pub FORCE_KEY_SWITCH: u8,
-    #[serde(rename = "td", skip_serializing_if = "Option::is_none")]
-    pub KeyTriggerDegree: Option<u8>,
-    #[serde(rename = "rd", skip_serializing_if = "Option::is_none")]
-    pub KeyReleaseDegree: Option<u8>,
-    #[serde(rename = "dz", skip_serializing_if = "Option::is_none")]
-    pub DeadZone: Option<u8>,
-    #[serde(rename = "r", skip_serializing_if = "Option::is_none")]
-    pub KeyScanRate: Option<u8>,
+    #[serde(rename = "cr")]
+    pub ContinuousReport: bool,
+    #[serde(rename = "kf")]
+    pub KalmanFilter: bool,
 }
 
 /// speed 0-10
@@ -49,65 +45,18 @@ pub struct KEYBOARD {
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[allow(non_snake_case)]
 pub struct LED {
-    #[serde(rename = "1c")]
-    pub LED1_COLOR: u32,
-    #[serde(rename = "2c")]
-    pub LED2_COLOR: u32,
-    #[serde(rename = "3c")]
-    pub LED3_COLOR: u32,
-    #[serde(rename = "4c")]
-    pub LED4_COLOR: u32,
-    #[serde(rename = "slhc")]
-    pub LED_SPEED_LIGHT_HIGH_COLOR: u32,
-    #[serde(rename = "sllc")]
-    pub LED_SPEED_LIGHT_LOW_COLOR: u32,
+    #[serde(rename = "c")]
+    pub LED_COLORS: [u32; 4],
     #[serde(rename = "km")]
     pub LED_KEY_MODE: u8,
-    #[serde(rename = "bm")]
-    pub LED_BTM_MODE: u8,
-    #[serde(rename = "lmx")]
-    pub LED_LUM_MAX: u8,
-    #[serde(rename = "lbmn")]
-    pub LED_LUM_BREATH_MIN: u8,
-    #[serde(rename = "lslmn")]
-    pub LED_LUM_SPEED_LIGHT_MIN: u8,
-    #[serde(rename = "lptgmn")]
-    pub LED_LUM_PUSH_TO_GLOW_MIN: u8,
-    /// 颜色变化的间隔时间
-    #[serde(rename = "rcts")]
-    pub LED_RAINBOW_CYCLE_TRANSITION_SPEED: u16,
-    /// 每个颜色的停留时间
-    #[serde(rename = "rckt")]
-    pub LED_RAINBOW_CYCLE_KEEP_TIME: u16,
-    #[serde(rename = "blmxkt")]
-    pub LED_BREATH_LUM_MAX_KEEP_TIME: u16,
-    #[serde(rename = "blmnkt")]
-    pub LED_BREATH_LUM_MIN_KEEP_TIME: u16,
-    #[serde(rename = "blts")]
-    pub LED_BREATH_LUM_TRANSITION_SPEED: u16,
-    #[serde(rename = "ptgts")]
-    pub LED_PUSH_TO_GLOW_TRANSITION_SPEED: u16,
-    #[serde(rename = "slts")]
-    pub LED_SPEED_LIGHT_TRANSITION_SPEED: u16,
-    #[serde(rename = "slsl")]
-    pub LED_SPEED_LIGHT_STEP_LENGTH: u16,
-    /// 2-10
-    #[serde(rename = "rbsc1")]
-    pub LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: u16,
-    #[serde(rename = "rbsc2")]
-    pub LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: u16,
-    #[serde(rename = "dsit")]
-    pub DEVICE_SLEEP_IDLE_TIME: u16,
-    #[serde(rename = "llsm")]
-    pub LED_LUM_SLEEP_MAX: u8,
-    #[serde(rename = "lksm")]
-    pub LED_KEY_SLEEP_MODE: u8,
-    #[serde(rename = "lbsm")]
-    pub LED_BTM_SLEEP_MODE: u8,
+    #[serde(rename = "mb")]
+    pub LED_MAX_BRIGHTNESS: u8,
+    #[serde(rename = "st")]
+    pub LED_SLEEP_TIME: u16,
 }
 
 #[repr(C)]
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 #[allow(non_snake_case)]
 pub struct CONFIG {
     #[serde(rename = "k")]
@@ -130,84 +79,80 @@ impl CONFIG {
     }
 }
 
-impl KEYBOARD {
-    fn default(is_wooting: bool) -> Self {
-        if is_wooting {
-            Self {
-                KEY_1: KeyCode::Z.to_report().into(),
-                KEY_2: KeyCode::X.to_report().into(),
-                KEY_3: KeyCode::Escape.to_report().into(),
-                KEY_4: KeyCode::F2.to_report().into(),
-                KEY_5: KeyCode::Grave.to_report().into(),
-                JittersEliminationTime: 5,
-                JittersEliminationMode: 1,
-                FORCE_KEY_SWITCH: false as u8,
-                KeyReleaseDegree: Some(25),
-                KeyTriggerDegree: Some(25),
-                DeadZone: Some(20),
-                KeyScanRate: Some(0)
-            }
-        } else {
-            Self {
-                KEY_1: KeyCode::Z.to_report().into(),
-                KEY_2: KeyCode::X.to_report().into(),
-                KEY_3: KeyCode::Escape.to_report().into(),
-                KEY_4: KeyCode::F2.to_report().into(),
-                KEY_5: KeyCode::Grave.to_report().into(),
-                JittersEliminationTime: 20,
-                JittersEliminationMode: 1,
-                FORCE_KEY_SWITCH: false as u8,
-                KeyReleaseDegree: None,
-                KeyTriggerDegree: None,
-                DeadZone: None,
-                KeyScanRate: None
-            }
+impl Default for KeyRTConfig {
+    fn default() -> Self {
+        Self {
+            PressPercentage: 20,
+            ReleasePercentage: 25,
+            DeadZone: 10,
+            KeyData: [0; 6],
+        }
+    }
+}
+
+impl KeyRTConfig {
+    pub fn with_key(key: KeyCode) -> Self {
+        Self {
+            KeyData: key.to_report().into(),
+            ..Default::default()
+        }
+    }
+}
+
+impl Default for KEYBOARD {
+    fn default() -> Self {
+        let key_configs = [
+            KeyRTConfig::with_key(KeyCode::Z),
+            KeyRTConfig::with_key(KeyCode::X),
+            KeyRTConfig::with_key(KeyCode::Grave),
+            KeyRTConfig::with_key(KeyCode::Escape),
+            // KeyRTConfig::default(),
+            // KeyRTConfig::default(),
+            // KeyRTConfig::default(),
+        ];
+        Self {
+            KeyConfigs: key_configs,
+            ContinuousReport: false,
+            KalmanFilter: true,
+            JittersEliminationTime: 15 * 8,
+        }
+    }
+}
+
+impl From<KeyConfig> for KeyRTConfig {
+    fn from(cfg: KeyConfig) -> Self {
+        Self {
+            PressPercentage: cfg.press_percentage,
+            ReleasePercentage: cfg.release_percentage,
+            DeadZone: cfg.dead_zone,
+            KeyData: cfg.key_data.into_iter().collect::<KbReport>().into(),
         }
     }
 }
 
 impl From<Config> for CONFIG {
     fn from(cfg: Config) -> Self {
+        let mut led_colors = [0u32; 4];
+        for i in 0..4 {
+            led_colors[i] = cfg.led_colors[i].into_u32::<Argb>();
+        }
+
+        let mut key_configs = [KeyRTConfig::default(); 4];
+        for i in 0..4 {
+            key_configs[i] = cfg.keys[i].into();
+        }
+
         Self {
             Key: KEYBOARD {
-                KEY_1: cfg.key_1.into_iter().collect::<KbReport>().into(),
-                KEY_2: cfg.key_2.into_iter().collect::<KbReport>().into(),
-                KEY_3: cfg.key_3.into_iter().collect::<KbReport>().into(),
-                KEY_4: cfg.key_4.into_iter().collect::<KbReport>().into(),
-                KEY_5: cfg.key_5.into_iter().collect::<KbReport>().into(),
-                JittersEliminationTime: cfg.keyboard_jitters_elimination_time,
-                JittersEliminationMode: cfg.keyboard_jitters_elimination_mode as u8,
-                FORCE_KEY_SWITCH: cfg.force_key_switch.into(),
-                KeyReleaseDegree: cfg.key_release_degree,
-                KeyTriggerDegree: cfg.key_trigger_degree,
-                DeadZone: cfg.dead_zone,
-                KeyScanRate: cfg.key_scan_rate,
+                KeyConfigs: key_configs,
+                ContinuousReport: cfg.continuous_report,
+                KalmanFilter: cfg.kalman_filter,
+                JittersEliminationTime: cfg.jitters_elimination_time,
             },
             LED: LED {
-                LED1_COLOR: cfg.led_color_l.into_u32::<Argb>(),
-                LED2_COLOR: cfg.led_color_r.into_u32::<Argb>(),
-                LED3_COLOR: cfg.led_color_btm_r.into_u32::<Argb>(),
-                LED4_COLOR: cfg.led_color_btm_l.into_u32::<Argb>(),
-                LED_SPEED_LIGHT_HIGH_COLOR: cfg.speed_press_high_color.into_u32::<Argb>(),
-                LED_SPEED_LIGHT_LOW_COLOR: cfg.speed_press_low_color.into_u32::<Argb>(),
+                LED_COLORS: led_colors,
                 LED_KEY_MODE: cfg.lighting_mode_key as u8,
-                LED_BTM_MODE: cfg.lighting_mode_btm as u8,
-                LED_LUM_MAX: cfg.maximum_brightness,
-                LED_LUM_BREATH_MIN: cfg.breath_minimum_brightness,
-                LED_LUM_SPEED_LIGHT_MIN: cfg.speed_press_minimum_brightness,
-                LED_LUM_PUSH_TO_GLOW_MIN: cfg.press_light_minimum_brightness,
-                LED_RAINBOW_CYCLE_TRANSITION_SPEED: cfg.rainbow_light_switching_interval.as_millis() as u16,    // 两个同值
-                LED_RAINBOW_CYCLE_KEEP_TIME: cfg.rainbow_light_switching_interval.as_millis() as u16,
-                LED_BREATH_LUM_MAX_KEEP_TIME: cfg.breath_maximum_light_duration.as_millis() as u16,
-                LED_BREATH_LUM_MIN_KEEP_TIME: cfg.breath_minimum_light_duration.as_millis() as u16,
-                LED_BREATH_LUM_TRANSITION_SPEED: cfg.breath_interval.as_millis() as u16,
-                LED_PUSH_TO_GLOW_TRANSITION_SPEED: cfg.press_light_duration.as_millis() as u16,
-                LED_SPEED_LIGHT_TRANSITION_SPEED: cfg.speed_press_trans_speed.as_millis() as u16,
-                LED_SPEED_LIGHT_STEP_LENGTH: cfg.speed_press_step,
-                DEVICE_SLEEP_IDLE_TIME: cfg.device_sleep_idle_time.as_secs() as u16,
-                LED_LUM_SLEEP_MAX: cfg.sleep_mode_maximum_brightness,
-                LED_KEY_SLEEP_MODE: cfg.sleep_lighting_mode_key as u8,
-                LED_BTM_SLEEP_MODE: cfg.sleep_lighting_mode_btm as u8,
+                LED_MAX_BRIGHTNESS: cfg.max_brightness,
                 ..Default::default()
             },
         }
@@ -216,42 +161,17 @@ impl From<Config> for CONFIG {
 
 impl Default for LED {
     fn default() -> Self {
+        let led_colors = [
+            Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            Srgb::new(255, 255, 255).into_u32::<Argb>(),
+        ];
         Self {
-            LED1_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            LED2_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            LED3_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            LED4_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            LED_SPEED_LIGHT_HIGH_COLOR: Srgb::new(255, 0, 0).into_u32::<Argb>(),
-            LED_SPEED_LIGHT_LOW_COLOR: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            LED_KEY_MODE: LightingMode::PressAndLight as u8,
-            LED_BTM_MODE: LightingMode::RainbowGradientSwitch as u8,
-            LED_LUM_MAX: 80,
-            LED_LUM_BREATH_MIN: 0,
-            LED_LUM_SPEED_LIGHT_MIN: 100,
-            LED_LUM_PUSH_TO_GLOW_MIN: 0,
-            LED_RAINBOW_CYCLE_TRANSITION_SPEED: 25,
-            LED_RAINBOW_CYCLE_KEEP_TIME: 25,
-            LED_BREATH_LUM_MAX_KEEP_TIME: 100,
-            LED_BREATH_LUM_MIN_KEEP_TIME: 0,
-            LED_BREATH_LUM_TRANSITION_SPEED: 15,
-            LED_PUSH_TO_GLOW_TRANSITION_SPEED: 1,
-            LED_SPEED_LIGHT_TRANSITION_SPEED: 20,
-            LED_SPEED_LIGHT_STEP_LENGTH: 50,
-            LED_RAINBOW_BREATH_SWITCH_COLOR_COUNT: 2,
-            LED_RAINBOW_BREATH_SYNC_COLOR_COUNT: 2,
-            DEVICE_SLEEP_IDLE_TIME: 120,
-            LED_LUM_SLEEP_MAX: 100,
-            LED_KEY_SLEEP_MODE: LightingMode::Off as u8,
-            LED_BTM_SLEEP_MODE: LightingMode::Off as u8,
-        }
-    }
-}
-
-impl CONFIG {
-    pub fn default(is_wooting: bool) -> Self {
-        Self {
-            Key: KEYBOARD::default(is_wooting),
-            LED: LED::default(),
+            LED_COLORS: led_colors,
+            LED_KEY_MODE: LightingMode::Solid as u8,
+            LED_MAX_BRIGHTNESS: 10,
+            LED_SLEEP_TIME: 120,
         }
     }
 }

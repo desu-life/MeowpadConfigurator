@@ -1,14 +1,14 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeBuildCommand": "yarn build",
-    "beforeDevCommand": "yarn dev",
+    "beforeBuildCommand": "pnpm run build",
+    "beforeDevCommand": "pnpm run dev",
     "devPath": "http://localhost:5777",
     "distDir": "../dist"
   },
   "package": {
     "productName": "MeowpadConfigurator",
-    "version": "0.3.1"
+    "version": "1.0.1"
   },
   "tauri": {
     "allowlist": {

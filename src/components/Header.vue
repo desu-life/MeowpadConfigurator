@@ -6,16 +6,15 @@ import { Type } from "naive-ui/es/button/src/interface"
 import { useStore } from '@/store'
 import { useI18n } from "vue-i18n";
 import { setI18nLanguage, i18n } from '@/locales/index'
-import { IConfig, IDevice } from "@/interface";
-import { Rgb2Hex, Hex2Rgb } from '@/utils';
+import { IConfig, IDevice, IError, IKeyRTStatus, KeyCode, Toggle } from "@/interface";
+import { Rgb2Hex, Hex2Rgb, getErrorMsg } from '@/utils';
 import { useDialog } from 'naive-ui'
 
 
 const { t } = useI18n();
 const dialog = useDialog()
 const store = useStore()
-const status = ref<Type | undefined>(undefined)
-const status_str = ref(t("device_disconnected"))
+store.status_str = t("device_disconnected")
 const show_calibrate_msg = ref(false)
 
 const state = ref({
@@ -34,48 +33,49 @@ const state = ref({
 
 function handleChange(e: string) {
   setI18nLanguage(i18n, e)
-  status_str.value = t("device_disconnected")
+  store.status_str = t("device_disconnected")
 }
 
 async function connect() {
   store.loading = true
-  status.value = "warning"
-  status_str.value = t('connecting')
+  store.status = "warning"
+  store.status_str = t('connecting')
   try {
     const res = await invoke("connect")
     let info = await check_device_info()
     console.table(info)
     store.device_info = info
-    store.is_hs = await invoke("is_hs")
 
-    let firmware_version = store.is_hs ? await invoke("get_firmware_version_hs") : await invoke("get_firmware_version")
-    if (store.device_info!.version != firmware_version) {
-      store.need_update_firmware = true // 需要更新固件
-      store.loading = false
-      status.value = "error"
-      status_str.value = t('bad_firmware_version', { version: info!.version })
-      return
-    }
+    // let firmware_version = await invoke("get_firmware_version_hs")
+    // if (store.device_info!.version != firmware_version) {
+    //   store.need_update_firmware = true // 需要更新固件
+    //   store.loading = false
+    //   store.status = "error"
+    //   store.status_str = t('bad_firmware_version', { version: info!.version })
+    //   return
+    // }
 
     // 不管怎么样总之是连上了
     store.connected = true
 
-    status.value = "success"
+    store.status = "success"
     if (info === undefined) {
-      status_str.value = t('connected')
+      store.status_str = t('connected')
     } else {
-      status_str.value = t('connected_device', { version: info!.version })
+      store.status_str = t('connected_device', { version: info!.version })
     }
   } catch (e) {
     store.connected = false
-    status.value = "error"
-    status_str.value = t('connection_broke', { e: e })
+    store.status = "error"
+    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
     console.error(e)
   }
-  if (store.debug_mode)
-    await get_config_raw()
-  else
-    await get_config()
+  if (store.connected) {
+    if (store.developer_mode)
+      await get_config_raw()
+    else
+      await get_config()
+  }
   store.loading = false
 }
 
@@ -85,8 +85,8 @@ async function check_device_info(): Promise<IDevice | undefined> {
     return res
   } catch (e) {
     store.connected = false
-    status.value = "error"
-    status_str.value = t('unknown_device_e', { e: e })
+    store.status = "error"
+    store.status_str = t('unknown_device_e', { e: getErrorMsg(t, e as IError) })
     console.error(e)
   }
 }
@@ -97,26 +97,32 @@ async function calibration_key() {
     await invoke("calibration_key")
   } catch (e) {
     store.connected = false
-    status.value = "error"
-    status_str.value = t('connection_broke', { e: e })
+    store.status = "error"
+    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
     console.error(e)
     store.loading = false
     return
   }
   store.loading = false
   show_calibrate_msg.value = true
-  try {
-    await invoke("get_calibration_key_result", { "timeout": -1 })
-  } catch (e) {
-    status.value = "error"
-    status_str.value = t('cali_failed', { e: e })
-    console.error(e)
+  setTimeout(() => {
     show_calibrate_msg.value = false
-    return
+  }, 3000)
+}
+
+function store_config(res: IConfig) {
+  store.led_colors = []
+  for (let i = 0; i < res.led_colors.length; i++) {
+    store.led_colors.push(Rgb2Hex(res.led_colors[i]))
   }
-  status.value = "success"
-  status_str.value = t('cali_finished')
-  show_calibrate_msg.value = false
+  store.jitters_elimination_time = res.jitters_elimination_time / 8
+  store.continuous_report = res.continuous_report == true ? Toggle.On : Toggle.Off
+  store.kalman_filter = res.kalman_filter == true ? Toggle.On : Toggle.Off
+  store.max_brightness = Math.floor(res.max_brightness * 2)
+  store.config = res
+  for (let i = 0; i < store.config.keys.length; i++) {
+    store.config.keys[i].key_data = store.config.keys[i].key_data.filter(k => k != KeyCode.None)
+  }
 }
 
 async function get_default_config() {
@@ -124,20 +130,12 @@ async function get_default_config() {
   try {
     const res: IConfig = await invoke("get_default_config")
     console.dir(res)
-    store.led_color_l = Rgb2Hex(res.led_color_l)
-    store.led_color_r = Rgb2Hex(res.led_color_r)
-    store.led_color_btm_l = Rgb2Hex(res.led_color_btm_l)
-    store.led_color_btm_r = Rgb2Hex(res.led_color_btm_r)
-    store.speed_press_high_color = Rgb2Hex(res.speed_press_high_color)
-    store.speed_press_low_color = Rgb2Hex(res.speed_press_low_color)
-    store.breath_speed = 20 - res.breath_interval
-    store.rainbow_light_switching_speed = 30 - res.rainbow_light_switching_interval
-    store.config = res
-    status.value = "success"
-    status_str.value = t('reset_success')
+    store_config(res)
+    store.status = "success"
+    store.status_str = t('reset_success')
   } catch (e) {
-    status.value = "error"
-    status_str.value = t('reset_failed', { e: e })
+    store.status = "error"
+    store.status_str = t('reset_failed', { e: getErrorMsg(t, e as IError) })
     console.error(e)
   }
   store.loading = false
@@ -148,28 +146,17 @@ async function get_config() {
   try {
     const res: IConfig = await invoke("get_config")
     console.dir(res)
-    store.config = res
-    store.led_color_l = Rgb2Hex(res.led_color_l)
-    store.led_color_r = Rgb2Hex(res.led_color_r)
-    store.led_color_btm_l = Rgb2Hex(res.led_color_btm_l)
-    store.led_color_btm_r = Rgb2Hex(res.led_color_btm_r)
-    store.speed_press_high_color = Rgb2Hex(res.speed_press_high_color)
-    store.speed_press_low_color = Rgb2Hex(res.speed_press_low_color)
-    store.breath_speed = 20 - res.breath_interval
-    store.rainbow_light_switching_speed = 30 - res.rainbow_light_switching_interval
+    store_config(res)
     if (store.version_info !== undefined) {
-      if (store.is_hs)
-        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
-      else
-        store.version_info.latest_firmware_download_url = store.version_info.v1_latest_firmware_download_url
+      store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
     }
   } catch (e) {
-    const es = e as string
-    status.value = "error"
-    status_str.value = es
+    const es = e as IError
+    store.status = "error"
+    store.status_str = getErrorMsg(t, e as IError)
     console.error(es)
-    if (es.includes("Semantic") || es.includes("Syntax") || es.includes("Unexpected")) {
-      status_str.value = t('device_config_error')
+    if (es.type === "Meowpad" && es.data.toString().includes("config_")) {
+      store.status_str = t('device_config_error')
       setTimeout(async () => {
         await get_default_config()
         await sync_config()
@@ -185,18 +172,15 @@ async function get_config_raw() {
     const res: string = await invoke("get_raw_config")
     store.raw_config = res
     if (store.version_info !== undefined) {
-      if (store.is_hs)
-        store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
-      else
-        store.version_info.latest_firmware_download_url = store.version_info.v1_latest_firmware_download_url
+      store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
     }
   } catch (e) {
-    const es = e as string
-    status.value = "error"
-    status_str.value = es
+    const es = e as IError
+    store.status = "error"
+    store.status_str = getErrorMsg(t, e as IError)
     console.error(es)
-    if (es.includes("Semantic") || es.includes("Syntax") || es.includes("Unexpected")) {
-      status_str.value = t('device_config_error')
+    if (es.type === "Meowpad" && es.data.toString().includes("config_")) {
+      store.status_str = t('device_config_error')
       setTimeout(async () => {
         await get_default_config()
         await sync_config()
@@ -209,25 +193,40 @@ async function get_config_raw() {
 
 async function sync_config() {
   store.loading = true
-  status.value = "warning"
-  status_str.value = t('syncing_config')
+  store.status = "warning"
+  store.status_str = t('syncing_config')
   try {
-    store.config!.led_color_l = Hex2Rgb(store.led_color_l!)
-    store.config!.led_color_r = Hex2Rgb(store.led_color_r!)
-    store.config!.led_color_btm_l = Hex2Rgb(store.led_color_btm_l!)
-    store.config!.led_color_btm_r = Hex2Rgb(store.led_color_btm_r!)
-    store.config!.speed_press_high_color = Hex2Rgb(store.speed_press_high_color!)
-    store.config!.speed_press_low_color = Hex2Rgb(store.speed_press_low_color!)
-    store.config!.breath_interval = 20 - store.breath_speed!
-    store.config!.rainbow_light_switching_interval = 30 - store.rainbow_light_switching_speed!
+    store.config!.led_colors = []
+    for (let i = 0; i < store.led_colors!.length; i++) {
+      store.config!.led_colors.push(Hex2Rgb(store.led_colors![i]))
+    }
+
+    for (let i = 0; i < store.config!.keys.length; i++) {
+      while (store.config!.keys[i].key_data.length < 6) {
+        store.config!.keys[i].key_data.push(KeyCode.None)
+      }
+
+      while (store.config!.keys[i].key_data.length > 6) {
+        store.config!.keys[i].key_data.pop()
+      }
+    }
+    store.config!.jitters_elimination_time = Math.round(store.jitters_elimination_time * 8)
+    store.config!.continuous_report = store.continuous_report == Toggle.On ? true : false
+    store.config!.kalman_filter = store.kalman_filter == Toggle.On ? true : false
+    store.config!.max_brightness = Math.round(store.max_brightness / 2)
+
     await invoke('save_config', { config: store.config })
-    status.value = "success"
-    status_str.value = t('sync_success')
+    store.status = "success"
+    store.status_str = t('sync_success')
+
+    for (let i = 0; i < store.config!.keys.length; i++) {
+      store.config!.keys[i].key_data = store.config!.keys[i].key_data.filter(k => k != KeyCode.None)
+    }
   } catch (e) {
     store.config = undefined
     store.connected = false
-    status.value = "error"
-    status_str.value = t('sync_error', { e: e })
+    store.status = "error"
+    store.status_str = t('sync_error', { e: getErrorMsg(t, e as IError) })
     console.error(e)
   }
   store.loading = false
@@ -235,24 +234,30 @@ async function sync_config() {
 
 async function sync_config_raw() {
   store.loading = true
-  status.value = "warning"
-  status_str.value = t('syncing_config')
+  store.status = "warning"
+  store.status_str = t('syncing_config')
   try {
     await invoke('save_raw_config', { config: store.raw_config })
-    status.value = "success"
-    status_str.value = t('sync_success')
+    store.status = "success"
+    store.status_str = t('sync_success')
   } catch (e) {
     store.raw_config = undefined
     store.connected = false
-    status.value = "error"
-    status_str.value = t('sync_error', { e: e })
+    store.status = "error"
+    store.status_str = t('sync_error', { e: getErrorMsg(t, e as IError) })
     console.error(e)
   }
   store.loading = false
 }
 
+function exit_developer_mode() {
+  store.developer_mode = false
+  store.connected = false
+  store.status = undefined
+  store.status_str = t("device_disconnected")
+}
 
-function debug() {
+function developer_mode() {
   dialog.warning({
     title: t('warning'),
     content: t('developer_warning'),
@@ -260,53 +265,30 @@ function debug() {
     negativeText: t('unconfirm'),
     maskClosable: false,
     onPositiveClick: () => {
-      store.debug_mode = true
+      store.developer_mode = true
     },
   })
 }
 
 const regex = /(\d)\/d:(\d*),f:(\d*)\*/gm;
 
-async function debug_mode() {
-  try {
-    await invoke("debug_mode")
-    store.in_debug = true
-    status.value = "warning"
-    status_str.value = t('enter_debug_mode')
-    const unlisten_debug = await listen('debug', (event) => {
-      // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
-      // event.payload is the payload object
-      console.log(event.event, event.payload)
-      store.debug_str = event.payload as string;
-    })
-    const unlisten_exit_debug = await listen('exit-debug', (event) => {
-      unlisten_debug()
-      unlisten_exit_debug()
-      store.connected = false
-      store.in_debug = false
-      store.raw_config = undefined
-      status.value = undefined
-      status_str.value = t("device_disconnected")
-    })
-  } catch (e) {
-    store.connected = false
-    store.in_debug = false
-    status.value = "error"
-    status_str.value = t('connection_broke', { e: e })
-    console.error(e)
-  }
+
+
+async function debug() {
+  store.debug_mode = !store.debug_mode
+
 }
 
 async function erase_firmware() {
   try {
     await invoke("erase_firmware")
     store.connected = false
-    status.value = undefined
-    status_str.value = t("device_disconnected")
+    store.status = undefined
+    store.status_str = t("device_disconnected")
   } catch (e) {
     store.connected = false
-    status.value = "error"
-    status_str.value = t('connection_broke', { e: e })
+    store.status = "error"
+    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
     console.error(e)
   }
 }
@@ -315,36 +297,70 @@ async function erase_firmware() {
 
 <template>
   <n-modal v-model:show="show_calibrate_msg" transform-origin="center">
-    <n-card style="width: fit-content;border-radius: 8px;align-items: center;" :bordered="false"
-      :title="$t('cali_msg')" role="dialog" aria-modal="true">
+    <n-card style="width: fit-content;border-radius: 8px;align-items: center;" :bordered="false" :title="$t('cali_msg')"
+      role="dialog" aria-modal="true">
     </n-card>
   </n-modal>
-  <div class="justify-self-start h-full flex items-center">
-    <n-select v-if="!store.connected" class="ml-4" @update:value="handleChange" v-model:value="state.currentLang" placeholder="Language" :options="state.options"></n-select>
-      <n-button class="ml-4 pointer-events-none" :loading="store.loading" :type="status">{{ status_str }}</n-button>
+  <div class="left">
+    <n-select v-if="!store.connected" class="ml" @update:value="handleChange" v-model:value="state.currentLang"
+      placeholder="Language" :options="state.options"></n-select>
+    <n-button class="ml" id="msgbox" :loading="store.loading" :type="store.status">{{ store.status_str }}</n-button>
   </div>
-  <div class="justify-self-end h-full flex items-center">
-    <div v-if="store.debug_mode">
+  <div class="right">
+    <div v-if="store.developer_mode">
       <div v-if="!store.connected">
-        <n-button class="mr-4" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
       </div>
       <div v-else>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug" @click="debug_mode">{{ $t('debug_mode') }}</n-button>
-        <n-button class="mr-4" :disabled="store.loading || store.in_debug || !store.can_sync"
-          @click="sync_config_raw">{{ $t('sync_config') }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="debug">
+        {{ store.debug_mode ? $t('exit') : t('debug_mode') }}
+        </n-button>
+        <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
+        <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{
+          $t('sync_config') }}</n-button>
+          <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
       </div>
     </div>
     <div v-else>
       <div v-if="!store.connected">
-        <n-button class="mr-4" :disabled="store.loading" @click="debug">{{ t("developer_mode") }}</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
       </div>
       <div v-else>
-        <n-button class="mr-4" :disabled="store.loading" v-if="store.is_hs" @click="calibration_key">{{ $t('cali_device') }}</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="get_default_config">{{ $t('default_config') }}</n-button>
-        <n-button class="mr-4" :disabled="store.loading" @click="sync_config">{{ $t('sync_config') }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device')
+        }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="get_default_config">{{ $t('default_config') }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="sync_config">{{ $t('sync_config') }}</n-button>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped lang="scss">
+.left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: row;
+}
+
+.mr {
+  margin-right: 1rem;
+}
+.ml {
+  margin-left: 1rem;
+}
+
+#msgbox {
+  pointer-events: none;
+}
+</style>
+

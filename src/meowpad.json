@@ -1,0 +1,9 @@
+[
+  [
+    { "name": "Z", "width": 1, "index": 0 },
+    { "name": "X", "width": 1, "index": 1 },
+    { "name": ".", "width": 1, "index": 2 },
+    { "width": 0.5 },
+    { "name": "Esc", "width": 1, "index": 3 }
+  ]
+]

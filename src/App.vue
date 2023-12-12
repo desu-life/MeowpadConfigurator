@@ -52,11 +52,11 @@ onMounted(async () => {
     :theme-overrides="theme == 'dark' ? null : lightThemeOverrides">
     <Application>
       <n-layout>
-        <n-layout-header class="grid grid-flow-col justify-items-stretch header">
+        <n-layout-header class="header">
           <Header />
         </n-layout-header>
         <n-layout-content class="main">
-          <div class="flex justify-center items-center h-full" id="main">
+          <div id="main">
             <Main />
           </div>
         </n-layout-content>
@@ -71,10 +71,22 @@ $header-height: 56px;
 
 .header {
   height: $header-height;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .main {
   height: calc(100vh - $header-height);
+}
+
+#main {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
 

@@ -1,8 +1,11 @@
+
+
 pub mod cbor;
 mod config;
 pub mod keycode;
 mod meowpad;
 mod packet;
+pub mod error;
 
 pub use crate::config::*;
 pub use crate::meowpad::*;

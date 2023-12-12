@@ -17,9 +17,10 @@ const messages = {
 function setupI18n() {
     const i18n = createI18n({
         legacy: false,
-        messages: messages
+        messages: messages,
+        locale: 'zh',
+        fallbackLocale: 'zh',
     })
-    setI18nLanguage(i18n, "zh")
     return i18n
 }
 

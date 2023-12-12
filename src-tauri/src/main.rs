@@ -6,7 +6,7 @@
 use anyhow::{anyhow, Result as AnyResult};
 use hidapi_rusb::HidApi;
 use log::*;
-use meowpad::*;
+use meowpad::{Config, Meowpad, KeyRTStatus};
 use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use once_cell::sync::Lazy;
 use reqwest::Client;
@@ -24,6 +24,11 @@ use std::time::Duration;
 use tauri::api::path;
 use tauri::Manager;
 use tauri::Window;
+
+mod consts;
+mod error;
+use consts::*;
+use error::{Error, Result};
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
@@ -75,68 +80,52 @@ fn init_logger(default_level: &str) {
 }
 
 #[tauri::command]
-async fn calibration_key(_app: tauri::AppHandle) -> Result<(), String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.calibration_key()?;
-        Ok(())
-    }()
-    .map_err(|e| format!("{}", e))
+async fn calibration_key(_app: tauri::AppHandle) -> Result<()> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.calibration_key()?;
+    Ok(())
+}
+
+// #[tauri::command]
+// async fn get_calibration_key_result(_app: tauri::AppHandle, timeout: i32) -> Result<(), String> {
+//     || -> AnyResult<_> {
+//         let mut _d = DEVICE.lock().unwrap();
+//         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+//         d.get_calibration_key_result(timeout)?;
+//         Ok(())
+//     }()
+//     .map_err(|e| format!("{}", e))
+// }
+
+// #[tauri::command]
+// async fn get_auto_config(_app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+//     || -> AnyResult<_> {
+//         let mut _d = DEVICE.lock().unwrap();
+//         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
+//         let res = d.get_auto_config()?;
+//         Ok(json!({
+//             "KeyTriggerDegree": res.0,
+//             "KeyReleaseDegree": res.1,
+//             "DeadZone": res.2,
+//         }))
+//     }()
+//     .map_err(|e| format!("{}", e))
+// }
+
+#[tauri::command]
+async fn get_hall_value(_window: Window) -> Result<[KeyRTStatus; 4]> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    Ok(d.debug()?)
 }
 
 #[tauri::command]
-async fn get_calibration_key_result(_app: tauri::AppHandle, timeout: i32) -> Result<(), String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.get_calibration_key_result(timeout)?;
-        Ok(())
-    }()
-    .map_err(|e| format!("{}", e))
-}
-
-
-#[tauri::command]
-async fn get_auto_config(_app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        let res = d.get_auto_config()?;
-        Ok(json!({
-            "KeyTriggerDegree": res.0,
-            "KeyReleaseDegree": res.1,
-            "DeadZone": res.2,
-        }))
-    }()
-    .map_err(|e| format!("{}", e))
-}
-
-#[tauri::command]
-async fn debug_mode(window: Window) {
-    thread::spawn(move || {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败")).unwrap();
-        let mut meowpad = d.debug_mode().unwrap();
-        while let Some(pkt) = meowpad.next() {
-            if !pkt.is_empty() {
-                let cstr = CStr::from_bytes_until_nul(pkt).unwrap();
-                window.emit("debug", cstr.to_string_lossy()).unwrap();
-            }
-        }
-        window.emit("exit-debug", 0).unwrap();
-    });
-}
-
-#[tauri::command]
-async fn erase_firmware(_app: tauri::AppHandle) -> Result<(), String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.erase_firmware()?;
-        Ok(())
-    }()
-    .map_err(|e| format!("{}", e))
+async fn erase_firmware(_app: tauri::AppHandle) -> Result<()> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.erase_firmware()?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -148,96 +137,63 @@ async fn get_default_config(_app: tauri::AppHandle) -> Config {
 }
 
 #[tauri::command]
-async fn get_config(_app: tauri::AppHandle) -> Result<Config, String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.load_config()
-            .map_err(|e| anyhow!("(错误) error, {}", e))?;
-        d.config()
-            .try_into()
-            .map_err(|e| anyhow!("(错误) error, {}", e))
-    }()
-    .map_err(|e| format!("{}", e))
+async fn get_config(_app: tauri::AppHandle) -> Result<Config> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.load_config()?;
+    Ok(d.config().try_into()?)
 }
 
 #[tauri::command]
-async fn get_raw_config(_app: tauri::AppHandle) -> Result<String, String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.load_config()
-            .map_err(|e| anyhow!("(错误) error, {}", e))?;
-        toml::to_string(&d.config()).map_err(|e| anyhow!("错误配置, {}", e))
-    }()
-    .map_err(|e| format!("{}", e))
+async fn get_raw_config(_app: tauri::AppHandle) -> Result<String> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.load_config()?;
+    Ok(toml::to_string::<Config>(&d.config().try_into()?).unwrap())
 }
 
 #[tauri::command]
 async fn check_raw_config(_app: tauri::AppHandle, config: String) -> bool {
-    toml::from_str::<meowpad::cbor::CONFIG>(&config).is_ok()
+    toml::from_str::<meowpad::Config>(&config).is_ok()
 }
 
 #[tauri::command]
-async fn save_raw_config(_app: tauri::AppHandle, config: String) -> Result<(), String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.config = Some(toml::from_str(&config).map_err(|e| anyhow!("错误配置, {}", e))?);
-        d.write_config()?;
-        d.flush()?;
-        Ok(())
-    }()
-    .map_err(|e| format!("{}", e))
+async fn save_raw_config(_app: tauri::AppHandle, config: String) -> Result<()> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.config = Some(toml::from_str::<Config>(&config).expect("错误配置").into());
+    d.write_config()?;
+    Ok(())
 }
 
 #[tauri::command]
-async fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.get_device_name()
-            .map_err(|e| anyhow!("获取设备名时出错, {}", e))?;
-        d.get_firmware_version()
-            .map_err(|e| anyhow!("获取设备版本时出错, {}", e))?;
-        let name = d.device_name.as_ref().unwrap();
-        let version = d.firmware_version.as_ref().unwrap();
-        info!("设备名称：{}", name);
-        info!("固件版本：{}", version);
-        Ok(serde_json::json!({
-            "name": name,
-            "version": version
-        }))
-    }()
-    .map_err(|e| format!("{}", e))
+async fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.get_device_name()?;
+    d.get_firmware_version()?;
+    let name = d.device_name.as_ref().expect("参数错误");
+    let version = d.firmware_version.as_ref().expect("参数错误");
+    info!("设备名称：{}", name);
+    info!("固件版本：{}", version);
+    Ok(serde_json::json!({
+        "name": name,
+        "version": version
+    }))
 }
 
 #[tauri::command]
-async fn save_config(_app: tauri::AppHandle, config: Config) -> Result<(), String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        d.config = Some(config.into());
-        d.write_config()?;
-        d.flush()?;
-        Ok(())
-    }()
-    .map_err(|e| format!("{}", e))
+async fn save_config(_app: tauri::AppHandle, config: Config) -> Result<()> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.config = Some(config.into());
+    d.write_config()?;
+    Ok(())
 }
 
 #[tauri::command]
-async fn is_hs(_app: tauri::AppHandle) -> Result<bool, String> {
-    || -> AnyResult<_> {
-        let mut _d = DEVICE.lock().unwrap();
-        let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-        Ok(d.is_hs)
-    }()
-    .map_err(|e| format!("{}", e))
-}
-
-#[tauri::command]
-async fn get_version(_app: tauri::AppHandle) -> Result<Version, String> {
-    Version::get().await.map_err(|e| format!("{}", e))
+async fn get_version(_app: tauri::AppHandle) -> Result<Version> {
+    Ok(Version::get().await?)
 }
 
 #[tauri::command]
@@ -292,11 +248,11 @@ async fn check_update(window: tauri::Window, version: Version) -> bool {
 }
 
 #[tauri::command]
-async fn connect(_app: tauri::AppHandle) -> Result<(), String> {
-    _connect().map_err(|e| format!("{}", e))
+async fn connect(_app: tauri::AppHandle) -> Result<()> {
+    _connect()
 }
 
-fn _connect() -> AnyResult<()> {
+fn _connect() -> Result<()> {
     info!("开始连接!");
     let found_device = find_device();
 
@@ -308,7 +264,7 @@ fn _connect() -> AnyResult<()> {
         }
         None => {
             warn!("连接失败，无法找到设备");
-            Err(anyhow!("无法找到设备，请尝试重新插拔Meowpad"))
+            Err(error::Error::DeviceNotFound)
         }
     }
 }
@@ -320,28 +276,26 @@ fn find_device() -> Option<Meowpad> {
 
     // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
-    const PID_1: u16 = 0x7490;
-    const PID_2: u16 = 29841;
+    const PID: u16 = 0xFE07;
 
     // 缓存路径
-    let cache_path = path::cache_dir()
-        .map(|mut p| {
-            p.push(".meowkey");
-            p
-        })
-        .unwrap_or_else(|| PathBuf::from(".meowkey"));
+    // let cache_path = path::cache_dir()
+    //     .map(|mut p| {
+    //         p.push(".meowkey");
+    //         p
+    //     })
+    //     .unwrap_or_else(|| PathBuf::from(".meowkey"));
 
     // 迭代设备列表，查找符合条件的设备
     api.device_list().find_map(|d| {
         // 过滤设备
-        if !(d.vendor_id() == VID && (d.product_id() == PID_1 || d.product_id() == PID_2)) {
+        if !(d.vendor_id() == VID && d.product_id() == PID) {
             return None;
         }
 
         // 连接设备
-        let is_hs = d.product_id() == PID_2;
         let device = match d.open_device(api) {
-            Ok(d) => Meowpad::new(d, is_hs, cache_path.clone()),
+            Ok(d) => Meowpad::new(d),
             Err(_) => return None,
         };
 
@@ -392,20 +346,18 @@ pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
     Equal
 }
 
-static VERSION: &str = "0.3.1";
-static FIRMWARE_VERSION_HS: &str = "1.0.0";
-static FIRMWARE_VERSION: &str = "0.1.7";
-
 fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
         use std::backtrace::Backtrace;
-        let emessage = format!(
-            "Unexcepted Error：\n{}\n{}",
-            e,
-            Backtrace::force_capture()
-        );
-        eprintln!("{emessage}");
-        message_dialog!("Meowpad Configurator", &emessage)
+        use better_panic::Settings;
+        let emessage = format!("Unexcepted Error：\n{}\n{}", e, Backtrace::force_capture());
+        // eprintln!("{emessage}");
+        let handler = Settings::debug()
+            .most_recent_first(false)
+            .create_panic_handler();
+        handler(e);
+        message_dialog!("Meowpad Configurator", &emessage);
+        std::process::exit(1);
     }));
 
     init_logger("INFO");
@@ -442,7 +394,7 @@ fn main() -> AnyResult<()> {
             d.get_firmware_version()?;
             info!("设备名称：{:?}", d.device_name);
             info!("固件版本：{:?}", d.firmware_version);
-            d.set_middle_point()?;
+            d.reset_middle_point()?;
             warn!("设置中点")
         }
         "--console" => {
@@ -503,14 +455,11 @@ fn main() -> AnyResult<()> {
                     get_firmware_version,
                     get_firmware_version_hs,
                     calibration_key,
-                    get_calibration_key_result,
-                    debug_mode,
                     erase_firmware,
-                    get_auto_config,
                     get_raw_config,
                     save_raw_config,
                     check_raw_config,
-                    is_hs
+                    get_hall_value
                 ])
                 .run(tauri::generate_context!())
                 .expect("error while running tauri application");

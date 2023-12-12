@@ -8,6 +8,7 @@ import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
 import ColorSetting from '@/components/ColorSetting.vue'
 import DeviceSetting from '@/components/DeviceSetting.vue'
+import Debug from '@/components/Debug.vue'
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -61,19 +62,16 @@ function parsems(value: string) {
   return parseInt(value)
 }
 
-function calcPencentage(index: number) {
-  return ((store.adc_data[index].dyn - store.adc_data[index].min) / (store.adc_data[index].max - store.adc_data[index].min)) * 100
-}
 </script>
 
 <template>
   <n-spin :show="store.loading" style="max-width: 640px;">
-    <div v-if="store.debug_mode" class="debug">
+    <div v-if="store.developer_mode" class="debug">
       <n-alert :title="$t('warning')" type="warning" style="margin-bottom: 10px;">
         {{ $t('developer_warning_2') }} </n-alert>
       <div v-if="store.connected">
-        <div v-if="store.in_debug" style="font-size: large;">
-          {{ store.debug_str }}
+        <div v-if="store.debug_mode">
+          <Debug></Debug>
         </div>
         <div v-else-if="store.raw_config != undefined">
           <n-input type="textarea" v-model:value="store.raw_config" :on-input="check_raw_config" :status="input_status"

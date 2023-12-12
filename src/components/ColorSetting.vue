@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useStore } from '@/store'
-import { LightingMode, KeyCode, jsToHid, IRgb, JitterEliminationMode } from "@/interface";
+import { LightingMode, KeyCode, jsToHid, IRgb } from "@/interface";
 import { Rgb2Hex, Hex2Rgb, IsModifierKey, compareArray } from '@/utils';
 import { useI18n } from "vue-i18n";
 
@@ -13,32 +13,20 @@ const lightingMode = ref(LightingMode.Solid)
 
 const LighingMode = [
   {
-    key: LightingMode.Off,
-    label: t('off')
-  },
-  {
     key: LightingMode.Solid,
     label: t('solid')
   },
   {
-    key: LightingMode.Breath,
-    label: t('breath')
-  },
-  {
-    key: LightingMode.RainbowBreathSync,
+    key: LightingMode.RainbowFlowMode,
     label: t('rainbow_breath_switch')
   },
   {
-    key: LightingMode.RainbowGradientSync,
+    key: LightingMode.RainbowMode,
     label: t('rainbow_gradient_switch')
   },
   {
-    key: LightingMode.PressAndLight,
-    label: t('press_and_light')
-  },
-  {
-    key: LightingMode.SpeedPress,
-    label: t('speed_press')
+    key: LightingMode.PressRadianceMode,
+    label: t('ya-gan-mo-shi')
   }
 ]
 
@@ -60,16 +48,10 @@ function CanCanChangeColor() {
     case LightingMode.Off:
       canChangeColor.value = false
       break
-    case LightingMode.RainbowBreathSync:
+    case LightingMode.RainbowFlowMode:
       canChangeColor.value = false
       break
-    case LightingMode.RainbowGradientSync:
-      canChangeColor.value = false
-      break
-    case LightingMode.RainbowBreathSwitch:
-      canChangeColor.value = false
-      break
-    case LightingMode.RainbowGradientSwitch:
+    case LightingMode.RainbowMode:
       canChangeColor.value = false
       break
     default:
@@ -91,40 +73,40 @@ function CanCanChangeColor() {
       <n-grid :cols="20" :x-gap="20">
         <n-gi :span="5">
           <n-collapse-transition :show="canChangeColor">
-            <n-form-item :label="$t('led_color_l')" path="led_color_l">
-              <n-color-picker v-model:value="store.led_color_l" :show-alpha="false" :modes="['hex']" />
+            <n-form-item :label="$t('led_color_num', { num: 'K1' })" path="led_colors_0">
+              <n-color-picker v-model:value="store.led_colors![0]" :show-alpha="false" :modes="['hex']" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="5">
           <n-collapse-transition :show="canChangeColor">
-            <n-form-item :label="$t('led_color_r')" path="led_color_r">
-              <n-color-picker v-model:value="store.led_color_r" :show-alpha="false" :modes="['hex']" />
+            <n-form-item :label="$t('led_color_num', { num: 'K2' })" path="led_colors_1">
+              <n-color-picker v-model:value="store.led_colors![1]" :show-alpha="false" :modes="['hex']" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="5">
           <n-collapse-transition :show="canChangeColor">
-            <n-form-item :label="$t('led_color_btm_l')" path="led_color_l">
-              <n-color-picker v-model:value="store.led_color_btm_l" :show-alpha="false" :modes="['hex']" />
+            <n-form-item :label="$t('led_color_num', { num: 'K3' })" path="led_colors_2">
+              <n-color-picker v-model:value="store.led_colors![2]" :show-alpha="false" :modes="['hex']" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="5">
           <n-collapse-transition :show="canChangeColor">
-            <n-form-item :label="$t('led_color_btm_r')" path="led_color_r">
-              <n-color-picker v-model:value="store.led_color_btm_r" :show-alpha="false" :modes="['hex']" />
+            <n-form-item :label="$t('led_color_num', { num: 'K4' })" path="led_colors_3">
+              <n-color-picker v-model:value="store.led_colors![3]" :show-alpha="false" :modes="['hex']" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="20">
           <n-collapse-transition :show="lightingMode != LightingMode.Off">
-            <n-form-item :label="$t('maximum_brightness')" path="maximum_brightness">
-              <n-slider v-model:value="store.config!.maximum_brightness" :step="1" :max="100" />
+            <n-form-item :label="$t('maximum_brightness')" path="max_brightness">
+              <n-slider v-model:value="store.max_brightness" :step="1" :max="100" :min="1" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
-        <n-gi :span="20">
+        <!-- <n-gi :span="20">
           <n-collapse-transition
             :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
             <n-form-item :label="$t('breath_minimum_brightness')" path="breath_minimum_brightness">
@@ -198,7 +180,7 @@ function CanCanChangeColor() {
               <n-slider v-model:value="store.config!.speed_press_trans_speed" :step="1" :min="10" :max="40" />
             </n-form-item>
           </n-collapse-transition>
-        </n-gi>
+        </n-gi> -->
       </n-grid>
       <n-collapse-transition :show="lightingMode == LightingMode.Off">
         <n-empty :description="$t('no_option')" size="huge" style="margin-top: 40px;"></n-empty>

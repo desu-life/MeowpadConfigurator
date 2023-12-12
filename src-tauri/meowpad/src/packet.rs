@@ -4,21 +4,21 @@ use serde::Deserialize;
 use std::io::Cursor;
 use std::io::Write;
 
-#[derive(Deserialize, FromPrimitive, ToPrimitive, Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, FromPrimitive, ToPrimitive, Copy, Clone, Debug, Eq, PartialEq, serde::Serialize)]
 #[repr(u8)]
 pub enum PacketID {
     Null = 0,
     Ok = 1,
     Bad = 2,
     Ping = 3,
-    FlushConfig = 4,
+
     WriteConfig = 5,
     GetConfig = 6,
     GetFirmwareVersion = 7,
     GetDeviceName = 8,
     CalibrationKey = 9,
     EraseFirmware = 10,
-    DebugMode = 11,
+    Debug = 11,
     AutoConfig = 12,
     SetMiddlePoint = 13,
 }
@@ -35,7 +35,7 @@ impl PacketID {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct Packet {
     pub id: PacketID,
     pub data: Vec<u8>,

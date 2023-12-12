@@ -1,12 +1,22 @@
-import { KeyCode } from './interface';
+import { IError, KeyCode } from './interface';
 import { IRgb } from '@/interface';
+import { useI18n } from "vue-i18n";
+
+
 
 function pad2(c) {
     return c.length == 1 ? '0' + c : '' + c;
 }
 
+export function getErrorMsg(t, e: IError): string {
+    if (e.data) {
+        return t(e.data)
+    }
+    return t(e.type) || '未知错误'
+}
+
 export function formatKeys(keycodes: KeyCode[]) {
-  const keys = keycodes.map((k) => KeyCode[k]).join(' + ')
+  const keys = keycodes.filter(k => k != KeyCode.None).map(k => KeyCode[k]).join(' + ')
   return keys === '' ? '无' : keys
 }
 

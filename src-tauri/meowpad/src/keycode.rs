@@ -313,7 +313,7 @@ impl KeyCode {
 }
 
 #[derive(Default, Debug, Clone, Eq, PartialEq)]
-pub struct KbReport([u8; 4]);
+pub struct KbReport(u8, [u8; 6]);
 
 impl core::iter::FromIterator<KeyCode> for KbReport {
     fn from_iter<T>(iter: T) -> Self
@@ -332,7 +332,7 @@ impl From<KbReport> for Vec<KeyCode> {
     fn from(value: KbReport) -> Self {
         [
             value.get_modifier_codes(),
-            value.0[..3]
+            value.1
                 .iter()
                 .map(|&k| KeyCode::from(k))
                 .filter(|&k| k != KeyCode::None)
@@ -342,24 +342,27 @@ impl From<KbReport> for Vec<KeyCode> {
     }
 }
 
-impl From<KbReport> for [u8; 4] {
+impl From<KbReport> for [KeyCode; 6] {
     fn from(value: KbReport) -> Self {
-        value.0
+        Vec::from(value).iter().map(|k| *k).chain(std::iter::repeat(KeyCode::None).take(6))
+        .take(6).collect::<Vec<_>>().try_into().unwrap()
     }
 }
 
-impl From<[u8; 4]> for KbReport {
-    fn from(value: [u8; 4]) -> Self {
-        Self(value)
+impl From<KbReport> for [u8; 6] {
+    fn from(value: KbReport) -> Self {
+        Vec::from(value).iter().map(|k| *k as u8).chain(std::iter::repeat(0).take(6))
+        .take(6).collect::<Vec<u8>>().try_into().unwrap()
+    }
+}
+
+impl From<[u8; 6]> for KbReport {
+    fn from(value: [u8; 6]) -> Self {
+        value.iter().map(|&k| KeyCode::from(k)).collect()
     }
 }
 
 impl KbReport {
-    /// Returns the byte slice corresponding to the report.
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.0
-    }
-
     /// Add the given key code to the report. If the report is full,
     /// it will be set to `ErrorRollOver`.
     pub fn pressed(&mut self, kc: KeyCode) {
@@ -367,10 +370,10 @@ impl KbReport {
         match kc {
             None => (),
             ErrorRollOver | PostFail | ErrorUndefined => (),
-            kc if kc.is_modifier() => self.0[3] |= kc.as_modifier_bit(),
+            kc if kc.is_modifier() => self.0 |= kc.as_modifier_bit(),
             _ => {
                 let k = kc as u8;
-                let s = self.0[0..3].borrow_mut();
+                let s: &mut [u8] = self.1.borrow_mut();
                 if !s.contains(&k) {
                     s.iter_mut()
                         .find(|c| **c == 0)
@@ -384,7 +387,7 @@ impl KbReport {
     pub fn get_modifier_codes(&self) -> Vec<KeyCode> {
         const START: u8 = KeyCode::LCtrl as u8;
         const END: u8 = KeyCode::RGui as u8;
-        let i = unsafe { *self.0.get_unchecked(3) };
+        let i = self.0;
         (START..END)
             .filter(|&k| (i & (1 << (k - START))) != 0)
             .map(|k| KeyCode::from(k))
