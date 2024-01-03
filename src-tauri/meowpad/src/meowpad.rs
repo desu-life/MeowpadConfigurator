@@ -1,5 +1,5 @@
 use crate::{
-    cbor::CONFIG,
+    cbor::CborConfig,
     packet::{Packet, PacketID},
     error::*,
 };
@@ -10,8 +10,6 @@ use num::FromPrimitive;
 use pretty_hex::*;
 use std::{fmt::Debug, io::{Cursor, Write}, thread, time::Duration};
 use num_derive::{FromPrimitive, ToPrimitive};
-
-type Config = CONFIG;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default, FromPrimitive, ToPrimitive)]
 pub enum KeyState {
@@ -30,7 +28,7 @@ pub struct KeyRTStatus {
 }
 
 pub struct Meowpad {
-    pub config: Option<Config>,
+    pub config: Option<CborConfig>,
     pub device_name: Option<String>,
     pub firmware_version: Option<String>,
     device: HidDevice,
@@ -54,11 +52,11 @@ impl Meowpad {
         }
     }
 
-    pub fn default_config(&self) -> Config {
-        Config::default()
+    pub fn default_config(&self) -> CborConfig {
+        CborConfig::default()
     }
 
-    pub fn config(&self) -> Config {
+    pub fn config(&self) -> CborConfig {
         self.config
             .expect("未获取配置，请先使用load_config获取当前配置")
     }
@@ -66,7 +64,7 @@ impl Meowpad {
     pub fn load_config(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::GetConfig, []))?;
         let packet = self.read()?;
-        self.config = Some(Config::from_cbor(packet.data)?);
+        self.config = Some(CborConfig::from_cbor(packet.data)?);
         Ok(())
     }
 

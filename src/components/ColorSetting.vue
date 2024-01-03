@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useStore } from '@/store'
-import { LightingMode, KeyCode, jsToHid, IRgb } from "@/interface";
+import { LightingMode, KeyCode, jsToHid, IRgb, Toggle } from "@/interface";
 import { Rgb2Hex, Hex2Rgb, IsModifierKey, compareArray } from '@/utils';
 import { useI18n } from "vue-i18n";
 
@@ -10,6 +10,17 @@ const store = useStore()
 const canChangeColor = ref(true)
 const lightingMode = ref(LightingMode.Solid)
 
+const ToggleSel = [
+  {
+    value: Toggle.On,
+    label: t('on')
+  },
+  {
+    value: Toggle.Off,
+    label: t('off')
+  },
+]
+
 
 const LighingMode = [
   {
@@ -17,17 +28,29 @@ const LighingMode = [
     label: t('solid')
   },
   {
-    key: LightingMode.RainbowFlowMode,
-    label: t('rainbow_breath_switch')
-  },
-  {
     key: LightingMode.RainbowMode,
     label: t('rainbow_gradient_switch')
   },
   {
-    key: LightingMode.PressRadianceMode,
-    label: t('ya-gan-mo-shi')
-  }
+    key: LightingMode.RainbowFlowMode,
+    label: t('rainbow_flow')
+  },
+  {
+    key: LightingMode.BreatheGlowAsyncMode,
+    label: t('rainbow_breath_switch')
+  },
+  {
+    key: LightingMode.RainDropMode,
+    label: t('rain_drop')
+  },
+  {
+    key: LightingMode.TapToGlowMode,
+    label: t('press_and_light')
+  },
+  {
+    key: LightingMode.SpeedLightMode,
+    label: t('speed_press')
+  },
 ]
 
 
@@ -52,6 +75,15 @@ function CanCanChangeColor() {
       canChangeColor.value = false
       break
     case LightingMode.RainbowMode:
+      canChangeColor.value = false
+      break
+    case LightingMode.BreatheGlowMode:
+      canChangeColor.value = false
+      break
+    case LightingMode.BreatheGlowAsyncMode:
+      canChangeColor.value = false
+      break
+    case LightingMode.RainDropMode:
       canChangeColor.value = false
       break
     default:
@@ -106,81 +138,118 @@ function CanCanChangeColor() {
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
-        <!-- <n-gi :span="20">
-          <n-collapse-transition
-            :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
-            <n-form-item :label="$t('breath_minimum_brightness')" path="breath_minimum_brightness">
-              <n-slider v-model:value="store.config!.breath_minimum_brightness" :step="1" :max="100" />
-            </n-form-item>
-          </n-collapse-transition>
-        </n-gi>
         <n-gi :span="10">
           <n-collapse-transition
-            :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
+            :show="lightingMode == LightingMode.BreatheGlowMode || lightingMode == LightingMode.BreatheGlowAsyncMode">
             <n-form-item :label="$t('breath_maximum_light_duration')" path="breath_maximum_light_duration">
-              <n-slider v-model:value="store.config!.breath_maximum_light_duration" :step="1" :max="1000" />
+              <n-slider v-model:value="store.config!.max_keep_time" :step="1" :max="1000" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="10">
           <n-collapse-transition
-            :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
+            :show="lightingMode == LightingMode.BreatheGlowMode || lightingMode == LightingMode.BreatheGlowAsyncMode">
             <n-form-item :label="$t('breath_minimum_light_duration')" path="breath_minimum_light_duration">
-              <n-slider v-model:value="store.config!.breath_minimum_light_duration" :step="1" :max="1000" />
+              <n-slider v-model:value="store.config!.min_keep_time" :step="1" :max="1000" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="20">
           <n-collapse-transition
-            :show="lightingMode == LightingMode.Breath || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowBreathSwitch">
+            :show="lightingMode == LightingMode.BreatheGlowMode || lightingMode == LightingMode.BreatheGlowAsyncMode">
             <n-form-item :label="$t('breath_speed')" path="breath_speed">
-              <n-slider v-model:value="store.breath_speed" :step="1" :max="20" />
+              <n-slider v-model:value="store.config!.breathing_speed" :step="1" :max="20" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="20">
           <n-collapse-transition
-            :show="lightingMode == LightingMode.RainbowGradientSync || lightingMode == LightingMode.RainbowBreathSync || lightingMode == LightingMode.RainbowGradientSwitch || lightingMode == LightingMode.RainbowBreathSwitch">
+            :show="lightingMode == LightingMode.RainbowMode">
             <n-form-item :label="$t('rainbow_light_switching_speed')" path="rainbow_light_switching_speed">
-              <n-slider v-model:value="store.rainbow_light_switching_speed" :step="1" :min="1" :max="30" />
+              <n-slider v-model:value="store.config!.rainbow_speed" :step="1" :min="1" :max="30" />
+            </n-form-item>
+          </n-collapse-transition>
+        </n-gi>
+        <n-gi :span="10">
+          <n-collapse-transition
+            :show="lightingMode == LightingMode.RainbowFlowMode">
+            <n-form-item :label="$t('rainbow_light_switching_step')" path="rainbow_flow_speed">
+              <n-slider v-model:value="store.config!.rainbow_flow_speed" :step="10" :min="10" :max="500" />
+            </n-form-item>
+          </n-collapse-transition>
+        </n-gi>
+        <n-gi :span="10">
+          <n-collapse-transition
+            :show="lightingMode == LightingMode.RainbowFlowMode">
+            <n-form-item :label="$t('color_change_rate')" path="color_change_rate">
+              <n-slider v-model:value="store.config!.color_change_rate" :step="1" :min="1" :max="10" />
+            </n-form-item>
+          </n-collapse-transition>
+        </n-gi>
+        <n-gi :span="10">
+          <n-collapse-transition
+            :show="lightingMode == LightingMode.RainbowFlowMode">
+            <n-form-item :label="$t('delay_process')" path="is_flow_delay">
+              <n-select v-model:value="store.is_flow_delay" :options="ToggleSel" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="20">
-          <n-collapse-transition :show="lightingMode == LightingMode.PressAndLight">
-            <n-form-item :label="$t('press_light_minimum_brightness')" path="press_light_minimum_brightness">
-              <n-slider v-model:value="store.config!.press_light_minimum_brightness" :step="1" :max="100" />
-            </n-form-item>
-          </n-collapse-transition>
-        </n-gi>
-        <n-gi :span="20">
-          <n-collapse-transition :show="lightingMode == LightingMode.PressAndLight">
+          <n-collapse-transition :show="lightingMode == LightingMode.TapToGlowMode">
             <n-form-item :label="$t('press_light_duration')" path="press_light_duration">
-              <n-slider v-model:value="store.config!.press_light_duration" :step="1" :min="0" :max="10" />
+              <n-slider v-model:value="store.config!.tap_to_glow_speed" :step="1" :min="1" :max="40" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="10">
-          <n-collapse-transition :show="lightingMode == LightingMode.SpeedPress">
+          <n-collapse-transition :show="lightingMode == LightingMode.TapToGlowMode">
+            <n-form-item :label="$t('random_color_mode')" path="random_color_mode">
+              <n-select v-model:value="store.random_color_mode" :options="ToggleSel" />
+            </n-form-item>
+          </n-collapse-transition>
+        </n-gi>
+        <n-gi :span="10">
+          <n-collapse-transition :show="lightingMode == LightingMode.TapToGlowMode">
+            <n-form-item :label="$t('change_color_when_pressed')" path="change_color_when_pressed">
+              <n-select v-model:value="store.random_color_mode" :options="ToggleSel" />
+            </n-form-item>
+          </n-collapse-transition>
+        </n-gi>
+        <n-gi :span="10">
+          <n-collapse-transition :show="lightingMode == LightingMode.SpeedLightMode">
             <n-form-item :label="$t('speed_press_high_color')" path="speed_press_high_color">
-              <n-color-picker v-model:value="store.speed_press_high_color" :show-alpha="false" />
+              <n-color-picker v-model:value="store.high_speed_color" :show-alpha="false" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="10">
-          <n-collapse-transition :show="lightingMode == LightingMode.SpeedPress">
+          <n-collapse-transition :show="lightingMode == LightingMode.SpeedLightMode">
             <n-form-item :label="$t('speed_press_low_color')" path="speed_press_low_color">
-              <n-color-picker v-model:value="store.speed_press_low_color" :show-alpha="false" />
+              <n-color-picker v-model:value="store.low_speed_color" :show-alpha="false" />
             </n-form-item>
           </n-collapse-transition>
         </n-gi>
         <n-gi :span="20">
-          <n-collapse-transition :show="lightingMode == LightingMode.SpeedPress">
-            <n-form-item :label="$t('speed_press_trans_speed')" path="speed_press_trans_speed">
-              <n-slider v-model:value="store.config!.speed_press_trans_speed" :step="1" :min="10" :max="40" />
+          <n-collapse-transition :show="lightingMode == LightingMode.SpeedLightMode">
+            <n-form-item :label="$t('speed_press_difficulty')" path="speed_press_trans_speed">
+              <n-slider v-model:value="store.config!.increase_difficulty" :step="1" :min="1" :max="40" />
             </n-form-item>
           </n-collapse-transition>
-        </n-gi> -->
+        </n-gi>
+        <n-gi :span="10">
+          <n-collapse-transition :show="lightingMode == LightingMode.RainDropMode">
+            <n-form-item :label="$t('speed')" path="rain_drop_speed">
+              <n-slider v-model:value="store.config!.rain_drop_speed" :step="1" :min="1" :max="40" />
+            </n-form-item>
+          </n-collapse-transition>
+        </n-gi>
+        <n-gi :span="10">
+          <n-collapse-transition :show="lightingMode == LightingMode.RainDropMode">
+            <n-form-item :label="$t('random_rain_chance')" path="random_rain_chance">
+              <n-slider v-model:value="store.config!.random_rain_chance" :step="10" :min="10" :max="1000" />
+            </n-form-item>
+          </n-collapse-transition>
+        </n-gi>
       </n-grid>
       <n-collapse-transition :show="lightingMode == LightingMode.Off">
         <n-empty :description="$t('no_option')" size="huge" style="margin-top: 40px;"></n-empty>

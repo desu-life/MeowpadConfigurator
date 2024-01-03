@@ -105,5 +105,16 @@
   "no_firmware_data": "No firmware data",
   "read_packet_failed": "Failed to read packet",
   "unexcepted_response": "unknown response",
-  "exit": "Exit"
+  "exit": "Exit",
+  "rainbow_flow": "Rainbow Flow",
+  "rain_drop": "Rain Drop",
+  "apply_to_all_key": "Apply to all keys",
+  "apply_done": "Done",
+  "random_color_mode": "random color",
+  "change_color_when_pressed": "Switch colors when pressed",
+  "speed": "speed",
+  "random_rain_chance": "Chance of raindrops",
+  "speed_press_difficulty": "Difficulty",
+  "color_change_rate": "color change rate",
+  "rainbow_light_switching_step": "Rainbow Step Length"
 }

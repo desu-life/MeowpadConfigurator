@@ -88,5 +88,6 @@
   "speed_press_low_color": "低速カラー",
   "speed_press_trans_speed": "カラー変化スピード",
   "press_light_step": "カラー変化ステップ",
-  "no_option": "オプションなし"
+  "no_option": "オプションなし",
+  "random_rain_chance": ""
 }

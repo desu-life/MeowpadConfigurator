@@ -15,6 +15,8 @@ export const useStore = defineStore("main", () => {
   const config = ref<IConfig | undefined>(undefined);
   const raw_config = ref<string | undefined>(undefined);
   const led_colors = ref<string[] | null>(null);
+  const low_speed_color = ref<string | null>(null);
+  const high_speed_color = ref<string | null>(null);
   const version_info = ref<IVersion | undefined>(undefined);
   const device_info = ref<IDevice | undefined>(undefined);
   const need_update_firmware = ref<boolean>(false);
@@ -24,9 +26,13 @@ export const useStore = defineStore("main", () => {
   const jitters_elimination_time = ref<number>(0);
   const continuous_report = ref<Toggle>(Toggle.Off);
   const kalman_filter = ref<Toggle>(Toggle.Off);
+  const change_color_when_pressed = ref<Toggle>(Toggle.Off);
+  const random_color_mode = ref<Toggle>(Toggle.Off);
+  const is_flow_delay = ref<Toggle>(Toggle.Off);
   const max_brightness = ref<number>(0);
   const status = ref<Type | undefined>(undefined)
   const status_str = ref("")
+  const latest_firmware_download_url = ref<string | null>(null);
 
   return {
     loading,
@@ -40,12 +46,18 @@ export const useStore = defineStore("main", () => {
     debug_mode,
     can_sync,
     led_colors,
+    low_speed_color,
+    high_speed_color,
     jitters_elimination_time,
     continuous_report,
     kalman_filter,
     max_brightness,
     status,
-    status_str
+    status_str,
+    change_color_when_pressed,
+    random_color_mode,
+    is_flow_delay,
+    latest_firmware_download_url
   };
 });
 

@@ -1,4 +1,4 @@
-use crate::{Config, KbReport, KeyCode, LightingMode, KeyConfig};
+use crate::{Config, KbReport, KeyCode, KeyConfig, LightingMode};
 use ciborium;
 use palette::rgb::channels::Argb;
 use palette::Srgb;
@@ -28,7 +28,7 @@ pub struct KeyRTConfig {
 #[repr(C)]
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[allow(non_snake_case)]
-pub struct KEYBOARD {
+pub struct Keyboard {
     #[serde(rename = "ks")]
     pub KeyConfigs: [KeyRTConfig; 4],
     #[serde(rename = "jet")]
@@ -44,31 +44,81 @@ pub struct KEYBOARD {
 #[repr(C)]
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[allow(non_snake_case)]
-pub struct LED {
+pub struct Light {
     #[serde(rename = "c")]
-    pub LED_COLORS: [u32; 4],
+    pub led_colors: [u32; 4],
     #[serde(rename = "km")]
-    pub LED_KEY_MODE: u8,
+    pub led_mode: u8,
     #[serde(rename = "mb")]
-    pub LED_MAX_BRIGHTNESS: u8,
+    pub max_brightness: u8,
     #[serde(rename = "st")]
-    pub LED_SLEEP_TIME: u16,
+    pub sleep_time: u16,
+
+    // rainbow_flow_mode
+    #[serde(rename = "rfs")]
+    pub rainbow_flow_speed: u16,
+    #[serde(rename = "ccr")]
+    pub color_change_rate: u8,
+    #[serde(rename = "fd")]
+    pub is_flow_delay: bool,
+
+    // rainbow_mode
+    #[serde(rename = "rs")]
+    pub rainbow_speed: u16,
+
+    // breathing_mode
+    #[serde(rename = "bs")]
+    pub breathing_speed: u16,
+    #[serde(rename = "akt")]
+    pub max_keep_time: u16,
+    #[serde(rename = "ikt")]
+    pub min_keep_time: u16,
+    #[serde(rename = "bcs")]
+    pub breaths_before_color_switch: u8,
+
+    // rain_drop_mode
+    #[serde(rename = "rds")]
+    pub rain_drop_speed: u16,
+    #[serde(rename = "rrc")]
+    pub random_rain_chance: u16,
+
+    // tap_to_glow_mode
+    #[serde(rename = "tgs")]
+    pub tap_to_glow_speed: u16,
+    #[serde(rename = "lft")]
+    pub max_lum_freeze_time: u8,
+    #[serde(rename = "cwp")]
+    pub change_color_when_pressed: bool,
+    #[serde(rename = "rcm")]
+    pub random_color_mode: bool,
+
+    // speed_light_mode
+    #[serde(rename = "slms")]
+    pub speed_light_mode_speed: u16,
+    #[serde(rename = "as")]
+    pub attenuation_speed: u16,
+    #[serde(rename = "id")]
+    pub increase_difficulty: u8,
+    #[serde(rename = "lsc")]
+    pub low_speed_color: u32,
+    #[serde(rename = "hsc")]
+    pub high_speed_color: u32,
 }
 
 #[repr(C)]
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 #[allow(non_snake_case)]
-pub struct CONFIG {
+pub struct CborConfig {
     #[serde(rename = "k")]
-    pub Key: KEYBOARD,
+    pub Key: Keyboard,
     #[serde(rename = "l")]
-    pub LED: LED,
+    pub Light: Light,
 }
 
-impl CONFIG {
+impl CborConfig {
     pub fn from_cbor<T: AsRef<[u8]>>(
         data: T,
-    ) -> Result<CONFIG, ciborium::de::Error<std::io::Error>> {
+    ) -> Result<CborConfig, ciborium::de::Error<std::io::Error>> {
         Ok(ciborium::de::from_reader(Cursor::new(data))?)
     }
 
@@ -82,9 +132,9 @@ impl CONFIG {
 impl Default for KeyRTConfig {
     fn default() -> Self {
         Self {
-            PressPercentage: 20,
-            ReleasePercentage: 25,
-            DeadZone: 10,
+            PressPercentage: 10,
+            ReleasePercentage: 10,
+            DeadZone: 5,
             KeyData: [0; 6],
         }
     }
@@ -99,13 +149,13 @@ impl KeyRTConfig {
     }
 }
 
-impl Default for KEYBOARD {
+impl Default for Keyboard {
     fn default() -> Self {
         let key_configs = [
             KeyRTConfig::with_key(KeyCode::Z),
             KeyRTConfig::with_key(KeyCode::X),
+            KeyRTConfig::with_key(KeyCode::C),
             KeyRTConfig::with_key(KeyCode::Grave),
-            KeyRTConfig::with_key(KeyCode::Escape),
             // KeyRTConfig::default(),
             // KeyRTConfig::default(),
             // KeyRTConfig::default(),
@@ -130,7 +180,7 @@ impl From<KeyConfig> for KeyRTConfig {
     }
 }
 
-impl From<Config> for CONFIG {
+impl From<Config> for CborConfig {
     fn from(cfg: Config) -> Self {
         let mut led_colors = [0u32; 4];
         for i in 0..4 {
@@ -143,23 +193,42 @@ impl From<Config> for CONFIG {
         }
 
         Self {
-            Key: KEYBOARD {
+            Key: Keyboard {
                 KeyConfigs: key_configs,
                 ContinuousReport: cfg.continuous_report,
                 KalmanFilter: cfg.kalman_filter,
                 JittersEliminationTime: cfg.jitters_elimination_time,
             },
-            LED: LED {
-                LED_COLORS: led_colors,
-                LED_KEY_MODE: cfg.lighting_mode_key as u8,
-                LED_MAX_BRIGHTNESS: cfg.max_brightness,
-                ..Default::default()
+            Light: Light {
+                led_colors: led_colors,
+                led_mode: cfg.lighting_mode_key as u8,
+                max_brightness: cfg.max_brightness,
+                sleep_time: cfg.sleep_time,
+                rainbow_flow_speed: cfg.rainbow_flow_speed,
+                is_flow_delay: cfg.is_flow_delay,
+                color_change_rate: cfg.color_change_rate,
+                rainbow_speed: cfg.rainbow_speed,
+                breathing_speed: cfg.breathing_speed,
+                max_keep_time: cfg.max_keep_time,
+                min_keep_time: cfg.min_keep_time,
+                breaths_before_color_switch: cfg.breaths_before_color_switch,
+                rain_drop_speed: cfg.rain_drop_speed,
+                random_rain_chance: cfg.random_rain_chance,
+                tap_to_glow_speed: cfg.tap_to_glow_speed,
+                max_lum_freeze_time: cfg.max_lum_freeze_time,
+                change_color_when_pressed: cfg.change_color_when_pressed,
+                random_color_mode: cfg.random_color_mode,
+                speed_light_mode_speed: cfg.speed_light_mode_speed,
+                attenuation_speed: cfg.attenuation_speed,
+                increase_difficulty: cfg.increase_difficulty,
+                low_speed_color: cfg.low_speed_color.into_u32::<Argb>(),
+                high_speed_color: cfg.high_speed_color.into_u32::<Argb>(),
             },
         }
     }
 }
 
-impl Default for LED {
+impl Default for Light {
     fn default() -> Self {
         let led_colors = [
             Srgb::new(255, 255, 255).into_u32::<Argb>(),
@@ -168,10 +237,29 @@ impl Default for LED {
             Srgb::new(255, 255, 255).into_u32::<Argb>(),
         ];
         Self {
-            LED_COLORS: led_colors,
-            LED_KEY_MODE: LightingMode::Solid as u8,
-            LED_MAX_BRIGHTNESS: 10,
-            LED_SLEEP_TIME: 120,
+            led_colors: led_colors,
+            led_mode: LightingMode::Solid as u8,
+            max_brightness: 50,
+            sleep_time: 120,
+            rainbow_flow_speed: 100,
+            is_flow_delay: true,
+            color_change_rate: 1,
+            rainbow_speed: 2,
+            breathing_speed: 8,
+            max_keep_time: 500,
+            min_keep_time: 0,
+            breaths_before_color_switch: 3,
+            rain_drop_speed: 2,
+            random_rain_chance: 400,
+            tap_to_glow_speed: 10,
+            max_lum_freeze_time: 50,
+            change_color_when_pressed: true,
+            random_color_mode: false,
+            speed_light_mode_speed: 2,
+            attenuation_speed: 80,
+            increase_difficulty: 24,
+            low_speed_color: Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            high_speed_color: Srgb::new(255, 0, 0).into_u32::<Argb>(),
         }
     }
 }

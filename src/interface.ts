@@ -26,13 +26,12 @@ export interface IDevice {
 }
 
 export interface IVersion {
-    version: string
+    configurator_version: string
     download_url: string
-    v1_latest_firmware_version: string
-    v1_hs_latest_firmware_version: string
-    latest_firmware_download_url: string | undefined
-    v1_latest_firmware_download_url: string
-    v1_hs_latest_firmware_download_url: string
+    v2_starter_edition_latest_firmware_version: string
+    v2_starter_edition_firmware_download_url: string
+    v2_standard_edition_latest_firmware_version: string
+    v2_standard_edition_firmware_download_url: string
 }
 
 export interface IKeyRTStatus {
@@ -58,6 +57,37 @@ export interface IConfig {
     continuous_report: boolean
     kalman_filter: boolean
     sleep_time: number
+    
+    // rainbow_flow_mode
+    rainbow_flow_speed: number
+    color_change_rate: number
+    is_flow_delay: boolean
+
+    // rainbow_mode
+    rainbow_speed: number
+
+    // breathing_mode
+    breathing_speed: number
+    max_keep_time: number
+    min_keep_time: number
+    breaths_before_color_switch: number
+
+    // rain_drop_mode
+    rain_drop_speed: number
+    random_rain_chance: number
+
+    // tap_to_glow_mode
+    tap_to_glow_speed: number
+    max_lum_freeze_time: number
+    change_color_when_pressed: boolean
+    random_color_mode: boolean
+
+    // speed_light_mode
+    speed_light_mode_speed: number,
+    attenuation_speed: number,
+    increase_difficulty: number,
+    low_speed_color: IRgb,
+    high_speed_color: IRgb,
 }
 
 export enum KeyState {
@@ -80,6 +110,13 @@ export enum LightingMode {
     RainbowMode = 4,
     RainbowFlowMode = 5,
     PressRadianceMode = 6,
+
+    BreatheGlowMode = 7,
+    BreatheGlowAsyncMode = 8,
+
+    RainDropMode = 9,
+    TapToGlowMode = 10,
+    SpeedLightMode = 11
 }
 
 // export enum KeyCode {

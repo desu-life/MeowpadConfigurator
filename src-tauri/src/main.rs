@@ -198,28 +198,23 @@ async fn get_version(_app: tauri::AppHandle) -> Result<Version> {
 
 #[tauri::command]
 async fn get_firmware_version(_app: tauri::AppHandle) -> &'static str {
-    FIRMWARE_VERSION
-}
-
-#[tauri::command]
-async fn get_firmware_version_hs(_app: tauri::AppHandle) -> &'static str {
-    FIRMWARE_VERSION_HS
+    FIRMWARE_VERSION_4K
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Version {
-    version: String,
+    configurator_version: String,
     download_url: String,
-    v1_latest_firmware_version: String,
-    v1_latest_firmware_download_url: String,
-    v1_hs_latest_firmware_version: String,
-    v1_hs_latest_firmware_download_url: String,
+    v2_starter_edition_latest_firmware_version: String,
+    v2_starter_edition_firmware_download_url: String,
+    v2_standard_edition_latest_firmware_version: String,
+    v2_standard_edition_firmware_download_url: String,
 }
 
 impl Version {
     async fn get() -> reqwest::Result<Version> {
         CLIENT
-            .get("https://desu.life/device/configurator_version/")
+            .get("https://desu.life/device/configurator_version/v2/")
             .send()
             .await?
             .json::<Version>()
@@ -231,7 +226,7 @@ use tauri::api::shell;
 
 #[tauri::command]
 async fn check_update(window: tauri::Window, version: Version) -> bool {
-    if compare_version(VERSION, &version.version) == std::cmp::Ordering::Less {
+    if compare_version(VERSION, &version.configurator_version) == std::cmp::Ordering::Less {
         warn!("最新版本信息：\n{:#?}", version);
         window.hide().unwrap();
         message_dialog_f!(
@@ -453,7 +448,6 @@ fn main() -> AnyResult<()> {
                     check_update,
                     get_version,
                     get_firmware_version,
-                    get_firmware_version_hs,
                     calibration_key,
                     erase_firmware,
                     get_raw_config,

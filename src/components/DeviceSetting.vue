@@ -56,16 +56,36 @@ const LighingModeSelWooting = [
     label: t('solid')
   },
   {
-    value: LightingMode.RainbowFlowMode,
+    value: LightingMode.RainbowMode,
     label: t('rainbow_gradient_switch')
   },
   {
-    value: LightingMode.RainbowMode,
-    label: t('rainbow_gradient_sync')
+    value: LightingMode.RainbowFlowMode,
+    label: t('rainbow_flow')
   },
   {
     value: LightingMode.PressRadianceMode,
     label: t('ya-gan-mo-shi')
+  },
+  {
+    value: LightingMode.BreatheGlowMode,
+    label: t('rainbow_breath_sync')
+  },
+  {
+    value: LightingMode.BreatheGlowAsyncMode,
+    label: t('rainbow_breath_switch')
+  },
+  {
+    value: LightingMode.RainDropMode,
+    label: t('rain_drop')
+  },
+  {
+    value: LightingMode.TapToGlowMode,
+    label: t('press_and_light')
+  },
+  {
+    value: LightingMode.SpeedLightMode,
+    label: t('speed_press')
   },
 ]
 

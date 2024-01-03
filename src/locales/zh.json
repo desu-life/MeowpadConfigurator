@@ -105,5 +105,17 @@
   "read_packet_failed": "读取数据包失败",
   "unexcepted_response": "未知的响应",
   "config_data_check_failed": "非法的配置数据",
-  "exit": "退出"
+  "exit": "退出",
+  "rainbow_flow": "流光模式",
+  "rain_drop": "雨点模式",
+  "apply_to_all_key": "应用到所有键",
+  "apply_done": "设置完成",
+  "random_color_mode": "随机颜色",
+  "change_color_when_pressed": "按下时切换颜色",
+  "speed": "速度",
+  "random_rain_chance": "雨滴几率",
+  "speed_press_difficulty": "手速计难度",
+  "color_change_rate": "颜色变化率",
+  "delay_process": "延迟处理",
+  "rainbow_light_switching_step": "流光步长"
 }

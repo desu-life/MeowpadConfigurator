@@ -46,14 +46,19 @@ async function connect() {
     console.table(info)
     store.device_info = info
 
-    // let firmware_version = await invoke("get_firmware_version_hs")
-    // if (store.device_info!.version != firmware_version) {
-    //   store.need_update_firmware = true // 需要更新固件
-    //   store.loading = false
-    //   store.status = "error"
-    //   store.status_str = t('bad_firmware_version', { version: info!.version })
-    //   return
-    // }
+    let firmware_version = await invoke("get_firmware_version")
+    if (store.device_info!.version != firmware_version) {
+      store.need_update_firmware = true // 需要更新固件
+      store.loading = false
+      store.status = "error"
+      store.status_str = t('bad_firmware_version', { version: info!.version })
+      return
+    }
+
+    if (store.version_info) {
+      store.latest_firmware_download_url = store.version_info.v2_standard_edition_firmware_download_url
+    }
+
 
     // 不管怎么样总之是连上了
     store.connected = true
@@ -115,9 +120,14 @@ function store_config(res: IConfig) {
   for (let i = 0; i < res.led_colors.length; i++) {
     store.led_colors.push(Rgb2Hex(res.led_colors[i]))
   }
+  store.low_speed_color = Rgb2Hex(res.low_speed_color)
+  store.high_speed_color = Rgb2Hex(res.high_speed_color)
   store.jitters_elimination_time = res.jitters_elimination_time / 8
   store.continuous_report = res.continuous_report == true ? Toggle.On : Toggle.Off
   store.kalman_filter = res.kalman_filter == true ? Toggle.On : Toggle.Off
+  store.change_color_when_pressed = res.change_color_when_pressed == true ? Toggle.On : Toggle.Off
+  store.random_color_mode = res.random_color_mode == true ? Toggle.On : Toggle.Off
+  store.is_flow_delay = res.is_flow_delay == true ? Toggle.On : Toggle.Off
   store.max_brightness = Math.floor(res.max_brightness * 2)
   store.config = res
   for (let i = 0; i < store.config.keys.length; i++) {
@@ -147,9 +157,6 @@ async function get_config() {
     const res: IConfig = await invoke("get_config")
     console.dir(res)
     store_config(res)
-    if (store.version_info !== undefined) {
-      store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
-    }
   } catch (e) {
     const es = e as IError
     store.status = "error"
@@ -171,9 +178,6 @@ async function get_config_raw() {
   try {
     const res: string = await invoke("get_raw_config")
     store.raw_config = res
-    if (store.version_info !== undefined) {
-      store.version_info.latest_firmware_download_url = store.version_info.v1_hs_latest_firmware_download_url
-    }
   } catch (e) {
     const es = e as IError
     store.status = "error"
@@ -200,6 +204,8 @@ async function sync_config() {
     for (let i = 0; i < store.led_colors!.length; i++) {
       store.config!.led_colors.push(Hex2Rgb(store.led_colors![i]))
     }
+    store.config!.low_speed_color = Hex2Rgb(store.low_speed_color!)
+    store.config!.high_speed_color = Hex2Rgb(store.high_speed_color!)
 
     for (let i = 0; i < store.config!.keys.length; i++) {
       while (store.config!.keys[i].key_data.length < 6) {
@@ -213,6 +219,10 @@ async function sync_config() {
     store.config!.jitters_elimination_time = Math.round(store.jitters_elimination_time * 8)
     store.config!.continuous_report = store.continuous_report == Toggle.On ? true : false
     store.config!.kalman_filter = store.kalman_filter == Toggle.On ? true : false
+    store.config!.change_color_when_pressed = store.change_color_when_pressed == Toggle.On ? true : false
+    store.config!.random_color_mode = store.random_color_mode == Toggle.On ? true : false
+    store.config!.is_flow_delay = store.is_flow_delay == Toggle.On ? true : false
+    
     store.config!.max_brightness = Math.round(store.max_brightness / 2)
 
     await invoke('save_config', { config: store.config })

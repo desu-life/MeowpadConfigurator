@@ -1,4 +1,4 @@
-use crate::{cbor::{CONFIG, KeyRTConfig}, error::Error, KbReport, KeyCode};
+use crate::{cbor::{CborConfig, KeyRTConfig}, error::Error, KbReport, KeyCode};
 use num::FromPrimitive;
 use num_derive::{FromPrimitive, ToPrimitive};
 use palette::rgb::channels::Argb;
@@ -13,14 +13,21 @@ use std::time::Duration;
 )]
 #[repr(u8)]
 pub enum LightingMode {
-    Off = 0,
-    Debug = 1,
-    Error = 2,
+    Off,
+    Calibration,
+    Error,
 
-    Solid = 3,
-    RainbowMode = 4,
-    RainbowFlowMode = 5,
-    PressRadianceMode = 6,
+    Solid,
+    RainbowMode,
+    RainbowFlowMode,
+    PressRadianceMode,
+
+    BreatheGlowMode,
+    BreatheGlowAsyncMode,
+
+    RainDropMode,
+    TapToGlowMode,
+    SpeedLightMode
 }
 
 #[serde_as]
@@ -45,11 +52,43 @@ pub struct Config {
     pub continuous_report: bool,
     pub kalman_filter: bool,
     pub sleep_time: u16,
+
+    // rainbow_flow_mode
+    pub rainbow_flow_speed: u16,
+    pub color_change_rate: u8,
+    pub is_flow_delay: bool,
+
+    // rainbow_mode
+    pub rainbow_speed: u16,
+
+    // breathing_mode
+    pub breathing_speed: u16,
+    pub max_keep_time: u16,
+    pub min_keep_time: u16,
+    pub breaths_before_color_switch: u8,
+
+    // rain_drop_mode
+    pub rain_drop_speed: u16,
+    pub random_rain_chance: u16,
+
+    // tap_to_glow_mode
+    pub tap_to_glow_speed: u16,
+    pub max_lum_freeze_time: u8,
+    pub change_color_when_pressed: bool,
+    pub random_color_mode: bool,
+
+    
+    // speed_light_mode
+    pub speed_light_mode_speed: u16,
+    pub attenuation_speed: u16,
+    pub increase_difficulty: u8,
+    pub low_speed_color: Srgb<u8>,
+    pub high_speed_color: Srgb<u8>,
 }
 
-impl TryFrom<CONFIG> for Config {
+impl TryFrom<CborConfig> for Config {
     type Error = Error;
-    fn try_from(cfg: CONFIG) -> Result<Self, Self::Error> {
+    fn try_from(cfg: CborConfig) -> Result<Self, Self::Error> {
         let mut keys: [KeyConfig; 4] = Default::default();
         for i in 0..4 {
             keys[i] = KeyConfig::from(cfg.Key.KeyConfigs[i]);
@@ -57,20 +96,39 @@ impl TryFrom<CONFIG> for Config {
 
         let mut led_colors: [Srgb<u8>; 4] = Default::default();
         for i in 0..4 {
-            led_colors[i] = Srgb::from_u32::<Argb>(cfg.LED.LED_COLORS[i]);
+            led_colors[i] = Srgb::from_u32::<Argb>(cfg.Light.led_colors[i]);
         }
 
         Ok(Config {
             keys,
             led_colors,
-            lighting_mode_key: LightingMode::from_u8(cfg.LED.LED_KEY_MODE).ok_or(
-                Error::ConfigDataCheckFailed("lighting_mode_key", cfg.LED.LED_KEY_MODE as usize),
+            lighting_mode_key: LightingMode::from_u8(cfg.Light.led_mode).ok_or(
+                Error::ConfigDataCheckFailed("lighting_mode_key", cfg.Light.led_mode as usize),
             )?,
-            max_brightness: cfg.LED.LED_MAX_BRIGHTNESS,
+            max_brightness: cfg.Light.max_brightness,
             continuous_report: cfg.Key.ContinuousReport,
             kalman_filter: cfg.Key.KalmanFilter,
             jitters_elimination_time: cfg.Key.JittersEliminationTime,
-            sleep_time: cfg.LED.LED_SLEEP_TIME
+            sleep_time: cfg.Light.sleep_time,
+            rainbow_flow_speed: cfg.Light.rainbow_flow_speed,
+            is_flow_delay: cfg.Light.is_flow_delay,
+            color_change_rate: cfg.Light.color_change_rate,
+            rainbow_speed: cfg.Light.rainbow_speed,
+            breathing_speed: cfg.Light.breathing_speed,
+            max_keep_time: cfg.Light.max_keep_time,
+            min_keep_time: cfg.Light.min_keep_time,
+            breaths_before_color_switch: cfg.Light.breaths_before_color_switch,
+            rain_drop_speed: cfg.Light.rain_drop_speed,
+            random_rain_chance: cfg.Light.random_rain_chance,
+            tap_to_glow_speed: cfg.Light.tap_to_glow_speed,
+            max_lum_freeze_time: cfg.Light.max_lum_freeze_time,
+            change_color_when_pressed: cfg.Light.change_color_when_pressed,
+            random_color_mode: cfg.Light.random_color_mode,
+            speed_light_mode_speed: cfg.Light.speed_light_mode_speed,
+            attenuation_speed: cfg.Light.attenuation_speed,
+            increase_difficulty: cfg.Light.increase_difficulty,
+            low_speed_color: Srgb::from_u32::<Argb>(cfg.Light.low_speed_color),
+            high_speed_color: Srgb::from_u32::<Argb>(cfg.Light.high_speed_color),
         })
     }
 }
