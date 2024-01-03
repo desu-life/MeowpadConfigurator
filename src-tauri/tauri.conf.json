@@ -7,8 +7,8 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "MeowpadConfigurator",
-    "version": "1.0.1"
+    "productName": "MeowpadConfiguratorForV2",
+    "version": "1.0.0"
   },
   "tauri": {
     "allowlist": {
@@ -29,7 +29,7 @@
         "icons/128x128@2x.png",
         "icons/icon.ico"
       ],
-      "identifier": "meowpad.configurator",
+      "identifier": "meowpad.configurator.v2",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
@@ -56,7 +56,7 @@
       {
         "fullscreen": false,
         "resizable": false,
-        "title": "Meowpad Configurator",
+        "title": "Meowpad Configurator for v2",
         "width": 800,
         "height": 600,
         "fileDropEnabled": false,
