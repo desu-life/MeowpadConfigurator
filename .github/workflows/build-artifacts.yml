@@ -27,6 +27,18 @@ jobs:
           override: true
           toolchain: nightly
 
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: 8
+          run_install: false
+
+
       - name: install libs (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -36,12 +48,12 @@ jobs:
       - name: install deps
         working-directory: ./
         run: |
-          yarn install
+          pnpm install
 
       - name: build artifacts
         working-directory: ./
         run: |
-          yarn tauri build
+          pnpm run tauri build
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'ubuntu-latest'
