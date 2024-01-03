@@ -48,7 +48,7 @@ jobs:
       - name: install deps
         working-directory: ./
         run: |
-          pnpm install
+          pnpm install --no-frozen-lockfile
 
       - name: build artifacts
         working-directory: ./
