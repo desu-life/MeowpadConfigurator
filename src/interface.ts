@@ -575,7 +575,7 @@ export let jsToHid = {
     "End": 0x4d,
     "Enter": 0x28,
     "Equal": 0x2e,
-    "Esc": 0x29,
+    "Escape": 0x29,
     "F1": 0x3a,
     "F2": 0x3b,
     "F3": 0x3c,

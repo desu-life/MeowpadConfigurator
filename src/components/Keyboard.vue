@@ -60,19 +60,17 @@ function setKeys(keyNum: number) {
   pressedkeycodes.value = []
   showModal.value = true
   let keycodes: KeyCode[] = []
-  document.onkeydown = (_e) => {
+  document.onkeydown = (e) => {
     if (showModal.value === false) { return }
-    _e.preventDefault()
-    const e = _e || window.event || arguments.callee.caller.arguments[0]
+    e.preventDefault()
     const HidCodeDown: KeyCode = jsToHid[e.code] || undefined
     if (HidCodeDown in KeyCode && needkey(HidCodeDown)) {
       console.log("pressed " + e.code)
       pressedkeycodes.value.push(HidCodeDown)
       presskeycodes.value.push(HidCodeDown)
-      document.onkeyup = (_e) => {
-        _e.preventDefault()
+      document.onkeyup = (e) => {
+        e.preventDefault()
         document.onkeydown = null // 当有键松开时，清除按下键盘的监听函数
-        const e = _e || window.event || arguments.callee.caller.arguments[0]
         console.log("released " + e.code)
         const HidCodeUP: KeyCode = jsToHid[e.code] || undefined
         if (presskeycodes.value.includes(HidCodeUP)) {
