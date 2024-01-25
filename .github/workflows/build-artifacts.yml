@@ -59,19 +59,19 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         with:
           name: linux-deb
-          path: ./src-tauri/target/release/bundle/deb/meowpad-configurator_*.deb
+          path: ./src-tauri/target/release/bundle/deb/*.deb
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'ubuntu-latest'
         with:
           name: linux-appimage
-          path: ./src-tauri/target/release/bundle/appimage/meowpad-configurator_*.AppImage
+          path: ./src-tauri/target/release/bundle/appimage/*.AppImage
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'windows-latest'
         with:
           name: windows-exe
-          path: ./src-tauri/target/release/MeowpadConfigurator.exe
+          path: ./src-tauri/target/release/*.exe
 
       - uses: actions/upload-artifact@v2
         if: matrix.platform == 'windows-latest'
@@ -83,4 +83,4 @@ jobs:
         if: matrix.platform == 'macos-latest'
         with:
           name: macos-app
-          path: ./src-tauri/target/release/bundle/macos/MeowpadConfigurator.app
+          path: ./src-tauri/target/release/bundle/macos/*.app
