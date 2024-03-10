@@ -12,6 +12,8 @@ pub enum Error {
     Meowpad(#[from] #[serde_as(as = "DisplayFromStr")] meowpad::error::Error),
     #[error("network error: {0}")]
     Network(#[from] #[serde_as(as = "DisplayFromStr")] reqwest::Error),
+    #[error("io error: {0}")]
+    Io(#[from] #[serde_as(as = "DisplayFromStr")] std::io::Error),
     #[error("无法找到设备，请尝试重新插拔Meowpad")]
     DeviceNotFound,
     #[error("设备未连接")]

@@ -1,7 +1,7 @@
 {
-  "name": "meowpad_configurator",
+  "name": "meowpad_configurator_v2",
   "private": true,
-  "version": "0.3.1",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,28 +10,29 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.5.1",
+    "@tauri-apps/api": "^1.5.3",
     "@vitejs/plugin-vue-jsx": "^3.1.0",
     "animate.css": "^4.1.1",
-    "autoprefixer": "^10.4.16",
-    "date-fns": "^2.30.0",
-    "naive-ui": "^2.35.0",
+    "autoprefixer": "^10.4.18",
+    "date-fns": "^3.3.1",
+    "naive-ui": "^2.38.1",
     "pinia": "^2.1.7",
     "postcss": "^8.4.32",
-    "sass": "^1.69.5",
-    "unplugin-auto-import": "^0.17.2",
+    "sass": "^1.71.1",
+    "unplugin-auto-import": "^0.17.5",
     "unplugin-vue-components": "^0.26.0",
     "vfonts": "^0.0.3",
-    "vue": "^3.3.10",
-    "vue-i18n": "^9.8.0"
+    "vue": "^3.4.21",
+    "vue-i18n": "^9.10.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5.7",
+    "@tauri-apps/cli": "^1.5.10",
     "@types/node": "^20.10.3",
     "@vicons/fluent": "^0.12.0",
-    "@vitejs/plugin-vue": "^4.5.1",
-    "typescript": "^5.3.2",
-    "vite": "^5.0.12",
-    "vue-tsc": "^1.8.25"
+    "@vicons/ionicons5": "^0.12.0",
+    "@vitejs/plugin-vue": "^4.6.2",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.5",
+    "vue-tsc": "^1.8.27"
   }
 }

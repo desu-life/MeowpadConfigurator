@@ -78,7 +78,7 @@ function setKeys(keyNum: number) {
           keycodes.push(HidCodeUP)
           if (presskeycodes.value.length === 0) {
             keycodes = keycodes.sort((l, r) => r - l)
-            compareArray(store.config!.keys[keyNum].key_data, keycodes) ? store.config!.keys[keyNum].key_data = [] : store.config!.keys[keyNum].key_data = keycodes
+            compareArray(store.key_config!.keys[keyNum].key_data, keycodes) ? store.key_config!.keys[keyNum].key_data = [] : store.key_config!.keys[keyNum].key_data = keycodes
             showModal.value = false
             document.onkeyup = null
           }
@@ -105,12 +105,12 @@ function clickKey(k: number) {
 
 function applyKeySetting() {
   if (selectedKey.value == null) { return }
-  const key = store.config!.keys[selectedKey.value]
-  for (let i = 0; i < store.config!.keys.length; i++) {
+  const key = store.key_config!.keys[selectedKey.value]
+  for (let i = 0; i < store.key_config!.keys.length; i++) {
     if (i != selectedKey.value) {
-      store.config!.keys[i].dead_zone = key.dead_zone
-      store.config!.keys[i].press_percentage = key.press_percentage
-      store.config!.keys[i].release_percentage = key.release_percentage
+      store.key_config!.keys[i].dead_zone = key.dead_zone
+      store.key_config!.keys[i].press_percentage = key.press_percentage
+      store.key_config!.keys[i].release_percentage = key.release_percentage
     }
   }
   message.success(t('apply_done'))
@@ -127,8 +127,8 @@ function applyKeySetting() {
         <div v-for="key in  line " :class="key.name == null ? 'hidden' : ''">
           <Key :unit-width="key.width" :key-num="key.index" :on-click="k => clickKey(k)"
             :selected="key.index == selectedKey">
-            <div v-if="key.index != undefined && store.config!.keys[key.index].key_data.length <= 1">
-              {{ formatKeys(store.config!.keys[key.index].key_data) }}
+            <div v-if="key.index != undefined && store.key_config!.keys[key.index].key_data.length <= 1">
+              {{ formatKeys(store.key_config!.keys[key.index].key_data) }}
             </div>
             <div v-else>
               ...
@@ -137,9 +137,9 @@ function applyKeySetting() {
         </div>
       </div>
       <transition name="fade">
-        <div class="line" v-if="selectedKey != null && store.config!.keys[selectedKey!].key_data.length > 1">
+        <div class="line" v-if="selectedKey != null && store.key_config!.keys[selectedKey!].key_data.length > 1">
           <KeyShow :unit-width="4.2" style="--default-key-font-size: 13px;--default-key-height: 45px;">
-            {{ formatKeys(store.config!.keys[selectedKey!].key_data) }}
+            {{ formatKeys(store.key_config!.keys[selectedKey!].key_data) }}
           </KeyShow>
         </div>
       </transition>
@@ -150,7 +150,7 @@ function applyKeySetting() {
           <!-- <n-button type="error" class="badge" @click="set_auto_config">
             {{ $t('need_help') }} </n-button> -->
           <n-form-item :label="$t('dead_zone')" path="dead_zone" label-placement="left" :show-feedback="false">
-            <n-input-number v-model:value="store.config!.keys[selectedKey!].dead_zone" :min="1" :max="100"
+            <n-input-number v-model:value="store.key_config!.keys[selectedKey!].dead_zone" :min="1" :max="100"
               :placeholder="$t('no_data')">
               <template #suffix>
                 %
@@ -159,7 +159,7 @@ function applyKeySetting() {
           </n-form-item>
           <n-form-item :label="$t('key_trigger_degree')" path="press_percentage" label-placement="left"
             :show-feedback="false">
-            <n-input-number v-model:value="store.config!.keys[selectedKey!].press_percentage" :min="1" :max="100"
+            <n-input-number v-model:value="store.key_config!.keys[selectedKey!].press_percentage" :min="1" :max="100"
               :placeholder="$t('no_data')">
               <template #suffix>
                 %
@@ -168,7 +168,7 @@ function applyKeySetting() {
           </n-form-item>
           <n-form-item :label="$t('key_release_degree')" path="release_percentage" label-placement="left"
             :show-feedback="false">
-            <n-input-number v-model:value="store.config!.keys[selectedKey!].release_percentage" :min="1" :max="100"
+            <n-input-number v-model:value="store.key_config!.keys[selectedKey!].release_percentage" :min="1" :max="100"
               :placeholder="$t('no_data')">
               <template #suffix>
                 %

@@ -1,26 +1,32 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { invoke } from "@tauri-apps/api/tauri";
-import { FormInst } from 'naive-ui'
+import { FormInst, UploadCustomRequestOptions } from 'naive-ui'
 import { useStore } from '@/store'
+import { emit, listen } from '@tauri-apps/api/event'
 import { Keyboard24Regular, Lightbulb24Regular } from '@vicons/fluent'
+import { ArchiveOutline as ArchiveIcon } from '@vicons/ionicons5'
 import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
 import ColorSetting from '@/components/ColorSetting.vue'
 import DeviceSetting from '@/components/DeviceSetting.vue'
 import Debug from '@/components/Debug.vue'
 import { useI18n } from "vue-i18n";
+import * as api from '@/api';
+import { IError } from '@/interface'
+import type { UploadFileInfo } from 'naive-ui'
 
 const { t } = useI18n();
 const store = useStore()
 const formRef = ref<FormInst | null>(null)
 const message = useMessage()
 const configType = ref(0)
+const downloading = ref(false)
+const file_list = ref<UploadFileInfo[]>([])
 
 const input_status = ref<FormValidationStatus | undefined>(undefined)
 
 async function check_raw_config(value: string): Promise<void> {
-  const res: boolean = await invoke("check_raw_config", { config: value })
+  const res: boolean = await api.check_raw_config(value)
   if (res) {
     store.can_sync = true
     input_status.value = undefined
@@ -62,6 +68,57 @@ function parsems(value: string) {
   return parseInt(value)
 }
 
+const uploadFirmware = async ({
+      file,
+      data,
+      headers,
+      withCredentials,
+      action,
+      onFinish,
+      onError,
+      onProgress
+    }: UploadCustomRequestOptions) => {
+
+      function calc_process(total, current, state) {
+        var s1 = 0;
+        if (state == 1)
+          s1 = current / (total * 1.125)
+        else if (state == 2)
+          s1 = ((current / 8) + total) / (total * 1.125)
+        return Math.ceil(s1 * 100);
+      }
+      
+      try {
+        if (file.file) {
+          downloading.value = true;
+          var buffer = await file.file.arrayBuffer()
+          var arr = Array.from(new Uint8Array(buffer))
+          var file_length = await api.iap_start(arr)
+          const unlisten = await listen('iap_process', (event: any) => {
+            var process = event.payload[0];
+            var state = event.payload[1];
+            
+            onProgress({ percent: calc_process(file_length, process, state) })
+          });
+          await api.iap_flush()
+          onFinish()
+          file_list.value = []
+          message.info("上传固件成功，已重启设备")
+          store.iap_connected = false
+          store.status = undefined
+          store.status_str = t("device_disconnected")
+        } else {
+          onError()
+        }
+      } catch (e) {
+        const es = e as IError
+        console.log(es)
+        onError()
+      } finally {
+        downloading.value = false;
+      }
+    }
+
 </script>
 
 <template>
@@ -81,9 +138,31 @@ function parsems(value: string) {
             }" />
         </div>
       </div>
+      <div v-else-if="store.iap_connected">
+        <n-upload
+          v-model:file-list="file_list"
+          directory-dnd
+          :custom-request="uploadFirmware"
+          accept=".bin"
+          :show-cancel-button="false"
+          :show-remove-button="false"
+          :max="1"
+        >
+          <n-upload-dragger v-if="!downloading">
+            <div style="margin-bottom: 12px">
+              <n-icon size="48" :depth="3">
+                <archive-icon />
+              </n-icon>
+            </div>
+            <n-text style="font-size: 16px">
+              点击或者拖动固件文件到该区域
+            </n-text>
+          </n-upload-dragger>
+        </n-upload>
+      </div>
     </div>
-    <n-form ref="formRef" :label-width="80" label-placement="top" :model="store.config" size="medium"
-      style="margin-bottom: 40px;" v-else-if="store.config != undefined && store.connected">
+    <n-form ref="formRef" :label-width="80" label-placement="top" size="medium"
+       v-else-if="store.key_config != undefined && store.light_config != undefined && store.connected">
       <div>
         <transition mode="out-in" name="tab-transition">
           <div v-if="configType !== 1">

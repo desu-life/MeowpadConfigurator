@@ -1,15 +1,15 @@
 use crate::{
-    cbor::CborConfig,
-    packet::{Packet, PacketID},
-    error::*,
+    cbor, error::*, packet::{Packet, PacketID}
 };
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use hidapi_rusb::HidDevice;
 use log::*;
 use num::FromPrimitive;
 use pretty_hex::*;
-use std::{fmt::Debug, io::{Cursor, Write}, thread, time::Duration};
+use std::{fmt::Debug, fs, io::{Cursor, Write}, thread, time::Duration};
 use num_derive::{FromPrimitive, ToPrimitive};
+use crate::cbor::CborConvertor;
+
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default, FromPrimitive, ToPrimitive)]
 pub enum KeyState {
@@ -27,8 +27,16 @@ pub struct KeyRTStatus {
     pub key_state: KeyState,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default)]
+pub struct KeyHallConfig {
+    pub adc_min: u16,
+    pub adc_max: u16,
+    pub hall_middle: u16,
+}
+
 pub struct Meowpad {
-    pub config: Option<CborConfig>,
+    pub key_config: Option<cbor::Keyboard>,
+    pub light_config: Option<cbor::Light>,
     pub device_name: Option<String>,
     pub firmware_version: Option<String>,
     device: HidDevice,
@@ -36,36 +44,20 @@ pub struct Meowpad {
 
 impl Debug for Meowpad {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("Meowpad {{ config: {:?} }}", self.config))
+        f.write_fmt(format_args!("Meowpad {{ config: {:?} }}", (self.key_config, self.light_config)))
     }
 }
 
 impl Meowpad {
     pub fn new(device: HidDevice) -> Meowpad {
-
         device.set_blocking_mode(true).unwrap();
         Meowpad {
             device,
-            config: None,
+            key_config: None,
+            light_config: None,
             device_name: None,
             firmware_version: None,
         }
-    }
-
-    pub fn default_config(&self) -> CborConfig {
-        CborConfig::default()
-    }
-
-    pub fn config(&self) -> CborConfig {
-        self.config
-            .expect("未获取配置，请先使用load_config获取当前配置")
-    }
-
-    pub fn load_config(&mut self) -> Result<()> {
-        self.write(Packet::new(PacketID::GetConfig, []))?;
-        let packet = self.read()?;
-        self.config = Some(CborConfig::from_cbor(packet.data)?);
-        Ok(())
     }
 
     pub fn ping(&self) -> Result<bool> {
@@ -90,27 +82,7 @@ impl Meowpad {
             Err(Error::UnexceptedResponse(packet))
         }
     }
-
-    pub fn debug(&mut self) -> Result<[KeyRTStatus; 4]> {
-        self.write(Packet::new(PacketID::Debug, []))?;
-        let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
-            let mut keys: [KeyRTStatus; 4] = Default::default();
-            let mut cur = Cursor::new(packet.data);
-            for key in keys.iter_mut() {
-                key.adc_value = cur.read_u16::<BigEndian>()?;
-                key.linear_value = cur.read_u16::<BigEndian>()?;
-                key.press_percentage = cur.read_u16::<BigEndian>()? as u8;
-                key.key_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
-            }
-            Ok(keys)
-        } else {
-            dbg!(packet.id);
-            dbg!(packet.data.hex_dump());
-            Err(Error::UnexceptedResponse(packet))
-        }
-    }
-
+    
     pub fn get_firmware_version(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::GetFirmwareVersion, []))?;
         let packet = self.read()?; // 读取
@@ -124,10 +96,81 @@ impl Meowpad {
         }
     }
 
-    pub fn write_config(&self) -> Result<()> {
-        let config = self.config();
-        info!("写入配置：{:?}", config);
-        self.write(Packet::new(PacketID::WriteConfig, config.to_cbor()))?;
+    /// (按键配置状态，灯光配置状态，按键校准状态，按键是否启用)
+    pub fn get_status(&mut self) -> Result<(bool, bool, bool, bool)> {
+        self.write(Packet::new(PacketID::GetStatus, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            Ok((packet.data[0] != 0, packet.data[1] != 0, packet.data[2] != 0, packet.data[3] != 0))
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
+    pub fn get_debug_value(&mut self) -> Result<[KeyRTStatus; 4]> {
+        self.write(Packet::new(PacketID::Debug, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            let mut keys: [KeyRTStatus; 4] = Default::default();
+            let mut cur = Cursor::new(packet.data);
+            for key in keys.iter_mut() {
+                key.adc_value = cur.read_u16::<BigEndian>()?;
+                key.linear_value = cur.read_u16::<BigEndian>()?;
+                key.press_percentage = cur.read_u16::<BigEndian>()? as u8;
+                key.key_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
+            }
+            let rem = cur.remaining_slice();
+            if !rem.is_empty() {
+                println!("{:?}", cur.remaining_slice());
+            }
+            Ok(keys)
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
+    pub fn get_hall_config(&mut self) -> Result<[KeyHallConfig; 4]> {
+        self.write(Packet::new(PacketID::GetHallConfig, []))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            let mut keys: [KeyHallConfig; 4] = Default::default();
+            let mut cur = Cursor::new(packet.data);
+            for key in keys.iter_mut() {
+                key.adc_max = cur.read_u16::<BigEndian>()?;
+                key.adc_min = cur.read_u16::<BigEndian>()?;
+                key.hall_middle = cur.read_u16::<BigEndian>()?;
+            }
+            Ok(keys)
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
+
+    pub fn load_key_config(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::GetKeyConfig, []))?;
+        let packet = self.read()?;
+        self.key_config = Some(cbor::Keyboard::from_cbor(packet.data)?);
+        Ok(())
+    }
+    
+    pub fn load_light_config(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::GetLightConfig, []))?;
+        let packet = self.read()?;
+        self.light_config = Some(cbor::Light::from_cbor(packet.data)?);
+        Ok(())
+    }
+
+    pub fn set_key_config(&self) -> Result<()> {
+        let config = self.key_config.ok_or(Error::EmptyConfig)?;
+        debug!("写入键盘配置：{:?}", config);
+        self.write(Packet::new(PacketID::SetKeyConfig, config.to_cbor()))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok {
             Ok(())
@@ -138,10 +181,78 @@ impl Meowpad {
         }
     }
 
-    pub fn reset_config(&mut self) -> Result<()> {
-        self.config = Some(self.default_config());
-        self.write_config()?;
-        Ok(())
+    pub fn set_light_config(&self) -> Result<()> {
+        let config = self.light_config.ok_or(Error::EmptyConfig)?;
+        debug!("写入灯光配置：{:?}", config);
+        self.write(Packet::new(PacketID::SetLightConfig, config.to_cbor()))?;
+        let packet = self.read()?; // 读取
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
+    pub fn save_key_config(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::SaveKeyConfig, []))?;
+        let packet = self.read()?;
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+    
+    pub fn save_light_config(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::SaveLightConfig, []))?;
+        let packet = self.read()?;
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
+    pub fn clear_key_config(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::ClearLightConfig, []))?;
+        let packet = self.read()?;
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+    
+    pub fn clear_light_config(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::ClearKeyConfig, []))?;
+        let packet = self.read()?;
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
+    pub fn clear_hall_config(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::ClearHallConfig, []))?;
+        let packet = self.read()?;
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
     }
 
     pub fn reset_middle_point(&self) -> Result<()> {
@@ -180,6 +291,18 @@ impl Meowpad {
         }
     }
 
+    pub fn reset_device(&mut self) -> Result<()> {
+        self.write(Packet::new(PacketID::Reset, []))?;
+        let packet = self.read()?;
+        if packet.id == PacketID::Ok {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
     fn write(&self, packet: Packet) -> Result<()> {
         debug!("发送：{:?}", packet);
         debug!("总数据大小：{}", packet.data.len());
@@ -199,7 +322,7 @@ impl Meowpad {
         let packet_len = buf.read_u16::<BigEndian>()? as usize;
         let mut data = Vec::with_capacity(packet_len);
         let mut read_bytes = 0;
-        let mut packet_num = 1;
+        // let mut packet_num = 1;
         loop {
             if read_bytes < packet_len {
                 match buf.read_u8() {
@@ -213,7 +336,7 @@ impl Meowpad {
                         unsafe { std::ptr::write_volatile(buf.get_mut(), [0u8; 64]) }
                         buf.set_position(0);
                         self.device.read_timeout(buf.get_mut(), timeout)?;
-                        packet_num += 1;
+                        // packet_num += 1;
                     }
                 }
             } else {

@@ -1,13 +1,12 @@
-
+#![feature(cursor_remaining)]
 
 pub mod cbor;
-mod config;
+pub mod config;
 pub mod keycode;
 mod meowpad;
 mod packet;
 pub mod error;
 
-pub use crate::config::*;
 pub use crate::meowpad::*;
 pub use crate::packet::PacketID;
 use keycode::*;
@@ -17,6 +16,8 @@ mod tests {
     use crate::*;
     use pretty_hex::*;
     use std::io::{Cursor, Read};
+    use crate::cbor::CborConvertor;
+
 
     #[test]
     fn build_packet() {
@@ -105,6 +106,20 @@ mod tests {
         dbg!(packet_recv.to_string());
         dbg!(packet_recv.data.hex_dump());
         assert!(packet_recv == packet)
+    }
+
+    #[test]
+    fn cbor_kb() {
+        let c = cbor::Keyboard::default().to_cbor();
+        dbg!(c.hex_dump());
+        assert!(c.len() <= 1);
+    }
+
+    #[test]
+    fn cbor_light() {
+        let c = cbor::Light::default().to_cbor();
+        dbg!(c.hex_dump());
+        assert!(c.len() <= 1);
     }
 
     #[test]

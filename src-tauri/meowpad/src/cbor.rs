@@ -1,6 +1,8 @@
-use crate::{Config, KbReport, KeyCode, KeyConfig, LightingMode};
-use ciborium;
-use palette::rgb::channels::Argb;
+use crate::{
+    config::{self, LightingMode},
+    KbReport, KeyCode,
+};
+use palette::{rgb::channels::Argb, WithAlpha};
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
 use serde_with::*;
@@ -37,6 +39,8 @@ pub struct Keyboard {
     pub ContinuousReport: bool,
     #[serde(rename = "kf")]
     pub KalmanFilter: bool,
+    #[serde(rename = "ehs")]
+    pub EnableHS: bool,
 }
 
 /// speed 0-10
@@ -49,6 +53,8 @@ pub struct Light {
     pub led_colors: [u32; 4],
     #[serde(rename = "km")]
     pub led_mode: u8,
+    #[serde(rename = "kms")]
+    pub led_mode_sleep: u8,
     #[serde(rename = "mb")]
     pub max_brightness: u8,
     #[serde(rename = "st")]
@@ -105,72 +111,27 @@ pub struct Light {
     pub high_speed_color: u32,
 }
 
-#[repr(C)]
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
-#[allow(non_snake_case)]
-pub struct CborConfig {
-    #[serde(rename = "k")]
-    pub Key: Keyboard,
-    #[serde(rename = "l")]
-    pub Light: Light,
-}
-
-impl CborConfig {
-    pub fn from_cbor<T: AsRef<[u8]>>(
-        data: T,
-    ) -> Result<CborConfig, ciborium::de::Error<std::io::Error>> {
+pub trait CborConvertor
+where
+    Self: Sized + Serialize,
+    for<'de> Self: Deserialize<'de>,
+{
+    fn from_cbor<T: AsRef<[u8]>>(data: T) -> Result<Self, ciborium::de::Error<std::io::Error>> {
         Ok(ciborium::de::from_reader(Cursor::new(data))?)
     }
 
-    pub fn to_cbor(self) -> Vec<u8> {
+    fn to_cbor(self) -> Vec<u8> {
         let mut data = vec![];
         ciborium::ser::into_writer(&self, &mut data).unwrap();
         data
     }
 }
 
-impl Default for KeyRTConfig {
-    fn default() -> Self {
-        Self {
-            PressPercentage: 10,
-            ReleasePercentage: 10,
-            DeadZone: 5,
-            KeyData: [0; 6],
-        }
-    }
-}
+impl CborConvertor for Keyboard {}
+impl CborConvertor for Light {}
 
-impl KeyRTConfig {
-    pub fn with_key(key: KeyCode) -> Self {
-        Self {
-            KeyData: key.to_report().into(),
-            ..Default::default()
-        }
-    }
-}
-
-impl Default for Keyboard {
-    fn default() -> Self {
-        let key_configs = [
-            KeyRTConfig::with_key(KeyCode::Z),
-            KeyRTConfig::with_key(KeyCode::X),
-            KeyRTConfig::with_key(KeyCode::C),
-            KeyRTConfig::with_key(KeyCode::Grave),
-            // KeyRTConfig::default(),
-            // KeyRTConfig::default(),
-            // KeyRTConfig::default(),
-        ];
-        Self {
-            KeyConfigs: key_configs,
-            ContinuousReport: false,
-            KalmanFilter: true,
-            JittersEliminationTime: 15 * 8,
-        }
-    }
-}
-
-impl From<KeyConfig> for KeyRTConfig {
-    fn from(cfg: KeyConfig) -> Self {
+impl From<config::KeyConfig> for KeyRTConfig {
+    fn from(cfg: config::KeyConfig) -> Self {
         Self {
             PressPercentage: cfg.press_percentage,
             ReleasePercentage: cfg.release_percentage,
@@ -180,50 +141,55 @@ impl From<KeyConfig> for KeyRTConfig {
     }
 }
 
-impl From<Config> for CborConfig {
-    fn from(cfg: Config) -> Self {
-        let mut led_colors = [0u32; 4];
-        for i in 0..4 {
-            led_colors[i] = cfg.led_colors[i].into_u32::<Argb>();
-        }
-
+impl From<config::Key> for Keyboard {
+    fn from(cfg: config::Key) -> Self {
         let mut key_configs = [KeyRTConfig::default(); 4];
         for i in 0..4 {
             key_configs[i] = cfg.keys[i].into();
         }
 
-        Self {
-            Key: Keyboard {
-                KeyConfigs: key_configs,
-                ContinuousReport: cfg.continuous_report,
-                KalmanFilter: cfg.kalman_filter,
-                JittersEliminationTime: cfg.jitters_elimination_time,
-            },
-            Light: Light {
-                led_colors: led_colors,
-                led_mode: cfg.lighting_mode_key as u8,
-                max_brightness: cfg.max_brightness,
-                sleep_time: cfg.sleep_time,
-                rainbow_flow_speed: cfg.rainbow_flow_speed,
-                is_flow_delay: cfg.is_flow_delay,
-                color_change_rate: cfg.color_change_rate,
-                rainbow_speed: cfg.rainbow_speed,
-                breathing_speed: cfg.breathing_speed,
-                max_keep_time: cfg.max_keep_time,
-                min_keep_time: cfg.min_keep_time,
-                breaths_before_color_switch: cfg.breaths_before_color_switch,
-                rain_drop_speed: cfg.rain_drop_speed,
-                random_rain_chance: cfg.random_rain_chance,
-                tap_to_glow_speed: cfg.tap_to_glow_speed,
-                max_lum_freeze_time: cfg.max_lum_freeze_time,
-                change_color_when_pressed: cfg.change_color_when_pressed,
-                random_color_mode: cfg.random_color_mode,
-                speed_light_mode_speed: cfg.speed_light_mode_speed,
-                attenuation_speed: cfg.attenuation_speed,
-                increase_difficulty: cfg.increase_difficulty,
-                low_speed_color: cfg.low_speed_color.into_u32::<Argb>(),
-                high_speed_color: cfg.high_speed_color.into_u32::<Argb>(),
-            },
+        Keyboard {
+            KeyConfigs: key_configs,
+            ContinuousReport: cfg.continuous_report,
+            KalmanFilter: cfg.kalman_filter,
+            JittersEliminationTime: cfg.jitters_elimination_time,
+            EnableHS: cfg.enable_hs
+        }
+    }
+}
+
+impl From<config::Light> for Light {
+    fn from(cfg: config::Light) -> Self {
+        let mut led_colors = [0u32; 4];
+        for i in 0..4 {
+            led_colors[i] = cfg.led_colors[i].with_alpha(0).into_u32::<Argb>();
+        }
+
+        Light {
+            led_colors: led_colors,
+            led_mode: cfg.lighting_mode as u8,
+            led_mode_sleep: cfg.lighting_mode_sleep as u8,
+            max_brightness: cfg.max_brightness,
+            sleep_time: cfg.sleep_time,
+            rainbow_flow_speed: cfg.rainbow_flow_speed,
+            is_flow_delay: cfg.is_flow_delay,
+            color_change_rate: cfg.color_change_rate,
+            rainbow_speed: cfg.rainbow_speed,
+            breathing_speed: cfg.breathing_speed,
+            max_keep_time: cfg.max_keep_time,
+            min_keep_time: cfg.min_keep_time,
+            breaths_before_color_switch: cfg.breaths_before_color_switch,
+            rain_drop_speed: cfg.rain_drop_speed,
+            random_rain_chance: cfg.random_rain_chance,
+            tap_to_glow_speed: cfg.tap_to_glow_speed,
+            max_lum_freeze_time: cfg.max_lum_freeze_time,
+            change_color_when_pressed: cfg.change_color_when_pressed,
+            random_color_mode: cfg.random_color_mode,
+            speed_light_mode_speed: cfg.speed_light_mode_speed,
+            attenuation_speed: cfg.attenuation_speed,
+            increase_difficulty: cfg.increase_difficulty,
+            low_speed_color: cfg.low_speed_color.with_alpha(0).into_u32::<Argb>(),
+            high_speed_color: cfg.high_speed_color.with_alpha(0).into_u32::<Argb>(),
         }
     }
 }
@@ -231,14 +197,15 @@ impl From<Config> for CborConfig {
 impl Default for Light {
     fn default() -> Self {
         let led_colors = [
-            Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            Srgb::new(255, 255, 255).into_u32::<Argb>(),
+            Srgb::new(255, 255, 255).with_alpha(0).into_u32::<Argb>(),
+            Srgb::new(255, 255, 255).with_alpha(0).into_u32::<Argb>(),
+            Srgb::new(255, 255, 255).with_alpha(0).into_u32::<Argb>(),
+            Srgb::new(255, 255, 255).with_alpha(0).into_u32::<Argb>(),
         ];
         Self {
             led_colors: led_colors,
-            led_mode: LightingMode::Solid as u8,
+            led_mode: LightingMode::BreatheGlowMode as u8,
+            led_mode_sleep: LightingMode::Off as u8,
             max_brightness: 50,
             sleep_time: 120,
             rainbow_flow_speed: 100,
@@ -258,8 +225,47 @@ impl Default for Light {
             speed_light_mode_speed: 2,
             attenuation_speed: 80,
             increase_difficulty: 24,
-            low_speed_color: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            high_speed_color: Srgb::new(255, 0, 0).into_u32::<Argb>(),
+            low_speed_color: Srgb::new(255, 255, 255).with_alpha(0).into_u32::<Argb>(),
+            high_speed_color: Srgb::new(255, 0, 0).with_alpha(0).into_u32::<Argb>(),
+        }
+    }
+}
+
+impl Default for Keyboard {
+    fn default() -> Self {
+        let key_configs = [
+            KeyRTConfig::with_key(KeyCode::Z),
+            KeyRTConfig::with_key(KeyCode::X),
+            KeyRTConfig::with_key(KeyCode::C),
+            KeyRTConfig::with_key(KeyCode::V),
+            // KeyRTConfig::default(),
+        ];
+        Self {
+            KeyConfigs: key_configs,
+            ContinuousReport: false,
+            KalmanFilter: true,
+            JittersEliminationTime: 15 * 8,
+            EnableHS: false
+        }
+    }
+}
+
+impl Default for KeyRTConfig {
+    fn default() -> Self {
+        Self {
+            PressPercentage: 8,
+            ReleasePercentage: 8,
+            DeadZone: 15,
+            KeyData: [0; 6],
+        }
+    }
+}
+
+impl KeyRTConfig {
+    pub fn with_key(key: KeyCode) -> Self {
+        Self {
+            KeyData: key.to_report().into(),
+            ..Default::default()
         }
     }
 }

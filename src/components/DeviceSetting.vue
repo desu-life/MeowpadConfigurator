@@ -2,7 +2,6 @@
 import { useStore } from '@/store'
 import KeyModal from '@/components/KeyModal.vue'
 import Keyboard from '@/components/Keyboard.vue'
-import { invoke } from "@tauri-apps/api/tauri";
 import { h } from 'vue'
 import { useI18n } from "vue-i18n";
 import { KeyCode, LightingMode, Toggle, jsToHid } from '@/interface';
@@ -108,9 +107,6 @@ function GetToggleSel() {
     <Keyboard></Keyboard>
   </div>
 
-
-
-
   <!-- </n-space> -->
   <n-grid :cols="20" :x-gap="18" style="width: 80vw;">
 
@@ -124,13 +120,13 @@ function GetToggleSel() {
       </n-form-item>
     </n-gi>
     <n-gi :span="10">
-      <n-form-item :label="$t('lighting_mode')" path="lighting_mode_key">
-        <n-select v-model:value="store.config!.lighting_mode_key" :options="GetLighingModeSel()" />
+      <n-form-item :label="$t('lighting_mode')" path="lighting_mode">
+        <n-select v-model:value="store.light_config!.lighting_mode" :options="GetLighingModeSel()" />
       </n-form-item>
     </n-gi>
     <n-gi :span="5">
       <n-form-item :label="$t('device_sleep_idle_time')" path="sleep_time">
-        <n-input-number v-model:value="store.config!.sleep_time" :min="0" :max="65535">
+        <n-input-number v-model:value="store.light_config!.sleep_time" :min="0" :max="65535">
           <template #suffix>
             {{ $t('sec') }}
           </template>
@@ -142,7 +138,17 @@ function GetToggleSel() {
         <n-select v-model:value="store.continuous_report" :options="GetToggleSel()" />
       </n-form-item>
     </n-gi>
+    <n-gi :span="10">
+      <n-form-item :label="$t('lighting_mode_sleep')" path="lighting_mode_sleep">
+        <n-select v-model:value="store.light_config!.lighting_mode_sleep" :options="GetLighingModeSel()" />
+      </n-form-item>
+    </n-gi>
     <n-gi :span="5">
+      <n-form-item :label="$t('enable_hs')" path="kalman_filter">
+        <n-select v-model:value="store.enable_hs" :options="GetToggleSel()" />
+      </n-form-item>
+    </n-gi>
+    <n-gi :span="3">
       <n-form-item :label="$t('kalman_filter')" path="kalman_filter">
         <n-select v-model:value="store.kalman_filter" :options="GetToggleSel()" />
       </n-form-item>

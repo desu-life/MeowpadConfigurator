@@ -20,7 +20,14 @@ export interface IRgb {
     blue: number
 }
 
-export interface IDevice {
+export interface IDeviceStatus {
+    key: boolean
+    light: boolean
+    hall: boolean
+    enabled: boolean
+}
+
+export interface IDeviceInfo {
     name: string
     version: string
 }
@@ -48,14 +55,19 @@ export interface IKeyConfig {
     key_data: KeyCode[]
 }
 
-export interface IConfig {
+export interface IKeyboard {
     keys: IKeyConfig[]
-    led_colors: IRgb[]
-    lighting_mode_key: LightingMode
-    max_brightness: number
     jitters_elimination_time: number
     continuous_report: boolean
     kalman_filter: boolean
+    enable_hs: boolean
+}
+
+export interface ILighting {
+    led_colors: IRgb[]
+    lighting_mode: LightingMode
+    lighting_mode_sleep: LightingMode
+    max_brightness: number
     sleep_time: number
     
     // rainbow_flow_mode

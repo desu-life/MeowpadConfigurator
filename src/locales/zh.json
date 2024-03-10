@@ -10,7 +10,7 @@
   "bad_firmware_version": "设备版本 {version} 与本程序不匹配，请更新固件",
   "connection_broke": "连接出错，错误原因：{e}",
   "unknown_device_e": "获取设备信息失败，错误原因：{e}",
-  "cali_msg": "请同时按下所有按键并保持2秒后松开，即可完成校准过程",
+  "cali_msg": "请同时按下所有按键直至全部按键的灯光从黄色变为绿色",
   "cali_failed": "校准失败，错误原因：{e}",
   "cali_finished": "校准完成",
   "reset_success": "已重置配置，同步以提交更改",
@@ -117,5 +117,10 @@
   "speed_press_difficulty": "手速计难度",
   "color_change_rate": "颜色变化率",
   "delay_process": "延迟处理",
-  "rainbow_light_switching_step": "流光步长"
+  "rainbow_light_switching_step": "流光步长",
+  "lighting_mode_sleep": "睡眠灯效模式",
+  "enable_hs": "高速USB（8000Hz）",
+  "device_update": "固件更新",
+  "iap_connected": "固件更新模式",
+  "save_config": "保存配置"
 }

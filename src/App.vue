@@ -4,11 +4,11 @@
 import Main from '@/components/Main.vue'
 import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
-import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow, Theme } from "@tauri-apps/api/window";
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { IVersion } from '@/interface';
 import { useStore } from '@/store'
+import { check_update, get_latest_version } from './api';
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
@@ -25,10 +25,10 @@ document.body.onselectstart = document.body.oncontextmenu = () => false
 
 onMounted(async () => {
   let show = true;
-
-  invoke("get_version").then((version: IVersion) => {
+  
+  get_latest_version().then((version: IVersion) => {
     store.version_info = version
-    invoke("check_update", { version: version }).then((res: boolean) => {
+    check_update(version).then((res: boolean) => {
       show = res;
     });
   });

@@ -4,23 +4,41 @@ use serde::Deserialize;
 use std::io::Cursor;
 use std::io::Write;
 
-#[derive(Deserialize, FromPrimitive, ToPrimitive, Copy, Clone, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Deserialize, FromPrimitive, ToPrimitive, Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(u8)]
 pub enum PacketID {
     Null = 0,
-    Ok = 1,
-    Bad = 2,
+    Ok   = 1,
+    Bad  = 2,
     Ping = 3,
 
-    WriteConfig = 5,
+    // 弃用
+    SetConfig = 5,
     GetConfig = 6,
+
+    // 其他
     GetFirmwareVersion = 7,
-    GetDeviceName = 8,
-    CalibrationKey = 9,
-    EraseFirmware = 10,
-    Debug = 11,
-    AutoConfig = 12,
-    SetMiddlePoint = 13,
+    GetDeviceName      = 8,
+    CalibrationKey     = 9,
+    EraseFirmware      = 10,
+    Debug              = 11,
+    AutoConfig         = 12, // todo
+    SetMiddlePoint     = 13,
+    ToggleKeyboard     = 14,
+    Reset              = 15,
+    GetStatus          = 16,
+
+    // 配置部分
+    GetKeyConfig     = 100,
+    GetLightConfig   = 101,
+    SetKeyConfig     = 102,
+    SetLightConfig   = 103,
+    SaveKeyConfig    = 104,
+    SaveLightConfig  = 105,
+    ClearKeyConfig   = 106,
+    ClearLightConfig = 107,
+    GetHallConfig    = 108,
+    ClearHallConfig  = 109,
 }
 
 impl std::fmt::Display for PacketID {
@@ -35,7 +53,7 @@ impl PacketID {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Packet {
     pub id: PacketID,
     pub data: Vec<u8>,

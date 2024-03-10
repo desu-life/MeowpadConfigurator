@@ -1,4 +1,4 @@
-use crate::{cbor::{CborConfig, KeyRTConfig}, error::Error, KbReport, KeyCode};
+use crate::{cbor, error::Error, KbReport, KeyCode};
 use num::FromPrimitive;
 use num_derive::{FromPrimitive, ToPrimitive};
 use palette::rgb::channels::Argb;
@@ -6,7 +6,6 @@ use palette::Srgb;
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
 use serde_with::*;
-use std::time::Duration;
 
 #[derive(
     Serialize_repr, Deserialize_repr, FromPrimitive, ToPrimitive, Copy, Clone, Debug, Eq, PartialEq,
@@ -40,17 +39,24 @@ pub struct KeyConfig {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Config {
+#[derive(Serialize, Deserialize, Clone, Debug, Copy)]
+pub struct Key {
     pub keys: [KeyConfig; 4],
-    /// LED灯颜色
-    pub led_colors: [Srgb<u8>; 4],
-    /// 灯效模式
-    pub lighting_mode_key: LightingMode,
-    pub max_brightness: u8,
     pub jitters_elimination_time: u16,
     pub continuous_report: bool,
     pub kalman_filter: bool,
+    pub enable_hs: bool
+}
+
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, Debug, Copy)]
+pub struct Light {
+    /// LED灯颜色
+    pub led_colors: [Srgb<u8>; 4],
+    /// 灯效模式
+    pub lighting_mode: LightingMode,
+    pub lighting_mode_sleep: LightingMode,
+    pub max_brightness: u8,
     pub sleep_time: u16,
 
     // rainbow_flow_mode
@@ -86,55 +92,67 @@ pub struct Config {
     pub high_speed_color: Srgb<u8>,
 }
 
-impl TryFrom<CborConfig> for Config {
+impl TryFrom<cbor::Keyboard> for Key {
     type Error = Error;
-    fn try_from(cfg: CborConfig) -> Result<Self, Self::Error> {
+    fn try_from(cfg: cbor::Keyboard) -> Result<Self, Self::Error> {
         let mut keys: [KeyConfig; 4] = Default::default();
         for i in 0..4 {
-            keys[i] = KeyConfig::from(cfg.Key.KeyConfigs[i]);
+            keys[i] = KeyConfig::from(cfg.KeyConfigs[i]);
         }
 
-        let mut led_colors: [Srgb<u8>; 4] = Default::default();
-        for i in 0..4 {
-            led_colors[i] = Srgb::from_u32::<Argb>(cfg.Light.led_colors[i]);
-        }
-
-        Ok(Config {
+        Ok(Key {
             keys,
-            led_colors,
-            lighting_mode_key: LightingMode::from_u8(cfg.Light.led_mode).ok_or(
-                Error::ConfigDataCheckFailed("lighting_mode_key", cfg.Light.led_mode as usize),
-            )?,
-            max_brightness: cfg.Light.max_brightness,
-            continuous_report: cfg.Key.ContinuousReport,
-            kalman_filter: cfg.Key.KalmanFilter,
-            jitters_elimination_time: cfg.Key.JittersEliminationTime,
-            sleep_time: cfg.Light.sleep_time,
-            rainbow_flow_speed: cfg.Light.rainbow_flow_speed,
-            is_flow_delay: cfg.Light.is_flow_delay,
-            color_change_rate: cfg.Light.color_change_rate,
-            rainbow_speed: cfg.Light.rainbow_speed,
-            breathing_speed: cfg.Light.breathing_speed,
-            max_keep_time: cfg.Light.max_keep_time,
-            min_keep_time: cfg.Light.min_keep_time,
-            breaths_before_color_switch: cfg.Light.breaths_before_color_switch,
-            rain_drop_speed: cfg.Light.rain_drop_speed,
-            random_rain_chance: cfg.Light.random_rain_chance,
-            tap_to_glow_speed: cfg.Light.tap_to_glow_speed,
-            max_lum_freeze_time: cfg.Light.max_lum_freeze_time,
-            change_color_when_pressed: cfg.Light.change_color_when_pressed,
-            random_color_mode: cfg.Light.random_color_mode,
-            speed_light_mode_speed: cfg.Light.speed_light_mode_speed,
-            attenuation_speed: cfg.Light.attenuation_speed,
-            increase_difficulty: cfg.Light.increase_difficulty,
-            low_speed_color: Srgb::from_u32::<Argb>(cfg.Light.low_speed_color),
-            high_speed_color: Srgb::from_u32::<Argb>(cfg.Light.high_speed_color),
+            continuous_report: cfg.ContinuousReport,
+            kalman_filter: cfg.KalmanFilter,
+            jitters_elimination_time: cfg.JittersEliminationTime,
+            enable_hs: cfg.EnableHS
         })
     }
 }
 
-impl From<KeyRTConfig> for KeyConfig {
-    fn from(cfg: KeyRTConfig) -> Self {
+impl TryFrom<cbor::Light> for Light {
+    type Error = Error;
+    fn try_from(cfg: cbor::Light) -> Result<Self, Self::Error> {
+        let mut led_colors: [Srgb<u8>; 4] = Default::default();
+        for i in 0..4 {
+            led_colors[i] = Srgb::from_u32::<Argb>(cfg.led_colors[i]);
+        }
+
+        Ok(Light {
+            led_colors,
+            lighting_mode: LightingMode::from_u8(cfg.led_mode).ok_or(
+                Error::ConfigDataCheckFailed("lighting_mode", cfg.led_mode as usize),
+            )?,
+            lighting_mode_sleep: LightingMode::from_u8(cfg.led_mode_sleep).ok_or(
+                Error::ConfigDataCheckFailed("lighting_mode_sleep", cfg.led_mode_sleep as usize),
+            )?,
+            max_brightness: cfg.max_brightness,
+            sleep_time: cfg.sleep_time,
+            rainbow_flow_speed: cfg.rainbow_flow_speed,
+            is_flow_delay: cfg.is_flow_delay,
+            color_change_rate: cfg.color_change_rate,
+            rainbow_speed: cfg.rainbow_speed,
+            breathing_speed: cfg.breathing_speed,
+            max_keep_time: cfg.max_keep_time,
+            min_keep_time: cfg.min_keep_time,
+            breaths_before_color_switch: cfg.breaths_before_color_switch,
+            rain_drop_speed: cfg.rain_drop_speed,
+            random_rain_chance: cfg.random_rain_chance,
+            tap_to_glow_speed: cfg.tap_to_glow_speed,
+            max_lum_freeze_time: cfg.max_lum_freeze_time,
+            change_color_when_pressed: cfg.change_color_when_pressed,
+            random_color_mode: cfg.random_color_mode,
+            speed_light_mode_speed: cfg.speed_light_mode_speed,
+            attenuation_speed: cfg.attenuation_speed,
+            increase_difficulty: cfg.increase_difficulty,
+            low_speed_color: Srgb::from_u32::<Argb>(cfg.low_speed_color),
+            high_speed_color: Srgb::from_u32::<Argb>(cfg.high_speed_color),
+        })
+    }
+}
+
+impl From<cbor::KeyRTConfig> for KeyConfig {
+    fn from(cfg: cbor::KeyRTConfig) -> Self {
         Self {
             press_percentage: cfg.PressPercentage,
             release_percentage: cfg.ReleasePercentage,

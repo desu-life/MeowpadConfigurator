@@ -3,25 +3,25 @@
 //     windows_subsystem = "windows"
 // )]
 
-use anyhow::{anyhow, Result as AnyResult};
+use anyhow::Result as AnyResult;
+use hid_iap::iap::IAPState;
+use hid_iap::iap::IAP;
 use hidapi_rusb::HidApi;
 use log::*;
-use meowpad::{Config, Meowpad, KeyRTStatus};
+use meowpad::{KeyRTStatus, Meowpad};
 use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use once_cell::sync::Lazy;
 use reqwest::Client;
-use serde_json::json;
 use std::borrow::BorrowMut;
 use std::env;
-use std::ffi::CStr;
 use std::fs;
 use std::io::Write;
 use std::panic;
-use std::path::PathBuf;
+use std::path;
+use std::path::Path;
 use std::sync::{mpsc, Mutex};
 use std::thread;
 use std::time::Duration;
-use tauri::api::path;
 use tauri::Manager;
 use tauri::Window;
 
@@ -29,6 +29,12 @@ mod consts;
 mod error;
 use consts::*;
 use error::{Error, Result};
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
+struct Config {
+    key: meowpad::config::Key,
+    light: meowpad::config::Light,
+}
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
@@ -38,6 +44,8 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
 });
 static mut HID_API: Lazy<HidApi> = Lazy::new(|| HidApi::new().unwrap());
 static DEVICE: Mutex<Option<Meowpad>> = Mutex::new(None);
+static IAP_DEVICE: Mutex<Option<IAP>> = Mutex::new(None);
+static mut FIRMWARE_DATA: Option<Vec<u8>> = None;
 
 /// blocking_dialog
 macro_rules! message_dialog {
@@ -68,11 +76,11 @@ fn init_logger(default_level: &str) {
     let mut builder = Builder::from_env(Env::default().filter_or("LOG_LEVEL", default_level));
     builder
         .format(|buf, record| {
-            let level = record.level();
+            let style = buf.default_level_style(record.level());
             writeln!(
                 buf,
-                "[{}] {}",
-                buf.default_level_style(level).value(level),
+                "[{style}{}{style:#}] {}",
+                record.level(),
                 record.args()
             )
         })
@@ -87,37 +95,11 @@ async fn calibration_key(_app: tauri::AppHandle) -> Result<()> {
     Ok(())
 }
 
-// #[tauri::command]
-// async fn get_calibration_key_result(_app: tauri::AppHandle, timeout: i32) -> Result<(), String> {
-//     || -> AnyResult<_> {
-//         let mut _d = DEVICE.lock().unwrap();
-//         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-//         d.get_calibration_key_result(timeout)?;
-//         Ok(())
-//     }()
-//     .map_err(|e| format!("{}", e))
-// }
-
-// #[tauri::command]
-// async fn get_auto_config(_app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-//     || -> AnyResult<_> {
-//         let mut _d = DEVICE.lock().unwrap();
-//         let d = _d.as_mut().ok_or_else(|| anyhow!("获取设备失败"))?;
-//         let res = d.get_auto_config()?;
-//         Ok(json!({
-//             "KeyTriggerDegree": res.0,
-//             "KeyReleaseDegree": res.1,
-//             "DeadZone": res.2,
-//         }))
-//     }()
-//     .map_err(|e| format!("{}", e))
-// }
-
 #[tauri::command]
-async fn get_hall_value(_window: Window) -> Result<[KeyRTStatus; 4]> {
+async fn get_debug_value(_window: Window) -> Result<[KeyRTStatus; 4]> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
-    Ok(d.debug()?)
+    Ok(d.get_debug_value()?)
 }
 
 #[tauri::command]
@@ -129,40 +111,94 @@ async fn erase_firmware(_app: tauri::AppHandle) -> Result<()> {
 }
 
 #[tauri::command]
-async fn get_default_config(_app: tauri::AppHandle) -> Config {
-    let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().unwrap();
-    let config = d.default_config();
-    config.try_into().expect("解析默认配置出错，真不应该..")
+async fn get_default_key_config(_app: tauri::AppHandle) -> meowpad::config::Key {
+    meowpad::cbor::Keyboard::default().try_into().unwrap()
 }
 
 #[tauri::command]
-async fn get_config(_app: tauri::AppHandle) -> Result<Config> {
+async fn get_default_light_config(_app: tauri::AppHandle) -> meowpad::config::Light {
+    meowpad::cbor::Light::default().try_into().unwrap()
+}
+
+#[tauri::command]
+async fn get_key_config(_app: tauri::AppHandle) -> Result<meowpad::config::Key> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
-    d.load_config()?;
-    Ok(d.config().try_into()?)
+    d.load_key_config()?;
+    Ok(d.key_config.unwrap().try_into()?)
+}
+
+#[tauri::command]
+async fn get_light_config(_app: tauri::AppHandle) -> Result<meowpad::config::Light> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.load_light_config()?;
+    Ok(d.light_config.unwrap().try_into()?)
+}
+
+#[tauri::command]
+async fn set_key_config(_app: tauri::AppHandle, config: meowpad::config::Key) -> Result<()> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.key_config = Some(config.into());
+    d.set_key_config()?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn set_light_config(_app: tauri::AppHandle, config: meowpad::config::Light) -> Result<()> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.light_config = Some(config.into());
+    d.set_light_config()?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn save_key_config(_app: tauri::AppHandle) -> Result<()> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.save_key_config()?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn save_light_config(_app: tauri::AppHandle) -> Result<()> {
+    let mut _d = DEVICE.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    d.save_light_config()?;
+    Ok(())
 }
 
 #[tauri::command]
 async fn get_raw_config(_app: tauri::AppHandle) -> Result<String> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
-    d.load_config()?;
-    Ok(toml::to_string::<Config>(&d.config().try_into()?).unwrap())
+    d.load_key_config()?;
+    d.load_light_config()?;
+    Ok(toml::to_string(&Config {
+        key: d.key_config.unwrap().try_into()?,
+        light: d.light_config.unwrap().try_into()?,
+    })
+    .unwrap())
 }
 
 #[tauri::command]
 async fn check_raw_config(_app: tauri::AppHandle, config: String) -> bool {
-    toml::from_str::<meowpad::Config>(&config).is_ok()
+    toml::from_str::<Config>(&config).is_ok()
 }
 
 #[tauri::command]
 async fn save_raw_config(_app: tauri::AppHandle, config: String) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
-    d.config = Some(toml::from_str::<Config>(&config).expect("错误配置").into());
-    d.write_config()?;
+    let cfg = toml::from_str::<Config>(&config).expect("错误配置");
+    d.key_config = Some(cfg.key.into());
+    d.set_key_config()?;
+    d.save_key_config()?;
+    d.light_config = Some(cfg.light.into());
+    d.set_light_config()?;
+    d.save_light_config()?;
     Ok(())
 }
 
@@ -183,21 +219,29 @@ async fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value> {
 }
 
 #[tauri::command]
-async fn save_config(_app: tauri::AppHandle, config: Config) -> Result<()> {
+async fn get_device_status(_app: tauri::AppHandle) -> Result<serde_json::Value> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
-    d.config = Some(config.into());
-    d.write_config()?;
-    Ok(())
+    let status = d.get_status()?;
+    info!(
+        "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
+        status.0, status.1, status.2, status.3
+    );
+    Ok(serde_json::json!({
+        "key": status.0,
+        "light": status.1,
+        "hall": status.2,
+        "enabled": status.3
+    }))
 }
 
 #[tauri::command]
-async fn get_version(_app: tauri::AppHandle) -> Result<Version> {
+async fn get_latest_version(_app: tauri::AppHandle) -> Result<Version> {
     Ok(Version::get().await?)
 }
 
 #[tauri::command]
-async fn get_firmware_version(_app: tauri::AppHandle) -> &'static str {
+async fn get_firmware_4k_version(_app: tauri::AppHandle) -> &'static str {
     FIRMWARE_VERSION_4K
 }
 
@@ -247,12 +291,66 @@ async fn connect(_app: tauri::AppHandle) -> Result<()> {
     _connect()
 }
 
+#[tauri::command]
+async fn connect_iap(_app: tauri::AppHandle) -> Result<()> {
+    let vid = 0x5D3E;
+    let pid = 0xFE08;
+    let api = unsafe { HID_API.borrow_mut() };
+    api.refresh_devices().unwrap();
+    match api.open(vid, pid) {
+        Ok(device) => {
+            info!("固件更新");
+            let mut _d = IAP_DEVICE.lock().unwrap();
+            *_d = Some(IAP::new(device));
+            Ok(())
+        }
+        Err(_) => {
+            warn!("连接失败，无法找到设备");
+            Err(error::Error::DeviceNotFound)
+        }
+    }
+}
+
+#[tauri::command]
+async fn iap_start(_app: tauri::AppHandle, data: Vec<u8>) -> Result<usize> {
+    let mut _iap = IAP_DEVICE.lock().unwrap();
+    let iap = _iap.as_mut().ok_or(Error::DeviceDissconnected)?;
+    unsafe { 
+        FIRMWARE_DATA = Some(data);
+        let data_ref = FIRMWARE_DATA.as_deref().unwrap();
+        let len = iap.start_program(data_ref)?;
+        Ok(len)
+    }
+}
+
+#[tauri::command]
+async fn iap_flush(app: tauri::AppHandle) -> Result<()> {
+    let mut _iap = IAP_DEVICE.lock().unwrap();
+    let iap = _iap.as_mut().ok_or(Error::DeviceDissconnected)?;
+    while iap.state == IAPState::Programming {
+        let pos = iap.program()?;
+        thread::sleep(Duration::from_millis(1));
+        app.emit_all("iap_process", &[pos, IAPState::Programming as u16]).unwrap();
+    }
+    
+    while iap.state == IAPState::Verifying {
+        let pos = iap.verify()?;
+        thread::sleep(Duration::from_millis(1));
+        app.emit_all("iap_process", &[pos, IAPState::Verifying as u16]).unwrap();
+    }
+    Ok(())
+}
+
+
+
+
 fn _connect() -> Result<()> {
     info!("开始连接!");
     let found_device = find_device();
 
     match found_device {
         Some(device) => {
+            info!("连接到设备");
             let mut _d = DEVICE.lock().unwrap();
             *_d = Some(device);
             Ok(())
@@ -299,7 +397,6 @@ fn find_device() -> Option<Meowpad> {
             Ok(r) if !r => None,
             Err(_) => None,
             _ => {
-                info!("连接到设备");
                 debug!("Name: {}", d.product_string().unwrap_or_default());
                 debug!(
                     "Manufacturer: {}",
@@ -343,8 +440,8 @@ pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
 
 fn main() -> AnyResult<()> {
     panic::set_hook(Box::new(|e| {
-        use std::backtrace::Backtrace;
         use better_panic::Settings;
+        use std::backtrace::Backtrace;
         let emessage = format!("Unexcepted Error：\n{}\n{}", e, Backtrace::force_capture());
         // eprintln!("{emessage}");
         let handler = Settings::debug()
@@ -367,8 +464,30 @@ fn main() -> AnyResult<()> {
             d.get_firmware_version()?;
             info!("设备名称：{:?}", d.device_name);
             info!("固件版本：{:?}", d.firmware_version);
-            d.reset_config()?;
+
+            d.key_config = Some(meowpad::cbor::Keyboard::default());
+            d.set_key_config()?;
+            d.save_key_config()?;
+
+            d.light_config = Some(meowpad::cbor::Light::default());
+            d.set_light_config()?;
+            d.save_light_config()?;
             warn!("重置配置成功")
+        }
+        "--clear" => {
+            _connect()?;
+            let mut _d = DEVICE.lock().unwrap();
+            let mut d = _d.take().unwrap();
+            d.get_device_name()?;
+            d.get_firmware_version()?;
+            info!("设备名称：{:?}", d.device_name);
+            info!("固件版本：{:?}", d.firmware_version);
+
+            d.clear_key_config()?;
+            d.clear_light_config()?;
+            d.clear_hall_config()?;
+            d.reset_device()?;
+            warn!("设备配置已清空");
         }
         "--erase" => {
             _connect()?;
@@ -400,10 +519,26 @@ fn main() -> AnyResult<()> {
             d.get_firmware_version()?;
             info!("设备名称：{:?}", d.device_name);
             info!("固件版本：{:?}", d.firmware_version);
-            d.load_config().unwrap();
-            info!("当前设备配置：{:?}", d.config());
+            let status = d.get_status()?;
+            info!(
+                "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
+                status.0, status.1, status.2, status.3
+            );
+
+            d.load_key_config()?;
+            d.load_light_config()?;
+
+            info!("当前按键配置：{:#?}", d.key_config.unwrap());
+            info!("当前灯效配置：{:#?}", d.light_config.unwrap());
+
             let mut f = std::fs::File::create("meowpad.toml")?;
-            f.write_all(toml::to_string_pretty(&d.config())?.as_bytes())?;
+            f.write_all(
+                toml::to_string(&Config {
+                    key: d.key_config.unwrap().try_into()?,
+                    light: d.light_config.unwrap().try_into()?,
+                })?
+                .as_bytes(),
+            )?;
 
             let (tx, rx) = mpsc::channel();
             let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2)).unwrap();
@@ -417,11 +552,19 @@ fn main() -> AnyResult<()> {
                 match rx.recv() {
                     Ok(DebouncedEvent::Write(_)) => {
                         warn!(" * 检测到配置文件更新，自动写入中 ...");
-                        d.config.iter_mut().for_each(|c| {
-                            *c = toml::from_str(&fs::read_to_string("meowpad.toml").unwrap())
-                                .unwrap();
-                        });
-                        d.write_config()?;
+                        if let Ok(cfg) =
+                            toml::from_str::<Config>(&fs::read_to_string("meowpad.toml")?)
+                        {
+                            d.key_config = Some(cfg.key.into());
+                            d.set_key_config()?;
+                            d.save_key_config()?;
+                            d.light_config = Some(cfg.light.into());
+                            d.set_light_config()?;
+                            d.save_light_config()?;
+                        } else {
+                            warn!(" * 配置文件格式错误，请修改");
+                            continue;
+                        }
                     }
                     Err(e) => error!("watch error: {:?}", e),
                     _ => (),
@@ -440,20 +583,29 @@ fn main() -> AnyResult<()> {
                     Ok(())
                 })
                 .invoke_handler(tauri::generate_handler![
-                    connect,
-                    get_config,
-                    save_config,
-                    get_default_config,
-                    get_device_info,
-                    check_update,
-                    get_version,
-                    get_firmware_version,
                     calibration_key,
+                    get_debug_value,
                     erase_firmware,
+                    get_default_key_config,
+                    get_default_light_config,
+                    get_key_config,
+                    get_light_config,
+                    set_key_config,
+                    set_light_config,
+                    save_key_config,
+                    save_light_config,
                     get_raw_config,
-                    save_raw_config,
                     check_raw_config,
-                    get_hall_value
+                    save_raw_config,
+                    get_device_info,
+                    get_device_status,
+                    get_latest_version,
+                    get_firmware_4k_version,
+                    check_update,
+                    connect_iap,
+                    iap_start,
+                    iap_flush,
+                    connect
                 ])
                 .run(tauri::generate_context!())
                 .expect("error while running tauri application");
