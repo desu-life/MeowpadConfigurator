@@ -14,8 +14,10 @@ import * as api from '@/api'
 const { t } = useI18n();
 const dialog = useDialog()
 const store = useStore()
+const message = useMessage()
 store.status_str = t("device_disconnected")
 const show_calibrate_msg = ref(false)
+const sync_btn_type = ref<Type | undefined>("default")
 
 const state = ref({
   options: [
@@ -80,16 +82,16 @@ async function connect() {
     if (store.device_status.hall == false) {
       dialog.warning({
         title: t('warning'),
-        content: "设备未校准，是否校准",
+        content: t('device_cali_warn'),
         positiveText: t('yes'),
         negativeText: t('no'),
         maskClosable: false,
         onPositiveClick: () => {
-          calibration_key() 
+          calibration_key()
         },
       })
     }
-    
+
     if (info === undefined) {
       store.status_str = t('connected')
     } else {
@@ -168,10 +170,16 @@ async function get_default_light_config() {
 }
 
 async function get_default_config() {
-  await get_default_key_config()
-  await get_default_light_config()
-  store.status = "success"
-  store.status_str = t('reset_success')
+  store.loading = true
+  setTimeout(async () => {
+    await get_default_key_config()
+    await get_default_light_config()
+
+    sync_btn_type.value = "primary"
+    store.status = "success"
+    store.status_str = t('reset_success')
+    store.loading = false
+  }, 250);
 }
 
 async function get_key_config() {
@@ -243,7 +251,13 @@ async function sync_key_config() {
   for (let i = 0; i < store.key_config!.keys.length; i++) {
     store.key_config!.keys[i].key_data = store.key_config!.keys[i].key_data.filter(k => k != KeyCode.None)
 
-    if (store.key_config!.keys[i].dead_zone < 3) {
+    if (store.key_config!.keys[i].dead_zone < 5) {
+      need_check.value = true
+    }
+    if (store.key_config!.keys[i].press_percentage < 3) {
+      need_check.value = true
+    }
+    if (store.key_config!.keys[i].release_percentage < 3) {
       need_check.value = true
     }
   }
@@ -286,7 +300,8 @@ async function sync_config() {
     await sync_light_config()
     if (need_check.value) {
       store.status = "warning"
-      store.status_str = "配置已应用，请确认无误后保存"
+      store.status_str = t('applied_config')
+      message.warning(t('check_config_msg'))
     } else {
       await save_config()
     }
@@ -298,6 +313,7 @@ async function sync_config() {
     store.status_str = t('sync_error', { e: getErrorMsg(t, e as IError) })
     console.error(e)
   }
+  sync_btn_type.value = "default"
   store.loading = false
 }
 
@@ -326,6 +342,12 @@ function exit_developer_mode() {
   store.status_str = t("device_disconnected")
 }
 
+function exit_iap_mode() {
+  store.iap_connected = false
+  store.status = undefined
+  store.status_str = t("device_disconnected")
+}
+
 function developer_mode() {
   dialog.warning({
     title: t('warning'),
@@ -344,7 +366,7 @@ async function enter_iap() {
     await api.connect_iap()
     // 不管怎么样总之是连上了
     store.iap_connected = true
-    store.status = "success"
+    store.status = "warning"
     store.status_str = t('iap_connected')
   } catch (e) {
     store.iap_connected = false
@@ -362,24 +384,24 @@ async function device_update() {
   try {
     await api.connect()
     dialog.warning({
-    title: t('warning'),
-    content: "找到设备，是否清除现有固件并更新？",
-    positiveText: t('yes'),
-    negativeText: t('no'),
-    maskClosable: false,
-    onPositiveClick: async () => {
-      await api.erase_firmware()
-      setTimeout(async () => {
-        await enter_iap()
+      title: t('warning'),
+      content: t('device_update_warn'),
+      positiveText: t('yes'),
+      negativeText: t('no'),
+      maskClosable: false,
+      onPositiveClick: async () => {
+        await api.erase_firmware()
+        setTimeout(async () => {
+          await enter_iap()
+          store.loading = false
+        }, 1000);
+      },
+      onNegativeClick: () => {
         store.loading = false
-      }, 1000);
-    },
-    onNegativeClick: () => {
-      store.loading = false
-      store.status = undefined
-      store.status_str = t("device_disconnected")
-    },
-  })
+        store.status = undefined
+        store.status_str = t("device_disconnected")
+      },
+    })
   } catch (e) {
     await enter_iap()
     store.loading = false
@@ -408,7 +430,6 @@ async function erase_firmware() {
     console.error(e)
   }
 }
-
 </script>
 
 <template>
@@ -420,16 +441,26 @@ async function erase_firmware() {
   <div class="left">
     <n-select v-if="!store.connected" class="ml" @update:value="handleChange" v-model:value="state.currentLang"
       placeholder="Language" :options="state.options"></n-select>
-    <n-button class="ml" id="msgbox" :loading="store.loading" :type="store.status">{{ store.status_str }}</n-button>
+    <n-button class="ml" id="msgbox" :loading="store.loading" :type="store.status" strong secondary>{{ store.status_str
+      }}</n-button>
   </div>
   <div class="right">
     <div v-if="store.developer_mode">
       <div v-if="!store.connected">
-        <n-button class="mr" :disabled="store.loading" @click="device_update">{{ $t('device_update') }}</n-button>
-        <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
-        <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
+        <div v-if="store.iap_connected">
+          <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_iap_mode">{{
+    $t('exit') }}</n-button>
+        </div>
+        <div v-else>
+
+          <n-button class="mr" :disabled="store.loading" @click="device_update">{{ $t('device_update') }}</n-button>
+          <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
+          <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
+        </div>
       </div>
       <div v-else>
+
+
         <n-button class="mr" :disabled="store.loading" @click="debug">
           {{ store.debug_mode ? $t('exit') : t('debug_mode') }}
         </n-button>
@@ -440,6 +471,7 @@ async function erase_firmware() {
     $t('sync_config') }}</n-button>
         <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_developer_mode">{{
     $t('exit') }}</n-button>
+
       </div>
     </div>
     <div v-else>
@@ -451,8 +483,10 @@ async function erase_firmware() {
         <n-button class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device')
           }}</n-button>
         <n-button class="mr" :disabled="store.loading" @click="get_default_config">{{ $t('default_config') }}</n-button>
-        <n-button class="mr" :disabled="store.loading" v-if="!need_check" @click="sync_config">{{ $t('sync_config') }}</n-button>
-        <n-button class="mr" :disabled="store.loading" v-if="need_check" @click="save_config">{{ $t('save_config') }}</n-button>
+        <n-button class="mr" :disabled="store.loading" v-if="!need_check" @click="sync_config" :type="sync_btn_type">{{
+    $t('sync_config') }}</n-button>
+        <n-button class="mr" :disabled="store.loading" v-if="need_check" @click="save_config" type="warning">{{
+          $t('save_config') }}</n-button>
       </div>
     </div>
   </div>

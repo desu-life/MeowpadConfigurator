@@ -49,7 +49,13 @@ function needkey(key: KeyCode) {
   return false
 }
 
+let keynum = 0;
+
 function clearset() {
+  let keycodes = pressedkeycodes.value.sort((l, r) => r - l)
+  if (keycodes.length > 0)
+    compareArray(store.key_config!.keys[keynum].key_data, keycodes) ? store.key_config!.keys[keynum].key_data = [] : store.key_config!.keys[keynum].key_data = keycodes
+
   pressedkeycodes.value = []
   presskeycodes.value = []
   document.onkeydown = null
@@ -57,9 +63,10 @@ function clearset() {
 }
 
 function setKeys(keyNum: number) {
+  keynum = keyNum;
   pressedkeycodes.value = []
-  showModal.value = true
   let keycodes: KeyCode[] = []
+  showModal.value = true
   document.onkeydown = (e) => {
     if (showModal.value === false) { return }
     e.preventDefault()
@@ -69,7 +76,7 @@ function setKeys(keyNum: number) {
       pressedkeycodes.value.push(HidCodeDown)
       presskeycodes.value.push(HidCodeDown)
       document.onkeyup = (e) => {
-        e.preventDefault()
+        e.preventDefault()        
         document.onkeydown = null // 当有键松开时，清除按下键盘的监听函数
         console.log("released " + e.code)
         const HidCodeUP: KeyCode = jsToHid[e.code] || undefined

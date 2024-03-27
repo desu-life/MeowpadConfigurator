@@ -116,5 +116,9 @@
   "random_rain_chance": "Chance of raindrops",
   "speed_press_difficulty": "Difficulty",
   "color_change_rate": "color change rate",
-  "rainbow_light_switching_step": "Rainbow Step Length"
+  "rainbow_light_switching_step": "Rainbow Step Length",
+  "press_percentage": "Press Percentage",
+  "key_state": "Key State",
+  "linear_adc_value": "Linear ADC Value",
+  "adc_value": "ADC Value"
 }

@@ -13,7 +13,7 @@
   "cali_msg": "请同时按下所有按键直至全部按键的灯光从黄色变为绿色",
   "cali_failed": "校准失败，错误原因：{e}",
   "cali_finished": "校准完成",
-  "reset_success": "已重置配置，同步以提交更改",
+  "reset_success": "已获取默认值，同步以提交更改",
   "reset_failed": "获取默认值失败，错误原因：{e}",
   "device_config_error": "检测到设备配置数据错误，将在五秒后自动重置",
   "syncing_config": "正在同步配置",
@@ -122,5 +122,16 @@
   "enable_hs": "高速USB（8000Hz）",
   "device_update": "固件更新",
   "iap_connected": "固件更新模式",
-  "save_config": "保存配置"
+  "save_config": "保存配置",
+  "applied_config": "配置已应用，请确认无误后保存",
+  "check_config_msg": "如设备异常，请直接拔掉设备重连",
+  "device_update_warn": "找到设备，是否清除现有固件并更新？",
+  "device_cali_warn": "设备未校准，是否校准",
+  "key_state": "按键状态",
+  "adc_value": "原始模拟值",
+  "linear_adc_value": "转换模拟值",
+  "press_percentage": "按下百分比",
+  "drag_file": "点击或者拖动固件文件到该区域",
+  "upload_firmware_success": "上传固件成功，已重启设备",
+  "firmware-file-error": "固件文件异常"
 }
