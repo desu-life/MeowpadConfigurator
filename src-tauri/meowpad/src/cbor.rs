@@ -245,7 +245,7 @@ impl Default for Keyboard {
             ContinuousReport: false,
             KalmanFilter: true,
             JittersEliminationTime: 15 * 8,
-            EnableHS: false
+            EnableHS: true
         }
     }
 }

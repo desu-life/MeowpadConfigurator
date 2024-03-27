@@ -91,6 +91,17 @@ const uploadFirmware = async ({
       try {
         if (file.file) {
           downloading.value = true;
+          
+          if (file.file.size > 131072 || file.file.size < 32768) {
+            message.error(t('firmware-file-error'))
+            onError()
+            store.iap_connected = false
+            store.status = undefined
+            store.status_str = t("device_disconnected")
+            file_list.value = []
+            return
+          }
+
           var buffer = await file.file.arrayBuffer()
           var arr = Array.from(new Uint8Array(buffer))
           var file_length = await api.iap_start(arr)
@@ -103,7 +114,7 @@ const uploadFirmware = async ({
           await api.iap_flush()
           onFinish()
           file_list.value = []
-          message.info("上传固件成功，已重启设备")
+          message.info(t('upload_firmware_success'))
           store.iap_connected = false
           store.status = undefined
           store.status_str = t("device_disconnected")
@@ -114,6 +125,10 @@ const uploadFirmware = async ({
         const es = e as IError
         console.log(es)
         onError()
+        store.iap_connected = false
+        store.status = undefined
+        store.status_str = t("device_disconnected")
+        file_list.value = []
       } finally {
         downloading.value = false;
       }
@@ -155,7 +170,7 @@ const uploadFirmware = async ({
               </n-icon>
             </div>
             <n-text style="font-size: 16px">
-              点击或者拖动固件文件到该区域
+              {{ $t('drag_file') }}
             </n-text>
           </n-upload-dragger>
         </n-upload>

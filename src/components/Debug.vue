@@ -14,19 +14,19 @@ const debug_data = ref<IKeyRTStatus[]>()
 
 const columns: DataTableColumns<IKeyRTStatus> = [
   {
-    title: 'ADC Value',
+    title: t('adc_value'),
     key: 'adc_value'
   },
   {
-    title: 'Linear ADC Value',
+    title: t('linear_adc_value'),
     key: 'linear_value'
   },
   {
-    title: 'Press Percentage',
+    title: t('press_percentage'),
     key: 'press_percentage',
   },
   {
-    title: 'Key State',
+    title: t('key_state'),
     key: 'key_state',
   }
 ]
