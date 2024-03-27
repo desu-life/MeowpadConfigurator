@@ -34,6 +34,12 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: 8
+          run_install: false
+
       - name: Sync node version and setup cache
         uses: actions/setup-node@v3
         with:
