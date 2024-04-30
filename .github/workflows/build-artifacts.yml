@@ -58,31 +58,31 @@ jobs:
         run: |
           pnpm run tauri build
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: matrix.platform == 'ubuntu-latest'
         with:
           name: linux-deb
           path: ./src-tauri/target/release/bundle/deb/*.deb
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: matrix.platform == 'ubuntu-latest'
         with:
           name: linux-appimage
           path: ./src-tauri/target/release/bundle/appimage/*.AppImage
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: matrix.platform == 'windows-latest'
         with:
           name: windows-exe
           path: ./src-tauri/target/release/*.exe
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: matrix.platform == 'windows-latest'
         with:
           name: windows-msi
           path: ./src-tauri/target/release/bundle/msi/*
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: matrix.platform == 'macos-latest'
         with:
           name: macos-app
