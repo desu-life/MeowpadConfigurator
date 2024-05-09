@@ -1,69 +1,18 @@
 use byteorder::{BigEndian, WriteBytesExt};
-use num_derive::{FromPrimitive, ToPrimitive};
-use serde::Deserialize;
 use std::io::Cursor;
 use std::io::Write;
 
-#[derive(Deserialize, FromPrimitive, ToPrimitive, Copy, Clone, Debug, Eq, PartialEq)]
-#[repr(u8)]
-pub enum PacketID {
-    Null = 0,
-    Ok   = 1,
-    Bad  = 2,
-    Ping = 3,
-
-    // 弃用
-    SetConfig = 5,
-    GetConfig = 6,
-
-    // 其他
-    GetFirmwareVersion = 7,
-    GetDeviceName      = 8,
-    CalibrationKey     = 9,
-    EraseFirmware      = 10,
-    Debug              = 11,
-    AutoConfig         = 12, // todo
-    SetMiddlePoint     = 13,
-    ToggleKeyboard     = 14,
-    Reset              = 15,
-    GetStatus          = 16,
-
-    // 配置部分
-    GetKeyConfig     = 100,
-    GetLightConfig   = 101,
-    SetKeyConfig     = 102,
-    SetLightConfig   = 103,
-    SaveKeyConfig    = 104,
-    SaveLightConfig  = 105,
-    ClearKeyConfig   = 106,
-    ClearLightConfig = 107,
-    GetHallConfig    = 108,
-    ClearHallConfig  = 109,
-}
-
-impl std::fmt::Display for PacketID {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl PacketID {
-    pub fn to_packet(self, data: impl Into<Vec<u8>>) -> Packet {
-        Packet::new(self, data)
-    }
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Packet {
-    pub id: PacketID,
+    pub id: u8,
     pub data: Vec<u8>,
 }
 
 impl Packet {
-    pub fn new(packet_id: PacketID, data: impl Into<Vec<u8>>) -> Self {
+    pub fn new(packet_id: impl Into<u8>, data: impl Into<Vec<u8>>) -> Self {
         let data = data.into();
         Self {
-            id: packet_id,
+            id: packet_id.into(),
             data: data,
         }
     }
@@ -77,9 +26,21 @@ impl Packet {
         // 1        2         total: 3bytes
         // packetID packetBodyLength
         let mut cur = Cursor::new(Vec::with_capacity(3 + body_len));
-        cur.write_u8(self.id as u8).unwrap();
+        cur.write_u8(self.id).unwrap();
         cur.write_u16::<BigEndian>(body_len as u16).unwrap();
         cur.write(self.data.as_slice()).unwrap();
+        cur.into_inner()
+    }
+
+    fn build_vec_large(self) -> Vec<u8> {
+        let body_len = self.len().max(62);
+        // 1        2         total: 3bytes
+        // packetID packetBodyLength
+        let mut cur = Cursor::new(Vec::with_capacity(3 + body_len));
+        cur.write_u8(self.id).unwrap();
+        cur.write_u16::<BigEndian>(body_len as u16).unwrap();
+        cur.write(self.data.as_slice()).unwrap();
+        cur.get_mut().resize(3 + body_len, 0);
         cur.into_inner()
     }
 
@@ -87,6 +48,16 @@ impl Packet {
         let vec = self.build_vec();
         PacketBuilder {
             len: vec.len(),
+            inner: vec,
+            pos: 0,
+        }
+        .into_iter()
+    }
+
+    pub fn build_packets_large(self) -> PacketBuilder {
+        let vec = self.build_vec_large();
+        PacketBuilder {
+            len: vec.capacity(),
             inner: vec,
             pos: 0,
         }

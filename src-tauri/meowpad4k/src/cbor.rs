@@ -1,7 +1,7 @@
 use crate::{
     config::{self, LightingMode},
-    KbReport, KeyCode,
 };
+use meowpad::{KeyCode, KbReport};
 use palette::{rgb::channels::Argb, WithAlpha};
 use palette::Srgb;
 use serde::{Deserialize, Serialize};

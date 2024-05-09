@@ -6,9 +6,9 @@ import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
 import { appWindow, Theme } from "@tauri-apps/api/window";
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
-import { IVersion } from '@/interface';
 import { useStore } from '@/store'
-import { check_update, get_latest_version } from './api';
+import { IVersion } from './apis';
+import { check_update, get_latest_version } from './apis/api';
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
@@ -89,4 +89,3 @@ $header-height: 56px;
   align-items: center;
 }
 </style>
-

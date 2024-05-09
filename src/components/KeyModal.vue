@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { KeyCode } from '@/interface';
+import { KeyCode } from '@/keycode';
 import { useStore } from '@/store'
 import { formatKeys } from '@/utils'
 const store = useStore()
@@ -76,3 +76,4 @@ function leaveFunc() {
   opacity: 0;
 }
 </style>
+@/apis/interface

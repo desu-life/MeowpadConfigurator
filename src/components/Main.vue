@@ -7,13 +7,14 @@ import { Keyboard24Regular, Lightbulb24Regular } from '@vicons/fluent'
 import { ArchiveOutline as ArchiveIcon } from '@vicons/ionicons5'
 import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
-import ColorSetting from '@/components/ColorSetting.vue'
-import DeviceSetting from '@/components/DeviceSetting.vue'
+import ColorSetting from '@/components/meowpad4k/ColorSetting.vue'
+import DeviceSetting from '@/components/meowpad4k/DeviceSetting.vue'
 import Debug from '@/components/Debug.vue'
 import { useI18n } from "vue-i18n";
-import * as api from '@/api';
-import { IError } from '@/interface'
+import * as api from '@/apis/api'
+import * as api4k from '@/apis/meowpad4k/api'
 import type { UploadFileInfo } from 'naive-ui'
+import { IError } from '@/apis'
 
 const { t } = useI18n();
 const store = useStore()
@@ -26,7 +27,7 @@ const file_list = ref<UploadFileInfo[]>([])
 const input_status = ref<FormValidationStatus | undefined>(undefined)
 
 async function check_raw_config(value: string): Promise<void> {
-  const res: boolean = await api.check_raw_config(value)
+  const res: boolean = await api4k.check_raw_config(value)
   if (res) {
     store.can_sync = true
     input_status.value = undefined
@@ -260,3 +261,4 @@ const uploadFirmware = async ({
   opacity: 1;
 }
 </style>
+@/apis/api@/apis/interface

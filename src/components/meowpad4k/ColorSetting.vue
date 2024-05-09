@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { LightingMode } from '@/apis/meowpad4k/config';
+import { Toggle } from '@/interface';
 import { useStore } from '@/store'
-import { LightingMode, KeyCode, jsToHid, IRgb, Toggle } from "@/interface";
 import { Rgb2Hex, Hex2Rgb, IsModifierKey, compareArray } from '@/utils';
 import { useI18n } from "vue-i18n";
 
@@ -257,3 +258,4 @@ function CanCanChangeColor() {
     </n-gi>
   </n-grid>
 </template>
+@/apis/interface

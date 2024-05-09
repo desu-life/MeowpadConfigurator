@@ -1,12 +1,6 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import {
-  IDeviceInfo,
-  IDeviceStatus,
-  IKeyRTStatus,
-  IKeyboard,
-  ILighting,
-  IVersion,
-} from "./interface";
+import { IKeyRTStatus } from "..";
+import { IKeyboard, ILighting } from "./config";
 
 export async function calibration_key() {
   return (await invoke("calibration_key")) as void;
@@ -50,31 +44,6 @@ export async function check_raw_config(config: string) {
 export async function save_raw_config(config: string) {
   return (await invoke("save_raw_config", { config })) as void;
 }
-export async function get_device_info() {
-  return (await invoke("get_device_info")) as IDeviceInfo;
-}
-export async function get_device_status() {
-  return (await invoke("get_device_status")) as IDeviceStatus;
-}
-export async function get_latest_version() {
-  return (await invoke("get_latest_version")) as IVersion;
-}
-export async function get_firmware_4k_version() {
-  return (await invoke("get_firmware_4k_version")) as string;
-}
-export async function check_update(version: IVersion) {
-  return (await invoke("check_update", { version })) as boolean;
-}
 export async function connect() {
   return (await invoke("connect")) as void;
-}
-export async function connect_iap() {
-  return (await invoke("connect_iap")) as void;
-}
-export async function iap_start(data: number[]) {
-  return (await invoke("iap_start", { data })) as number;
-  // Array.from(new Uint8Array(data))
-}
-export async function iap_flush() {
-  return (await invoke("iap_flush")) as void;
 }

@@ -1,8 +1,9 @@
-import { IDeviceInfo, IDeviceStatus, IKeyboard, ILighting, Toggle } from './interface';
+import { IDeviceInfo, IDeviceStatus } from './apis';
 import { defineStore, acceptHMRUpdate } from "pinia";
-import { IVersion, LightingMode } from "@/interface";
-import { invoke } from "@tauri-apps/api/tauri";
+import { IVersion } from "@/apis";
 import { Type } from 'naive-ui/es/button/src/interface';
+import { IKeyboard, ILighting } from './apis/meowpad4k/config';
+import { Toggle } from './interface';
 
 export const useStore = defineStore("main", () => {
   const count = ref(0);

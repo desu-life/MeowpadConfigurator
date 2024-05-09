@@ -5,10 +5,14 @@ import { Type } from "naive-ui/es/button/src/interface"
 import { useStore } from '@/store'
 import { useI18n } from "vue-i18n";
 import { setI18nLanguage, i18n } from '@/locales/index'
-import { IKeyboard, ILighting, IError, IKeyRTStatus, KeyCode, Toggle, IDeviceInfo } from "@/interface";
 import { Rgb2Hex, Hex2Rgb, getErrorMsg } from '@/utils';
 import { useDialog } from 'naive-ui'
-import * as api from '@/api'
+import * as api from '@/apis/api'
+import * as api4k from '@/apis/meowpad4k/api'
+import { IError } from '@/apis';
+import { Toggle } from '@/interface';
+import { IKeyboard, ILighting } from '@/apis/meowpad4k/config';
+import { KeyCode } from '@/keycode';
 
 
 const { t } = useI18n();
@@ -43,7 +47,7 @@ async function connect() {
   store.status = "warning"
   store.status_str = t('connecting')
   try {
-    await api.connect()
+    await api4k.connect()
     let info = await api.get_device_info()
     let status = await api.get_device_status()
     console.table(info)
@@ -66,13 +70,13 @@ async function connect() {
     if (store.device_status.key == false) {
       await get_default_key_config()
       await sync_key_config()
-      await api.save_key_config()
+      await api4k.save_key_config()
     }
 
     if (store.device_status.key == false) {
       await get_default_light_config()
       await sync_light_config()
-      await api.save_light_config()
+      await api4k.save_light_config()
     }
 
     // 不管怎么样总之是连上了
@@ -115,7 +119,7 @@ async function connect() {
 async function calibration_key() {
   store.loading = true
   try {
-    await api.calibration_key()
+    await api4k.calibration_key()
   } catch (e) {
     store.connected = false
     store.status = "error"
@@ -158,13 +162,13 @@ function store_light_config(res: ILighting) {
 }
 
 async function get_default_key_config() {
-  const res = await api.get_default_key_config()
+  const res = await api4k.get_default_key_config()
   console.dir(res)
   store_key_config(res)
 }
 
 async function get_default_light_config() {
-  const res = await api.get_default_light_config()
+  const res = await api4k.get_default_light_config()
   console.dir(res)
   store_light_config(res)
 }
@@ -183,13 +187,13 @@ async function get_default_config() {
 }
 
 async function get_key_config() {
-  const res = await api.get_key_config()
+  const res = await api4k.get_key_config()
   console.dir(res)
   store_key_config(res)
 }
 
 async function get_light_config() {
-  const res = await api.get_light_config()
+  const res = await api4k.get_light_config()
   console.dir(res)
   store_light_config(res)
 }
@@ -218,7 +222,7 @@ async function get_config() {
 async function get_config_raw() {
   store.loading = true
   try {
-    const res = await api.get_raw_config()
+    const res = await api4k.get_raw_config()
     store.raw_config = res
   } catch (e) {
     const es = e as IError
@@ -246,7 +250,7 @@ async function sync_key_config() {
   store.key_config!.kalman_filter = store.kalman_filter == Toggle.On ? true : false
   store.key_config!.enable_hs = store.enable_hs == Toggle.On ? true : false
 
-  await api.set_key_config(store.key_config!);
+  await api4k.set_key_config(store.key_config!);
 
   for (let i = 0; i < store.key_config!.keys.length; i++) {
     store.key_config!.keys[i].key_data = store.key_config!.keys[i].key_data.filter(k => k != KeyCode.None)
@@ -278,13 +282,13 @@ async function sync_light_config() {
 
   store.light_config!.max_brightness = Math.round(store.max_brightness / 2)
 
-  await api.set_light_config(store.light_config!);
+  await api4k.set_light_config(store.light_config!);
 }
 
 async function save_config() {
   store.loading = true
-  await api.save_key_config()
-  await api.save_light_config()
+  await api4k.save_key_config()
+  await api4k.save_light_config()
   need_check.value = false
   store.status = "success"
   store.status_str = t('sync_success')
@@ -322,7 +326,7 @@ async function sync_config_raw() {
   store.status = "warning"
   store.status_str = t('syncing_config')
   try {
-    await api.save_raw_config(store.raw_config!)
+    await api4k.save_raw_config(store.raw_config!)
     store.status = "success"
     store.status_str = t('sync_success')
   } catch (e) {
@@ -382,7 +386,7 @@ async function device_update() {
   store.status = "warning"
   store.status_str = t('connecting')
   try {
-    await api.connect()
+    await api4k.connect()
     dialog.warning({
       title: t('warning'),
       content: t('device_update_warn'),
@@ -390,7 +394,7 @@ async function device_update() {
       negativeText: t('no'),
       maskClosable: false,
       onPositiveClick: async () => {
-        await api.erase_firmware()
+        await api4k.erase_firmware()
         setTimeout(async () => {
           await enter_iap()
           store.loading = false
@@ -419,7 +423,7 @@ async function debug() {
 
 async function erase_firmware() {
   try {
-    await api.erase_firmware()
+    await api4k.erase_firmware()
     store.connected = false
     store.status = undefined
     store.status_str = t("device_disconnected")
@@ -519,3 +523,4 @@ async function erase_firmware() {
   pointer-events: none;
 }
 </style>
+@/apis/api@/apis/interface

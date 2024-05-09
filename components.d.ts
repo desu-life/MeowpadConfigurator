@@ -8,9 +8,9 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Application: typeof import('./src/components/Application.vue')['default']
-    ColorSetting: typeof import('./src/components/ColorSetting.vue')['default']
+    ColorSetting: typeof import('./src/components/meowpad4k/ColorSetting.vue')['default']
     Debug: typeof import('./src/components/Debug.vue')['default']
-    DeviceSetting: typeof import('./src/components/DeviceSetting.vue')['default']
+    DeviceSetting: typeof import('./src/components/meowpad4k/DeviceSetting.vue')['default']
     FirmwareUpdate: typeof import('./src/components/FirmwareUpdate.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     Key: typeof import('./src/components/Key.vue')['default']

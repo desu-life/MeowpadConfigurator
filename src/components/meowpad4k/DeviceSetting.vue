@@ -4,7 +4,10 @@ import KeyModal from '@/components/KeyModal.vue'
 import Keyboard from '@/components/Keyboard.vue'
 import { h } from 'vue'
 import { useI18n } from "vue-i18n";
-import { KeyCode, LightingMode, Toggle, jsToHid } from '@/interface';
+import { IKeymap, Toggle } from '@/interface';
+import { LightingMode } from '@/apis/meowpad4k/config';
+import meowpad from '@/meowpad4k.json'
+const keymap: IKeymap[][] = meowpad;
 
 
 const { t } = useI18n();
@@ -12,27 +15,6 @@ const message = useMessage()
 const dialog = useDialog()
 const store = useStore()
 
-
-
-// async function set_auto_config(): Promise<void> {
-//   const res: any = await invoke("get_auto_config", {})
-//   console.log(res)
-//   dialog.warning({
-//     title: t('tip'),
-//     content: () => t('recommend_config_help'),
-//     positiveText: t('yes'),
-//     negativeText: t('no'),
-//     onPositiveClick: () => {
-//       store.config!.dead_zone = res["DeadZone"]
-//       store.config!.key_release_degree = res["KeyReleaseDegree"]
-//       store.config!.key_trigger_degree = res["KeyTriggerDegree"]
-//       message.success(t('applied_recommend_config'))
-//     },
-//     onNegativeClick: () => {
-
-//     }
-//   })
-// }
 
 const ToggleSel = [
   {
@@ -104,7 +86,7 @@ function GetToggleSel() {
   <!-- <n-space justify="space-between"> -->
 
   <div style="width: 80vw;height: 30vh;" class="key-config">
-    <Keyboard></Keyboard>
+    <Keyboard :keymap="keymap"></Keyboard>
   </div>
 
   <!-- </n-space> -->

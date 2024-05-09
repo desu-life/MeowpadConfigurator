@@ -1,4 +1,5 @@
-use crate::{cbor, error::Error, KbReport, KeyCode};
+use crate::cbor;
+use meowpad::{KeyCode, error::Error, KbReport};
 use num::FromPrimitive;
 use num_derive::{FromPrimitive, ToPrimitive};
 use palette::rgb::channels::Argb;

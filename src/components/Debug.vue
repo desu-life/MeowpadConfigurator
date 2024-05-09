@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { get_debug_value } from '@/api';
-import { KeyCode, IKeyRTStatus, IError } from '@/interface';
+import { IError, IKeyRTStatus } from '@/apis';
+import { get_debug_value } from '@/apis/meowpad4k/api';
 import { useStore } from '@/store'
 import { getErrorMsg } from '@/utils';
 import { DataTableColumns } from 'naive-ui';

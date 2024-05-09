@@ -5,7 +5,6 @@ import Key from '@/components/Key.vue'
 import KeyShow from '@/components/KeyShow.vue'
 import type { IKeymap } from '@/interface';
 import { ref } from 'vue';
-import { KeyCode, LightingMode, jsToHid } from '@/interface';
 import { formatKeys, IsModifierKey, compareArray } from '@/utils'
 
 const { t } = useI18n();
@@ -13,8 +12,11 @@ const message = useMessage()
 const dialog = useDialog()
 const store = useStore()
 
-import meowpad from '@/meowpad.json'
-const keymap: IKeymap[][] = meowpad;
+import { KeyCode, jsToHid } from '@/keycode';
+
+const props = defineProps<{
+  keymap: IKeymap[][]
+}>()
 
 let default_height = ref(55)
 let default_width = ref(55)
@@ -76,7 +78,7 @@ function setKeys(keyNum: number) {
       pressedkeycodes.value.push(HidCodeDown)
       presskeycodes.value.push(HidCodeDown)
       document.onkeyup = (e) => {
-        e.preventDefault()        
+        e.preventDefault()
         document.onkeydown = null // 当有键松开时，清除按下键盘的监听函数
         console.log("released " + e.code)
         const HidCodeUP: KeyCode = jsToHid[e.code] || undefined
@@ -130,8 +132,8 @@ function applyKeySetting() {
   <KeyModal v-model:show="showModal" :pressedkeycodes="pressedkeycodes" :leave-func="clearset"></KeyModal>
   <div class="key-settings">
     <div class="keyboard" :style="keymapStyle">
-      <div v-for="line in  keymap " class="line">
-        <div v-for="key in  line " :class="key.name == null ? 'hidden' : ''">
+      <div v-for="line in keymap" class="line">
+        <div v-for="key in line" :class="key.name == null ? 'hidden' : ''">
           <Key :unit-width="key.width" :key-num="key.index" :on-click="k => clickKey(k)"
             :selected="key.index == selectedKey">
             <div v-if="key.index != undefined && store.key_config!.keys[key.index].key_data.length <= 1">
@@ -239,3 +241,4 @@ function applyKeySetting() {
   opacity: 0;
 }
 </style>
+@/apis/interface@/apis/interface

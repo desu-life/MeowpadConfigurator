@@ -1,6 +1,7 @@
-import { IError, KeyCode } from './interface';
-import { IRgb } from '@/interface';
 import { useI18n } from "vue-i18n";
+import { IError } from "./apis";
+import { KeyCode } from "./keycode";
+import { IRgb } from "./interface";
 
 
 

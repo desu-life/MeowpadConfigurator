@@ -6,9 +6,9 @@
 use anyhow::Result as AnyResult;
 use hid_iap::iap::IAPState;
 use hid_iap::iap::IAP;
-use hidapi_rusb::HidApi;
+use hidapi::HidApi;
 use log::*;
-use meowpad::{KeyRTStatus, Meowpad};
+use meowpad4k::{KeyRTStatus, Meowpad};
 use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use once_cell::sync::Lazy;
 use reqwest::Client;
@@ -32,8 +32,8 @@ use error::{Error, Result};
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
 struct Config {
-    key: meowpad::config::Key,
-    light: meowpad::config::Light,
+    key: meowpad4k::config::Key,
+    light: meowpad4k::config::Light,
 }
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
@@ -111,17 +111,17 @@ async fn erase_firmware(_app: tauri::AppHandle) -> Result<()> {
 }
 
 #[tauri::command]
-async fn get_default_key_config(_app: tauri::AppHandle) -> meowpad::config::Key {
-    meowpad::cbor::Keyboard::default().try_into().unwrap()
+async fn get_default_key_config(_app: tauri::AppHandle) -> meowpad4k::config::Key {
+    meowpad4k::cbor::Keyboard::default().try_into().unwrap()
 }
 
 #[tauri::command]
-async fn get_default_light_config(_app: tauri::AppHandle) -> meowpad::config::Light {
-    meowpad::cbor::Light::default().try_into().unwrap()
+async fn get_default_light_config(_app: tauri::AppHandle) -> meowpad4k::config::Light {
+    meowpad4k::cbor::Light::default().try_into().unwrap()
 }
 
 #[tauri::command]
-async fn get_key_config(_app: tauri::AppHandle) -> Result<meowpad::config::Key> {
+async fn get_key_config(_app: tauri::AppHandle) -> Result<meowpad4k::config::Key> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
     d.load_key_config()?;
@@ -129,7 +129,7 @@ async fn get_key_config(_app: tauri::AppHandle) -> Result<meowpad::config::Key> 
 }
 
 #[tauri::command]
-async fn get_light_config(_app: tauri::AppHandle) -> Result<meowpad::config::Light> {
+async fn get_light_config(_app: tauri::AppHandle) -> Result<meowpad4k::config::Light> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
     d.load_light_config()?;
@@ -137,7 +137,7 @@ async fn get_light_config(_app: tauri::AppHandle) -> Result<meowpad::config::Lig
 }
 
 #[tauri::command]
-async fn set_key_config(_app: tauri::AppHandle, config: meowpad::config::Key) -> Result<()> {
+async fn set_key_config(_app: tauri::AppHandle, config: meowpad4k::config::Key) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
     d.key_config = Some(config.into());
@@ -146,7 +146,7 @@ async fn set_key_config(_app: tauri::AppHandle, config: meowpad::config::Key) ->
 }
 
 #[tauri::command]
-async fn set_light_config(_app: tauri::AppHandle, config: meowpad::config::Light) -> Result<()> {
+async fn set_light_config(_app: tauri::AppHandle, config: meowpad4k::config::Light) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
     d.light_config = Some(config.into());
@@ -465,11 +465,11 @@ fn main() -> AnyResult<()> {
             info!("设备名称：{:?}", d.device_name);
             info!("固件版本：{:?}", d.firmware_version);
 
-            d.key_config = Some(meowpad::cbor::Keyboard::default());
+            d.key_config = Some(meowpad4k::cbor::Keyboard::default());
             d.set_key_config()?;
             d.save_key_config()?;
 
-            d.light_config = Some(meowpad::cbor::Light::default());
+            d.light_config = Some(meowpad4k::cbor::Light::default());
             d.set_light_config()?;
             d.save_light_config()?;
             warn!("重置配置成功")

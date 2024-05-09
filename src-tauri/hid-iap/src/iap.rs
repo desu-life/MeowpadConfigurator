@@ -1,5 +1,5 @@
 use std::{fs, fmt::Write, slice::Chunks};
-use hidapi_rusb::{HidApi, HidDevice};
+use hidapi::{HidApi, HidDevice};
 use crate::{packet::{IAPCommand, IAPacket}, error::*};
 
 #[derive(PartialEq)]

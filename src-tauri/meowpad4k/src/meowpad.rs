@@ -1,8 +1,9 @@
 use crate::{
-    cbor, error::*, packet::{Packet, PacketID}
+    cbor, packet_id::PacketID
 };
+use meowpad::{Packet, error::Error, Result};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use hidapi_rusb::HidDevice;
+use hidapi::HidDevice;
 use log::*;
 use num::FromPrimitive;
 use pretty_hex::*;
@@ -63,7 +64,7 @@ impl Meowpad {
     pub fn ping(&self) -> Result<bool> {
         self.write(Packet::new(PacketID::Ping, []))?;
         let packet = self.read_timeout(1000)?;
-        if packet.id == PacketID::Ping {
+        if packet.id == PacketID::Ping as u8 {
             Ok(true)
         } else {
             Ok(false)
@@ -73,7 +74,7 @@ impl Meowpad {
     pub fn get_device_name(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::GetDeviceName, []))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             self.device_name = Some(String::from_utf8(packet.data)?);
             Ok(())
         } else {
@@ -86,7 +87,7 @@ impl Meowpad {
     pub fn get_firmware_version(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::GetFirmwareVersion, []))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             self.firmware_version = Some(String::from_utf8(packet.data)?);
             Ok(())
         } else {
@@ -100,7 +101,7 @@ impl Meowpad {
     pub fn get_status(&mut self) -> Result<(bool, bool, bool, bool)> {
         self.write(Packet::new(PacketID::GetStatus, []))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok((packet.data[0] != 0, packet.data[1] != 0, packet.data[2] != 0, packet.data[3] != 0))
         } else {
             dbg!(packet.id);
@@ -112,7 +113,7 @@ impl Meowpad {
     pub fn get_debug_value(&mut self) -> Result<[KeyRTStatus; 4]> {
         self.write(Packet::new(PacketID::Debug, []))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             let mut keys: [KeyRTStatus; 4] = Default::default();
             let mut cur = Cursor::new(packet.data);
             for key in keys.iter_mut() {
@@ -136,7 +137,7 @@ impl Meowpad {
     pub fn get_hall_config(&mut self) -> Result<[KeyHallConfig; 4]> {
         self.write(Packet::new(PacketID::GetHallConfig, []))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             let mut keys: [KeyHallConfig; 4] = Default::default();
             let mut cur = Cursor::new(packet.data);
             for key in keys.iter_mut() {
@@ -172,7 +173,7 @@ impl Meowpad {
         debug!("写入键盘配置：{:?}", config);
         self.write(Packet::new(PacketID::SetKeyConfig, config.to_cbor()))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -186,7 +187,7 @@ impl Meowpad {
         debug!("写入灯光配置：{:?}", config);
         self.write(Packet::new(PacketID::SetLightConfig, config.to_cbor()))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -198,7 +199,7 @@ impl Meowpad {
     pub fn save_key_config(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::SaveKeyConfig, []))?;
         let packet = self.read()?;
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -210,7 +211,7 @@ impl Meowpad {
     pub fn save_light_config(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::SaveLightConfig, []))?;
         let packet = self.read()?;
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -222,7 +223,7 @@ impl Meowpad {
     pub fn clear_key_config(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::ClearLightConfig, []))?;
         let packet = self.read()?;
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -234,7 +235,7 @@ impl Meowpad {
     pub fn clear_light_config(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::ClearKeyConfig, []))?;
         let packet = self.read()?;
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -246,7 +247,7 @@ impl Meowpad {
     pub fn clear_hall_config(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::ClearHallConfig, []))?;
         let packet = self.read()?;
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -258,7 +259,7 @@ impl Meowpad {
     pub fn reset_middle_point(&self) -> Result<()> {
         self.write(Packet::new(PacketID::SetMiddlePoint, []))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -270,7 +271,7 @@ impl Meowpad {
     pub fn calibration_key(&self) -> Result<()> {
         self.write(Packet::new(PacketID::CalibrationKey, []))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -282,7 +283,7 @@ impl Meowpad {
     pub fn erase_firmware(&self)  -> Result<()> {
         self.write(Packet::new(PacketID::EraseFirmware, []))?;
         let packet = self.read()?; // 读取
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
@@ -294,7 +295,7 @@ impl Meowpad {
     pub fn reset_device(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::Reset, []))?;
         let packet = self.read()?;
-        if packet.id == PacketID::Ok {
+        if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
