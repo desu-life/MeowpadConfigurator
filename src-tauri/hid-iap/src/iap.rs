@@ -1,4 +1,4 @@
-use std::{mem::{self, ManuallyDrop}, slice::{self, Chunks}};
+use std::slice::{self, Chunks};
 use hidapi::HidDevice;
 use crate::{packet::{IAPCommand, IAPacket}, error::*};
 

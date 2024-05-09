@@ -4,25 +4,19 @@
 // )]
 
 use anyhow::Result as AnyResult;
-use hid_iap::iap::IAPState;
 use hid_iap::iap::IAP;
-use hidapi::HidApi;
 use log::*;
-use meowpad::models::{DeviceStatus, KeyRTStatus};
+use meowpad::models::DeviceStatus;
 use meowpad4k::Meowpad;
-use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use reqwest::Client;
 use std::env;
-use std::fs;
 use std::io::Write;
 use std::ops::Deref;
 use std::panic;
 use std::sync::{mpsc, Mutex};
-use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::State;
-use tauri::Window;
 
 mod consts;
 mod device;

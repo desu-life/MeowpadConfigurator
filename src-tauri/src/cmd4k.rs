@@ -1,9 +1,9 @@
 
-use std::{sync::Mutex, thread, time::Duration};
+use std::sync::Mutex;
 use hidapi::HidApi;
 use meowpad::models::KeyRTStatus;
 use meowpad4k::Meowpad;
-use tauri::{Manager, State};
+use tauri::State;
 use crate::{device::HidDevice, error::{self, Error, Result}};
 use log::*;
 
