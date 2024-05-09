@@ -1,6 +1,4 @@
-use crate::{
-    config::{self, LightingMode},
-};
+use crate::config::{self, LightingMode};
 use meowpad::{KeyCode, KbReport};
 use palette::{rgb::channels::Argb, WithAlpha};
 use palette::Srgb;

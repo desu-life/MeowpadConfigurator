@@ -2,6 +2,7 @@ import { IRgb } from "@/interface";
 import { KeyCode } from "@/keycode";
 
 export declare type Error = 'DeviceDissconnected' | 'DeviceNotFound' | 'Network' | 'Meowpad' | 'Iap';
+export declare type DeviceName = 'Meowpad' | 'Meowpad3K';
 
 export interface IError {
     type: Error
@@ -16,7 +17,7 @@ export interface IDeviceStatus {
 }
 
 export interface IDeviceInfo {
-    name: string
+    name: DeviceName
     version: string
 }
 

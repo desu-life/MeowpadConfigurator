@@ -49,10 +49,8 @@ async function connect() {
   try {
     await api4k.connect()
     let info = await api.get_device_info()
-    let status = await api.get_device_status()
     console.table(info)
     store.device_info = info
-    store.device_status = status
 
     let firmware_version = await api.get_firmware_4k_version()
     if (store.device_info!.version != firmware_version) {
@@ -66,6 +64,9 @@ async function connect() {
     if (store.version_info) {
       store.latest_firmware_download_url = store.version_info.v2_standard_edition_firmware_download_url
     }
+
+    let status = await api.get_device_status()
+    store.device_status = status
 
     if (store.device_status.key == false) {
       await get_default_key_config()
