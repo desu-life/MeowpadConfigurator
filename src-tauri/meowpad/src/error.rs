@@ -9,7 +9,7 @@ pub enum Error {
     #[error("empty_config")]
     EmptyConfig,
     #[error("device_disconnected")]
-    Disconnect(#[from] hidapi::HidError),
+    Disconnect,
     #[error("config_cbor_parse_failed")]
     ConfigCborParseFailed(#[from] ciborium::de::Error<std::io::Error>),
     #[error("config_data_check_failed, key: {0}, data: {1}")]

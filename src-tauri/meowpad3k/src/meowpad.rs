@@ -83,11 +83,11 @@ impl<D: Device> Meowpad<D> {
         }
     }
 
-    pub fn get_debug_value(&mut self) -> Result<[KeyRTStatus; 4]> {
+    pub fn get_debug_value(&mut self) -> Result<[KeyRTStatus; 3]> {
         self.write(Packet::new(PacketID::Debug, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
-            let mut keys: [KeyRTStatus; 4] = Default::default();
+            let mut keys: [KeyRTStatus; 3] = Default::default();
             let mut cur = Cursor::new(packet.data);
             for key in keys.iter_mut() {
                 key.adc_value = cur.read_u16::<BigEndian>()?;
@@ -107,11 +107,11 @@ impl<D: Device> Meowpad<D> {
         }
     }
 
-    pub fn get_hall_config(&mut self) -> Result<[KeyHallConfig; 4]> {
+    pub fn get_hall_config(&mut self) -> Result<[KeyHallConfig; 3]> {
         self.write(Packet::new(PacketID::GetHallConfig, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
-            let mut keys: [KeyHallConfig; 4] = Default::default();
+            let mut keys: [KeyHallConfig; 3] = Default::default();
             let mut cur = Cursor::new(packet.data);
             for key in keys.iter_mut() {
                 key.adc_max = cur.read_u16::<BigEndian>()?;
@@ -143,9 +143,10 @@ impl<D: Device> Meowpad<D> {
 
     pub fn set_key_config(&self) -> Result<()> {
         let config = self.key_config.ok_or(Error::EmptyConfig)?;
-        debug!("写入键盘配置：{:?}", config);
-        self.write(Packet::new(PacketID::SetKeyConfig, config.to_cbor()))?;
+        info!("写入键盘配置：{:?}", config);
+        self.write_large(Packet::new(PacketID::SetKeyConfig, config.to_cbor()))?;
         let packet = self.read()?; // 读取
+        dbg!(config.to_cbor().len());
         if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
@@ -157,9 +158,10 @@ impl<D: Device> Meowpad<D> {
 
     pub fn set_light_config(&self) -> Result<()> {
         let config = self.light_config.ok_or(Error::EmptyConfig)?;
-        debug!("写入灯光配置：{:?}", config);
-        self.write(Packet::new(PacketID::SetLightConfig, config.to_cbor()))?;
+        info!("写入键盘配置：{:?}", config);
+        self.write_large(Packet::new(PacketID::SetLightConfig, config.to_cbor()))?;
         let packet = self.read()?; // 读取
+        dbg!(config.to_cbor().len());
         if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
@@ -275,6 +277,17 @@ impl<D: Device> Meowpad<D> {
             dbg!(packet.data.hex_dump());
             Err(Error::UnexceptedResponse(packet))
         }
+    }
+
+    fn write_large(&self, packet: Packet) -> Result<()> {
+        debug!("发送：{:?}", packet);
+        debug!("总数据大小：{}", packet.data.len());
+        for v in packet.build_packets_large() {
+            debug!("raw：{:?}", v.hex_dump());
+            self.device.write(&v)?;
+            thread::sleep(Duration::from_millis(50));
+        }
+        Ok(())
     }
 
     fn write(&self, packet: Packet) -> Result<()> {

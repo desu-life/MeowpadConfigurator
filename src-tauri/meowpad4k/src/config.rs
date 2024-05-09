@@ -30,7 +30,6 @@ pub enum LightingMode {
     SpeedLightMode
 }
 
-#[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy)]
 pub struct KeyConfig {
     pub press_percentage: u8,
@@ -39,7 +38,6 @@ pub struct KeyConfig {
     pub key_data: [KeyCode; 6],
 }
 
-#[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Copy)]
 pub struct Key {
     pub keys: [KeyConfig; 4],
@@ -49,7 +47,6 @@ pub struct Key {
     pub enable_hs: bool
 }
 
-#[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Copy)]
 pub struct Light {
     /// LED灯颜色

@@ -17,5 +17,5 @@ pub enum Error {
     #[error("无法找到设备，请尝试重新插拔Meowpad")]
     DeviceNotFound,
     #[error("设备未连接")]
-    DeviceDissconnected,
+    DeviceDisconnected,
 }

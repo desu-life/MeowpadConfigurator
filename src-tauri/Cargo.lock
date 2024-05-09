@@ -2530,6 +2530,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "meowpad3k"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "ciborium",
+ "hidapi",
+ "log",
+ "meowpad",
+ "num",
+ "num-derive",
+ "num-traits",
+ "palette",
+ "pretty-hex",
+ "rand 0.8.5",
+ "serde",
+ "serde_repr",
+ "serde_with",
+ "strum",
+ "strum_macros",
+ "thiserror",
+]
+
+[[package]]
 name = "meowpad4k"
 version = "0.1.0"
 dependencies = [
@@ -2563,6 +2586,7 @@ dependencies = [
  "hidapi",
  "log",
  "meowpad",
+ "meowpad3k",
  "meowpad4k",
  "notify",
  "once_cell",

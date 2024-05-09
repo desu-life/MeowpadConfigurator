@@ -8,27 +8,30 @@ use hid_iap::iap::IAPState;
 use hid_iap::iap::IAP;
 use hidapi::HidApi;
 use log::*;
-use meowpad4k::{KeyRTStatus, Meowpad};
+use meowpad::models::{DeviceStatus, KeyRTStatus};
+use meowpad4k::Meowpad;
 use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
-use once_cell::sync::Lazy;
 use reqwest::Client;
-use std::borrow::BorrowMut;
 use std::env;
 use std::fs;
 use std::io::Write;
 use std::panic;
-use std::path;
-use std::path::Path;
 use std::sync::{mpsc, Mutex};
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::Window;
+use tauri::State;
+use std::ops::Deref;
 
 mod consts;
+mod device;
 mod error;
+mod utils;
 use consts::*;
 use error::{Error, Result};
+
+use crate::utils::compare_version;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
 struct Config {
@@ -36,16 +39,26 @@ struct Config {
     light: meowpad4k::config::Light,
 }
 
-static CLIENT: Lazy<Client> = Lazy::new(|| {
-    Client::builder()
-        .timeout(Duration::from_secs(5))
-        .build()
-        .unwrap()
-});
-static mut HID_API: Lazy<HidApi> = Lazy::new(|| HidApi::new().unwrap());
-static DEVICE: Mutex<Option<Meowpad>> = Mutex::new(None);
+static DEVICE: Mutex<Option<Meowpad<HidDevice>>> = Mutex::new(None);
 static IAP_DEVICE: Mutex<Option<IAP>> = Mutex::new(None);
 static mut FIRMWARE_DATA: Option<Vec<u8>> = None;
+
+fn init_logger(default_level: &str) {
+    use env_logger::{Builder, Env};
+    let log_level = Env::default().filter_or("LOG_LEVEL", default_level);
+    let mut builder = Builder::from_env(log_level);
+    builder
+        .format(|buf, record| {
+            let style = buf.default_level_style(record.level());
+            writeln!(
+                buf,
+                "[{style}{}{style:#}] {}",
+                record.level(),
+                record.args()
+            )
+        })
+        .init();
+}
 
 /// blocking_dialog
 macro_rules! message_dialog {
@@ -71,26 +84,11 @@ macro_rules! message_dialog_f {
     }};
 }
 
-fn init_logger(default_level: &str) {
-    use env_logger::{Builder, Env};
-    let mut builder = Builder::from_env(Env::default().filter_or("LOG_LEVEL", default_level));
-    builder
-        .format(|buf, record| {
-            let style = buf.default_level_style(record.level());
-            writeln!(
-                buf,
-                "[{style}{}{style:#}] {}",
-                record.level(),
-                record.args()
-            )
-        })
-        .init();
-}
 
 #[tauri::command]
 async fn calibration_key(_app: tauri::AppHandle) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.calibration_key()?;
     Ok(())
 }
@@ -98,14 +96,14 @@ async fn calibration_key(_app: tauri::AppHandle) -> Result<()> {
 #[tauri::command]
 async fn get_debug_value(_window: Window) -> Result<[KeyRTStatus; 4]> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_debug_value()?)
 }
 
 #[tauri::command]
 async fn erase_firmware(_app: tauri::AppHandle) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.erase_firmware()?;
     Ok(())
 }
@@ -123,7 +121,7 @@ async fn get_default_light_config(_app: tauri::AppHandle) -> meowpad4k::config::
 #[tauri::command]
 async fn get_key_config(_app: tauri::AppHandle) -> Result<meowpad4k::config::Key> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_key_config()?;
     Ok(d.key_config.unwrap().try_into()?)
 }
@@ -131,7 +129,7 @@ async fn get_key_config(_app: tauri::AppHandle) -> Result<meowpad4k::config::Key
 #[tauri::command]
 async fn get_light_config(_app: tauri::AppHandle) -> Result<meowpad4k::config::Light> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_light_config()?;
     Ok(d.light_config.unwrap().try_into()?)
 }
@@ -139,7 +137,7 @@ async fn get_light_config(_app: tauri::AppHandle) -> Result<meowpad4k::config::L
 #[tauri::command]
 async fn set_key_config(_app: tauri::AppHandle, config: meowpad4k::config::Key) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.key_config = Some(config.into());
     d.set_key_config()?;
     Ok(())
@@ -148,7 +146,7 @@ async fn set_key_config(_app: tauri::AppHandle, config: meowpad4k::config::Key) 
 #[tauri::command]
 async fn set_light_config(_app: tauri::AppHandle, config: meowpad4k::config::Light) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.light_config = Some(config.into());
     d.set_light_config()?;
     Ok(())
@@ -157,7 +155,7 @@ async fn set_light_config(_app: tauri::AppHandle, config: meowpad4k::config::Lig
 #[tauri::command]
 async fn save_key_config(_app: tauri::AppHandle) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.save_key_config()?;
     Ok(())
 }
@@ -165,7 +163,7 @@ async fn save_key_config(_app: tauri::AppHandle) -> Result<()> {
 #[tauri::command]
 async fn save_light_config(_app: tauri::AppHandle) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.save_light_config()?;
     Ok(())
 }
@@ -173,7 +171,7 @@ async fn save_light_config(_app: tauri::AppHandle) -> Result<()> {
 #[tauri::command]
 async fn get_raw_config(_app: tauri::AppHandle) -> Result<String> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_key_config()?;
     d.load_light_config()?;
     Ok(toml::to_string(&Config {
@@ -191,7 +189,7 @@ async fn check_raw_config(_app: tauri::AppHandle, config: String) -> bool {
 #[tauri::command]
 async fn save_raw_config(_app: tauri::AppHandle, config: String) -> Result<()> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     let cfg = toml::from_str::<Config>(&config).expect("错误配置");
     d.key_config = Some(cfg.key.into());
     d.set_key_config()?;
@@ -205,7 +203,7 @@ async fn save_raw_config(_app: tauri::AppHandle, config: String) -> Result<()> {
 #[tauri::command]
 async fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.get_device_name()?;
     d.get_firmware_version()?;
     let name = d.device_name.as_ref().expect("参数错误");
@@ -219,30 +217,30 @@ async fn get_device_info(_app: tauri::AppHandle) -> Result<serde_json::Value> {
 }
 
 #[tauri::command]
-async fn get_device_status(_app: tauri::AppHandle) -> Result<serde_json::Value> {
+async fn get_device_status(_app: tauri::AppHandle) -> Result<DeviceStatus> {
     let mut _d = DEVICE.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     let status = d.get_status()?;
     info!(
         "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
-        status.0, status.1, status.2, status.3
+        status.key, status.light, status.hall, status.enabled
     );
-    Ok(serde_json::json!({
-        "key": status.0,
-        "light": status.1,
-        "hall": status.2,
-        "enabled": status.3
-    }))
+    Ok(status)
 }
 
 #[tauri::command]
-async fn get_latest_version(_app: tauri::AppHandle) -> Result<Version> {
-    Ok(Version::get().await?)
+async fn get_latest_version(client: State<'_, Client>) -> Result<Version> {
+    Ok(Version::get(client.deref()).await?)
 }
 
 #[tauri::command]
 async fn get_firmware_4k_version(_app: tauri::AppHandle) -> &'static str {
     FIRMWARE_VERSION_4K
+}
+
+#[tauri::command]
+async fn get_firmware_3k_version(_app: tauri::AppHandle) -> &'static str {
+    FIRMWARE_VERSION_3K
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -256,8 +254,8 @@ struct Version {
 }
 
 impl Version {
-    async fn get() -> reqwest::Result<Version> {
-        CLIENT
+    async fn get(client: &Client) -> reqwest::Result<Version> {
+        client
             .get("https://desu.life/device/configurator_version/v2/")
             .send()
             .await?
@@ -267,6 +265,8 @@ impl Version {
 }
 
 use tauri::api::shell;
+
+use crate::device::HidDevice;
 
 #[tauri::command]
 async fn check_update(window: tauri::Window, version: Version) -> bool {
@@ -295,8 +295,8 @@ async fn connect(_app: tauri::AppHandle) -> Result<()> {
 async fn connect_iap(_app: tauri::AppHandle) -> Result<()> {
     let vid = 0x5D3E;
     let pid = 0xFE08;
-    let api = unsafe { HID_API.borrow_mut() };
-    api.refresh_devices().unwrap();
+    let api = HidApi::new().unwrap();
+
     match api.open(vid, pid) {
         Ok(device) => {
             info!("固件更新");
@@ -314,8 +314,8 @@ async fn connect_iap(_app: tauri::AppHandle) -> Result<()> {
 #[tauri::command]
 async fn iap_start(_app: tauri::AppHandle, data: Vec<u8>) -> Result<usize> {
     let mut _iap = IAP_DEVICE.lock().unwrap();
-    let iap = _iap.as_mut().ok_or(Error::DeviceDissconnected)?;
-    unsafe { 
+    let iap = _iap.as_mut().ok_or(Error::DeviceDisconnected)?;
+    unsafe {
         FIRMWARE_DATA = Some(data);
         let data_ref = FIRMWARE_DATA.as_deref().unwrap();
         let len = iap.start_program(data_ref)?;
@@ -326,23 +326,22 @@ async fn iap_start(_app: tauri::AppHandle, data: Vec<u8>) -> Result<usize> {
 #[tauri::command]
 async fn iap_flush(app: tauri::AppHandle) -> Result<()> {
     let mut _iap = IAP_DEVICE.lock().unwrap();
-    let iap = _iap.as_mut().ok_or(Error::DeviceDissconnected)?;
+    let iap = _iap.as_mut().ok_or(Error::DeviceDisconnected)?;
     while iap.state == IAPState::Programming {
         let pos = iap.program()?;
         thread::sleep(Duration::from_millis(1));
-        app.emit_all("iap_process", &[pos, IAPState::Programming as u16]).unwrap();
+        app.emit_all("iap_process", &[pos, IAPState::Programming as u16])
+            .unwrap();
     }
-    
+
     while iap.state == IAPState::Verifying {
         let pos = iap.verify()?;
         thread::sleep(Duration::from_millis(1));
-        app.emit_all("iap_process", &[pos, IAPState::Verifying as u16]).unwrap();
+        app.emit_all("iap_process", &[pos, IAPState::Verifying as u16])
+            .unwrap();
     }
     Ok(())
 }
-
-
-
 
 fn _connect() -> Result<()> {
     info!("开始连接!");
@@ -362,10 +361,9 @@ fn _connect() -> Result<()> {
     }
 }
 
-fn find_device() -> Option<Meowpad> {
+fn find_device() -> Option<Meowpad<HidDevice>> {
     // 获取设备列表
-    let api = unsafe { HID_API.borrow_mut() };
-    api.refresh_devices().unwrap();
+    let api = HidApi::new().unwrap();
 
     // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
@@ -380,15 +378,16 @@ fn find_device() -> Option<Meowpad> {
     //     .unwrap_or_else(|| PathBuf::from(".meowkey"));
 
     // 迭代设备列表，查找符合条件的设备
-    api.device_list().find_map(|d| {
+    let mut devices = api.device_list();
+    devices.find_map(|d| {
         // 过滤设备
         if !(d.vendor_id() == VID && d.product_id() == PID) {
             return None;
         }
 
         // 连接设备
-        let device = match d.open_device(api) {
-            Ok(d) => Meowpad::new(d),
+        let device = match d.open_device(&api) {
+            Ok(d) => Meowpad::new(HidDevice { device: d }),
             Err(_) => return None,
         };
 
@@ -408,34 +407,6 @@ fn find_device() -> Option<Meowpad> {
             }
         }
     })
-}
-
-pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
-    use std::cmp::Ordering::*;
-
-    // 检查版本号的格式是否正确
-    let re = regex::Regex::new(r"^\d+(\.\d+)*$").unwrap();
-    if !re.is_match(version1) || !re.is_match(version2) {
-        panic!("Invalid version format");
-    }
-
-    // 将版本号转换为数字向量
-    let v1: Vec<u64> = version1.split('.').map(|s| s.parse().unwrap()).collect();
-    let v2: Vec<u64> = version2.split('.').map(|s| s.parse().unwrap()).collect();
-
-    // 比较数字向量
-    for i in 0..std::cmp::max(v1.len(), v2.len()) {
-        let n1 = v1.get(i).unwrap_or(&0);
-        let n2 = v2.get(i).unwrap_or(&0);
-        match n1.cmp(n2) {
-            Greater => return Greater,
-            Less => return Less,
-            Equal => (),
-        }
-    }
-
-    // 版本号相等
-    Equal
 }
 
 fn main() -> AnyResult<()> {
@@ -522,7 +493,7 @@ fn main() -> AnyResult<()> {
             let status = d.get_status()?;
             info!(
                 "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
-                status.0, status.1, status.2, status.3
+                status.key, status.light, status.hall, status.enabled
             );
 
             d.load_key_config()?;
@@ -601,12 +572,19 @@ fn main() -> AnyResult<()> {
                     get_device_status,
                     get_latest_version,
                     get_firmware_4k_version,
+                    get_firmware_3k_version,
                     check_update,
                     connect_iap,
                     iap_start,
                     iap_flush,
                     connect
                 ])
+                .manage(
+                    Client::builder()
+                        .timeout(Duration::from_secs(5))
+                        .build()
+                        .unwrap(),
+                )
                 .run(tauri::generate_context!())
                 .expect("error while running tauri application");
         }

@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[repr(packed)]
 #[derive(Debug, Copy, Clone)]
 pub struct IAPacket {
