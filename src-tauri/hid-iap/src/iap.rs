@@ -1,4 +1,4 @@
-use std::slice::Chunks;
+use std::{mem::{self, ManuallyDrop}, slice::{self, Chunks}};
 use hidapi::HidDevice;
 use crate::{packet::{IAPCommand, IAPacket}, error::*};
 
@@ -11,7 +11,7 @@ pub enum IAPState {
 
 pub struct IAP<'a> {
     device: HidDevice,
-    firmware_data: Option<&'a [u8]>,
+    firmware_data: Option<Vec<u8>>,
     tmp_data: Option<Chunks<'a, u8>>,
     flash_addr: u16,
     pub state: IAPState,
@@ -29,17 +29,20 @@ impl<'a> IAP<'a> {
     }
 
     fn reset_tmp_data(&mut self) {
-        self.tmp_data = self.firmware_data.map(|data| data.chunks(60));
+        let v = self.firmware_data.as_ref().unwrap();
+        let s = unsafe { slice::from_raw_parts(v.as_ptr(), v.len()) };
+        self.tmp_data = Some(s.chunks(60));
         self.flash_addr = 0;
     }
 
-    pub fn start_program(&mut self, firmware_data: &'a [u8]) -> Result<usize> {
+    pub fn start_program(&mut self, firmware_data: Vec<u8>) -> Result<usize> {
+        let len = firmware_data.len();
         self.firmware_data = Some(firmware_data);
         self.erase()?;
         self.reset_tmp_data();
         self.state = IAPState::Programming;
 
-        Ok(firmware_data.len())
+        Ok(len)
     }
 
     pub fn program(&mut self) -> Result<u16> {

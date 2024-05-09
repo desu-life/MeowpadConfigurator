@@ -51,7 +51,7 @@ export interface ILighting {
 
 export enum LightingMode {
     Off = 0,
-    Debug = 1,
+    Calibration = 1,
     Error = 2,
 
     Solid = 3,
