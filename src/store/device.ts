@@ -1,11 +1,7 @@
-import { IDeviceInfo, IDeviceStatus } from "./apis";
+import { IDeviceInfo, IDeviceStatus } from "../apis";
 import { defineStore, acceptHMRUpdate } from "pinia";
-import { IVersion } from "@/apis";
-import { Type } from "naive-ui/es/button/src/interface";
-import { IKeyboard, ILighting } from "./apis/meowpad4k/config";
-import { Toggle } from "./interface";
-import * as api from "@/apis/api";
-import * as api4k from "@/apis/meowpad4k/api";
+import { IKeyboard, ILighting } from "../apis/meowpad4k/config";
+import { Toggle } from "../interface";
 
 export const useDeviceStore = defineStore("device", () => {
   const connected = ref(false);
@@ -29,6 +25,13 @@ export const useDeviceStore = defineStore("device", () => {
   const continuous_report = ref<Toggle>(Toggle.Off);
   const kalman_filter = ref<Toggle>(Toggle.Off);
 
+  function is_4k() {
+    return device_info.value?.name == 'Meowpad'
+  }
+  function is_3k() {
+    return device_info.value?.name == 'Meowpad3K'
+  }
+
   return {
     key_config,
     light_config,
@@ -47,36 +50,12 @@ export const useDeviceStore = defineStore("device", () => {
     change_color_when_pressed,
     random_color_mode,
     is_flow_delay,
+    is_4k,
+    is_3k
   };
 });
 
-export const useStore = defineStore("main", () => {
-  const status = ref<Type | undefined>(undefined);
-  const status_str = ref("");
-  const loading = ref(false);
-  const iap_connected = ref(false);
-  const version_info = ref<IVersion | undefined>(undefined);
-  const latest_firmware_download_url = ref<string | null>(null);
-  const need_update_firmware = ref<boolean>(false);
-  const developer_mode = ref<boolean>(false);
-  const debug_mode = ref<boolean>(false);
-  const can_sync = ref<boolean>(false);
-
-  return {
-    status,
-    status_str,
-    iap_connected,
-    version_info,
-    need_update_firmware,
-    developer_mode,
-    debug_mode,
-    can_sync,
-    latest_firmware_download_url,
-    loading
-  };
-});
 
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useDeviceStore, import.meta.hot));
-  import.meta.hot.accept(acceptHMRUpdate(useStore, import.meta.hot));
 }

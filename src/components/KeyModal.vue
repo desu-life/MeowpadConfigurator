@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { KeyCode } from '@/keycode';
-import { useStore } from '@/store'
+import { useStore } from '@/store/main';
+import { useDeviceStore } from '@/store/device';
 import { formatKeys } from '@/utils'
 const store = useStore()
 
@@ -76,4 +77,4 @@ function leaveFunc() {
   opacity: 0;
 }
 </style>
-@/apis/interface
+@/apis/interface@/store/store

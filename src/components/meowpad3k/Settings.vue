@@ -1,9 +1,8 @@
 <script lang="ts">
   export default {
-    name: 'Settings4k',
+    name: 'Settings3k',
   }
 </script>
-
 
 <script setup lang="ts">
 import { ref } from 'vue'

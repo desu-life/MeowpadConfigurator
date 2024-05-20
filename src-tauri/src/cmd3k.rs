@@ -8,7 +8,7 @@ use crate::{device::HidDevice, error::{self, Error, Result}};
 use log::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
-struct DebugValue {
+pub struct DebugValue {
     pub key: [KeyRTStatus; 3],
     pub btn: KeyState,
 }
@@ -141,28 +141,24 @@ pub fn save_raw_config_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevic
 
 
 #[tauri::command]
-pub fn connect_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<()> {
+pub fn connect_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> bool {
     let mut _d = device_handle.lock().unwrap();
-    _d.replace(_connect()?);
-    Ok(())
-}
-
-
-fn _connect() -> Result<Meowpad<HidDevice>> {
     info!("开始连接!");
     let found_device = find_device();
 
     match found_device {
         Some(device) => {
             info!("连接到设备");
-            Ok(device)
+            _d.replace(device);
+            true
         }
         None => {
             warn!("连接失败，无法找到设备");
-            Err(error::Error::DeviceNotFound)
+            false
         }
     }
 }
+
 
 fn find_device() -> Option<Meowpad<HidDevice>> {
     // 获取设备列表
@@ -203,3 +199,4 @@ fn find_device() -> Option<Meowpad<HidDevice>> {
         }
     })
 }
+

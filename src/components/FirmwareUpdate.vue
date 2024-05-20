@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useStore } from '@/store'
+import { useStore } from '@/store/main';
 const store = useStore()
 </script>
 
@@ -16,4 +16,4 @@ const store = useStore()
             {{ $t('need_update_warning_4') }} </template>
     </n-result>
 </template>
-lk
+lk@/store/store

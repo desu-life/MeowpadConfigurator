@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { IError, IKeyRTStatus } from '@/apis';
 import { get_debug_value } from '@/apis/meowpad4k/api';
-import { useDeviceStore, useStore } from '@/store'
+import { useStore } from '@/store/main';
+import { useDeviceStore } from '@/store/device';
 import { getErrorMsg } from '@/utils';
 import { DataTableColumns } from 'naive-ui';
 import { useI18n } from "vue-i18n";
@@ -65,4 +66,4 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 
-</style>
+</style>@/store/store

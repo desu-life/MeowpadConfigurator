@@ -6,7 +6,8 @@ import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
 import { appWindow, Theme } from "@tauri-apps/api/window";
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
-import { useStore } from '@/store'
+import { useStore } from '@/store/main';
+import { useDeviceStore } from '@/store/device';
 import { IVersion } from './apis';
 import { check_update, get_latest_version } from './apis/api';
 
@@ -89,3 +90,4 @@ $header-height: 56px;
   align-items: center;
 }
 </style>
+@/store/store

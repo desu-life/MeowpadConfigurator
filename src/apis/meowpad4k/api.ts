@@ -45,5 +45,5 @@ export async function save_raw_config(config: string) {
   return (await invoke("save_raw_config", { config })) as void;
 }
 export async function connect() {
-  return (await invoke("connect_4k")) as void;
+  return (await invoke("connect_4k")) as boolean;
 }

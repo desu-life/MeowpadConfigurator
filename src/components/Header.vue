@@ -2,13 +2,15 @@
 import { ref } from 'vue'
 import { listen } from '@tauri-apps/api/event'
 import { Type } from "naive-ui/es/button/src/interface"
-import { useDeviceStore, useStore } from '@/store'
+import { useStore } from '@/store/main';
+import { useDeviceStore } from '@/store/device';
 import { useI18n } from "vue-i18n";
 import { setI18nLanguage, i18n } from '@/locales/index'
 import { Rgb2Hex, Hex2Rgb, getErrorMsg } from '@/utils';
 import { useDialog } from 'naive-ui'
 import * as api from '@/apis/api'
 import * as api4k from '@/apis/meowpad4k/api'
+import * as api3k from '@/apis/meowpad3k/api'
 import { IError } from '@/apis';
 import { Toggle } from '@/interface';
 import { IKeyboard, ILighting } from '@/apis/meowpad4k/config';
@@ -43,12 +45,22 @@ function handleChange(e: string) {
   store.status_str = t("device_disconnected")
 }
 
+async function tryConnect() {
+  if (await api4k.connect()) return true;
+  if (await api3k.connect()) return true;
+  return false;
+}
+
 async function connect() {
   store.loading = true
   store.status = "warning"
   store.status_str = t('connecting')
   try {
-    await api4k.connect()
+    if (!await tryConnect()) {
+      store.status = "error"
+      store.status_str = t('connection_broke', { e: t('device_not_found') })
+      store.loading = false
+    }
     let info = await api.get_device_info()
     console.table(info)
     device.device_info = info
@@ -82,8 +94,8 @@ async function connect() {
     }
 
     // 不管怎么样总之是连上了
-    device.connected = true
     store.status = "success"
+    device.connected = true
 
     if (device.device_status.hall == false) {
       dialog.warning({
@@ -525,4 +537,4 @@ async function erase_firmware() {
   pointer-events: none;
 }
 </style>
-@/apis/api@/apis/interface
+@/apis/api@/apis/interface@/store/store

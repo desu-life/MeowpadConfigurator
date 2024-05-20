@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { UploadCustomRequestOptions } from 'naive-ui'
-import { useStore } from '@/store'
+import { useStore } from '@/store/main';
+import { useDeviceStore } from '@/store/device';
 import { listen } from '@tauri-apps/api/event'
 import { ArchiveOutline as ArchiveIcon } from '@vicons/ionicons5'
 import { useI18n } from "vue-i18n";
@@ -101,4 +102,4 @@ const uploadFirmware = async ({
 
 <style lang="scss">
 
-</style>
+</style>@/store/store

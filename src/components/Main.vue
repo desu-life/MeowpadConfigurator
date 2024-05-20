@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { useDeviceStore, useStore } from '@/store'
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
-import Settings from '@/components/meowpad4k/Settings.vue'
+import Settings4K from '@/components/meowpad4k/Settings.vue'
+import Settings3K from '@/components/meowpad3k/Settings.vue'
 import DeveloperSettings from '@/components/DeveloperSettings.vue'
 import { useI18n } from "vue-i18n";
+import { useStore } from '@/store/main';
+import { useDeviceStore } from '@/store/device';
 
 const { t } = useI18n();
 const store = useStore()
@@ -16,8 +18,13 @@ const device = useDeviceStore()
       <DeveloperSettings></DeveloperSettings>
     </div>
 
-    <div v-else-if="device.key_config != undefined && device.light_config != undefined && device.connected">
-      <Settings></Settings>
+    <div v-else-if="device.connected">
+      <div v-if="device.is_4k()">
+        <Settings4K></Settings4K>
+      </div>
+      <div v-else-if="device.is_3k()">
+        <Settings3K></Settings3K>
+      </div>
     </div>
 
     <div v-else-if="store.need_update_firmware">
@@ -35,4 +42,4 @@ const device = useDeviceStore()
   height: 100%;
   min-height: 80vh;
 }
-</style>
+</style>@/store/store

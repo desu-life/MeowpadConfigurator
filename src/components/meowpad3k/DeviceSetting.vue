@@ -2,7 +2,7 @@
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import KeyModal from '@/components/KeyModal.vue'
-import Keyboard from './Keyboard.vue'
+import Keyboard from '@/components/Keyboard.vue'
 import { h } from 'vue'
 import { useI18n } from "vue-i18n";
 import { IKeymap, Toggle } from '@/interface';

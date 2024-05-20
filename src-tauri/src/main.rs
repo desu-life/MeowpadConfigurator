@@ -7,7 +7,8 @@ use anyhow::Result as AnyResult;
 use hid_iap::iap::IAP;
 use log::*;
 use meowpad::models::DeviceStatus;
-use meowpad4k::Meowpad;
+use meowpad4k::Meowpad as Meowpad4k;
+use meowpad3k::Meowpad as Meowpad3k;
 use reqwest::Client;
 use std::env;
 use std::io::Write;
@@ -76,32 +77,60 @@ macro_rules! message_dialog_f {
 
 #[tauri::command]
 async fn get_device_info(app: tauri::AppHandle) -> Result<serde_json::Value> {
-    let __d = app.state::<Mutex<Option<Meowpad<HidDevice>>>>();
+    let __d = app.state::<Mutex<Option<Meowpad4k<HidDevice>>>>();
     let mut _d = __d.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.get_device_name()?;
-    d.get_firmware_version()?;
-    let name = d.device_name.as_ref().expect("参数错误");
-    let version = d.firmware_version.as_ref().expect("参数错误");
-    info!("设备名称：{}", name);
-    info!("固件版本：{}", version);
-    Ok(serde_json::json!({
-        "name": name,
-        "version": version
-    }))
+    if let Some(d) = _d.as_mut() {
+        d.get_device_name()?;
+        d.get_firmware_version()?;
+        let name = d.device_name.as_ref().expect("参数错误");
+        let version = d.firmware_version.as_ref().expect("参数错误");
+        info!("设备名称：{}", name);
+        info!("固件版本：{}", version);
+        return Ok(serde_json::json!({
+            "name": name,
+            "version": version
+        }));
+    }
+    let __d = app.state::<Mutex<Option<Meowpad3k<HidDevice>>>>();
+    let mut _d = __d.lock().unwrap();
+    if let Some(d) = _d.as_mut() {
+        d.get_device_name()?;
+        d.get_firmware_version()?;
+        let name = d.device_name.as_ref().expect("参数错误");
+        let version = d.firmware_version.as_ref().expect("参数错误");
+        info!("设备名称：{}", name);
+        info!("固件版本：{}", version);
+        return Ok(serde_json::json!({
+            "name": name,
+            "version": version
+        }));
+    }
+    Err(Error::DeviceDisconnected)
 }
 
 #[tauri::command]
 async fn get_device_status(app: tauri::AppHandle) -> Result<DeviceStatus> {
-    let __d = app.state::<Mutex<Option<Meowpad<HidDevice>>>>();
+    let __d = app.state::<Mutex<Option<Meowpad4k<HidDevice>>>>();
     let mut _d = __d.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    let status = d.get_status()?;
-    info!(
-        "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
-        status.key, status.light, status.hall, status.enabled
-    );
-    Ok(status)
+    if let Some(d) = _d.as_mut() {
+        let status = d.get_status()?;
+        info!(
+            "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
+            status.key, status.light, status.hall, status.enabled
+        );
+        return Ok(status);
+    }
+    let __d = app.state::<Mutex<Option<Meowpad3k<HidDevice>>>>();
+    let mut _d = __d.lock().unwrap();
+    if let Some(d) = _d.as_mut() {
+        let status = d.get_status()?;
+        info!(
+            "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
+            status.key, status.light, status.hall, status.enabled
+        );
+        return Ok(status);
+    }
+    Err(Error::DeviceDisconnected)
 }
 
 #[tauri::command]
@@ -235,7 +264,8 @@ fn main() -> AnyResult<()> {
                 .build()
                 .unwrap(),
         )
-        .manage::<Mutex<Option<Meowpad<HidDevice>>>>(Mutex::new(None))
+        .manage::<Mutex<Option<Meowpad3k<HidDevice>>>>(Mutex::new(None))
+        .manage::<Mutex<Option<Meowpad4k<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<IAP>>>(Mutex::new(None))
         .manage::<Mutex<Option<Vec<u8>>>>(Mutex::new(None))
         .run(tauri::generate_context!())

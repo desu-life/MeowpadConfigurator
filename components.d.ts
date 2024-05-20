@@ -8,15 +8,15 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Application: typeof import('./src/components/Application.vue')['default']
-    ColorSetting: typeof import('./src/components/meowpad4k/ColorSetting.vue')['default']
+    ColorSetting: typeof import('./src/components/meowpad3k/ColorSetting.vue')['default']
     Debug: typeof import('./src/components/Debug.vue')['default']
     DeveloperSettings: typeof import('./src/components/DeveloperSettings.vue')['default']
-    DeviceSetting: typeof import('./src/components/meowpad4k/DeviceSetting.vue')['default']
+    DeviceSetting: typeof import('./src/components/meowpad3k/DeviceSetting.vue')['default']
     FirmwareUpdate: typeof import('./src/components/FirmwareUpdate.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
     IAP: typeof import('./src/components/IAP.vue')['default']
     Key: typeof import('./src/components/Key.vue')['default']
-    Keyboard: typeof import('./src/components/Keyboard.vue')['default']
+    Keyboard: typeof import('./src/components/meowpad3k/Keyboard.vue')['default']
     KeyModal: typeof import('./src/components/KeyModal.vue')['default']
     KeyShow: typeof import('./src/components/KeyShow.vue')['default']
     Main: typeof import('./src/components/Main.vue')['default']
@@ -52,6 +52,6 @@ declare module 'vue' {
     NTooltip: typeof import('naive-ui')['NTooltip']
     NUpload: typeof import('naive-ui')['NUpload']
     NUploadDragger: typeof import('naive-ui')['NUploadDragger']
-    Settings: typeof import('./src/components/meowpad4k/Settings.vue')['default']
+    Settings: typeof import('./src/components/meowpad3k/Settings.vue')['default']
   }
 }

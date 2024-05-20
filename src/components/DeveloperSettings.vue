@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useDeviceStore, useStore } from '@/store'
+import { useStore } from '@/store/main';
+import { useDeviceStore } from '@/store/device';
 import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 import IAP from '@/components/IAP.vue'
 import { useI18n } from "vue-i18n";
@@ -47,4 +48,4 @@ async function check_raw_config(value: string): Promise<void> {
 
 <style lang="scss">
 
-</style>
+</style>@/store/store
