@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { listen } from '@tauri-apps/api/event'
 import { Type } from "naive-ui/es/button/src/interface"
-import { useStore } from '@/store'
+import { useDeviceStore, useStore } from '@/store'
 import { useI18n } from "vue-i18n";
 import { setI18nLanguage, i18n } from '@/locales/index'
 import { Rgb2Hex, Hex2Rgb, getErrorMsg } from '@/utils';
@@ -18,6 +18,7 @@ import { KeyCode } from '@/keycode';
 const { t } = useI18n();
 const dialog = useDialog()
 const store = useStore()
+const device = useDeviceStore()
 const message = useMessage()
 store.status_str = t("device_disconnected")
 const show_calibrate_msg = ref(false)
@@ -50,10 +51,10 @@ async function connect() {
     await api4k.connect()
     let info = await api.get_device_info()
     console.table(info)
-    store.device_info = info
+    device.device_info = info
 
     let firmware_version = await api.get_firmware_4k_version()
-    if (store.device_info!.version != firmware_version) {
+    if (device.device_info!.version != firmware_version) {
       store.need_update_firmware = true // 需要更新固件
       store.loading = false
       store.status = "error"
@@ -66,25 +67,25 @@ async function connect() {
     }
 
     let status = await api.get_device_status()
-    store.device_status = status
+    device.device_status = status
 
-    if (store.device_status.key == false) {
+    if (device.device_status.key == false) {
       await get_default_key_config()
       await sync_key_config()
       await api4k.save_key_config()
     }
 
-    if (store.device_status.key == false) {
+    if (device.device_status.key == false) {
       await get_default_light_config()
       await sync_light_config()
       await api4k.save_light_config()
     }
 
     // 不管怎么样总之是连上了
-    store.connected = true
+    device.connected = true
     store.status = "success"
 
-    if (store.device_status.hall == false) {
+    if (device.device_status.hall == false) {
       dialog.warning({
         title: t('warning'),
         content: t('device_cali_warn'),
@@ -103,12 +104,12 @@ async function connect() {
       store.status_str = t('connected_device', { version: info!.version })
     }
   } catch (e) {
-    store.connected = false
+    device.connected = false
     store.status = "error"
     store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
     console.error(e)
   }
-  if (store.connected) {
+  if (device.connected) {
     if (store.developer_mode)
       await get_config_raw()
     else
@@ -122,7 +123,7 @@ async function calibration_key() {
   try {
     await api4k.calibration_key()
   } catch (e) {
-    store.connected = false
+    device.connected = false
     store.status = "error"
     store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
     console.error(e)
@@ -138,28 +139,28 @@ async function calibration_key() {
 
 
 function store_key_config(res: IKeyboard) {
-  store.jitters_elimination_time = res.jitters_elimination_time / 8
-  store.continuous_report = res.continuous_report == true ? Toggle.On : Toggle.Off
-  store.kalman_filter = res.kalman_filter == true ? Toggle.On : Toggle.Off
-  store.enable_hs = res.enable_hs == true ? Toggle.On : Toggle.Off
-  store.key_config = res
-  for (let i = 0; i < store.key_config.keys.length; i++) {
-    store.key_config.keys[i].key_data = store.key_config.keys[i].key_data.filter(k => k != KeyCode.None)
+  device.jitters_elimination_time = res.jitters_elimination_time / 8
+  device.continuous_report = res.continuous_report == true ? Toggle.On : Toggle.Off
+  device.kalman_filter = res.kalman_filter == true ? Toggle.On : Toggle.Off
+  device.enable_hs = res.enable_hs == true ? Toggle.On : Toggle.Off
+  device.key_config = res
+  for (let i = 0; i < device.key_config.keys.length; i++) {
+    device.key_config.keys[i].key_data = device.key_config.keys[i].key_data.filter(k => k != KeyCode.None)
   }
 }
 
 function store_light_config(res: ILighting) {
-  store.led_colors = []
+  device.led_colors = []
   for (let i = 0; i < res.led_colors.length; i++) {
-    store.led_colors.push(Rgb2Hex(res.led_colors[i]))
+    device.led_colors.push(Rgb2Hex(res.led_colors[i]))
   }
-  store.low_speed_color = Rgb2Hex(res.low_speed_color)
-  store.high_speed_color = Rgb2Hex(res.high_speed_color)
-  store.change_color_when_pressed = res.change_color_when_pressed == true ? Toggle.On : Toggle.Off
-  store.random_color_mode = res.random_color_mode == true ? Toggle.On : Toggle.Off
-  store.is_flow_delay = res.is_flow_delay == true ? Toggle.On : Toggle.Off
-  store.max_brightness = Math.floor(res.max_brightness * 2)
-  store.light_config = res
+  device.low_speed_color = Rgb2Hex(res.low_speed_color)
+  device.high_speed_color = Rgb2Hex(res.high_speed_color)
+  device.change_color_when_pressed = res.change_color_when_pressed == true ? Toggle.On : Toggle.Off
+  device.random_color_mode = res.random_color_mode == true ? Toggle.On : Toggle.Off
+  device.is_flow_delay = res.is_flow_delay == true ? Toggle.On : Toggle.Off
+  device.max_brightness = Math.floor(res.max_brightness * 2)
+  device.light_config = res
 }
 
 async function get_default_key_config() {
@@ -224,7 +225,7 @@ async function get_config_raw() {
   store.loading = true
   try {
     const res = await api4k.get_raw_config()
-    store.raw_config = res
+    device.raw_config = res
   } catch (e) {
     const es = e as IError
     store.status = "error"
@@ -237,32 +238,32 @@ async function get_config_raw() {
 const need_check = ref(false)
 
 async function sync_key_config() {
-  for (let i = 0; i < store.key_config!.keys.length; i++) {
-    while (store.key_config!.keys[i].key_data.length < 6) {
-      store.key_config!.keys[i].key_data.push(KeyCode.None)
+  for (let i = 0; i < device.key_config!.keys.length; i++) {
+    while (device.key_config!.keys[i].key_data.length < 6) {
+      device.key_config!.keys[i].key_data.push(KeyCode.None)
     }
 
-    while (store.key_config!.keys[i].key_data.length > 6) {
-      store.key_config!.keys[i].key_data.pop()
+    while (device.key_config!.keys[i].key_data.length > 6) {
+      device.key_config!.keys[i].key_data.pop()
     }
   }
-  store.key_config!.jitters_elimination_time = Math.round(store.jitters_elimination_time * 8)
-  store.key_config!.continuous_report = store.continuous_report == Toggle.On ? true : false
-  store.key_config!.kalman_filter = store.kalman_filter == Toggle.On ? true : false
-  store.key_config!.enable_hs = store.enable_hs == Toggle.On ? true : false
+  device.key_config!.jitters_elimination_time = Math.round(device.jitters_elimination_time * 8)
+  device.key_config!.continuous_report = device.continuous_report == Toggle.On ? true : false
+  device.key_config!.kalman_filter = device.kalman_filter == Toggle.On ? true : false
+  device.key_config!.enable_hs = device.enable_hs == Toggle.On ? true : false
 
-  await api4k.set_key_config(store.key_config!);
+  await api4k.set_key_config(device.key_config!);
 
-  for (let i = 0; i < store.key_config!.keys.length; i++) {
-    store.key_config!.keys[i].key_data = store.key_config!.keys[i].key_data.filter(k => k != KeyCode.None)
+  for (let i = 0; i < device.key_config!.keys.length; i++) {
+    device.key_config!.keys[i].key_data = device.key_config!.keys[i].key_data.filter(k => k != KeyCode.None)
 
-    if (store.key_config!.keys[i].dead_zone < 5) {
+    if (device.key_config!.keys[i].dead_zone < 5) {
       need_check.value = true
     }
-    if (store.key_config!.keys[i].press_percentage < 3) {
+    if (device.key_config!.keys[i].press_percentage < 3) {
       need_check.value = true
     }
-    if (store.key_config!.keys[i].release_percentage < 3) {
+    if (device.key_config!.keys[i].release_percentage < 3) {
       need_check.value = true
     }
   }
@@ -270,20 +271,20 @@ async function sync_key_config() {
 
 
 async function sync_light_config() {
-  store.light_config!.led_colors = []
-  for (let i = 0; i < store.led_colors!.length; i++) {
-    store.light_config!.led_colors.push(Hex2Rgb(store.led_colors![i]))
+  device.light_config!.led_colors = []
+  for (let i = 0; i < device.led_colors!.length; i++) {
+    device.light_config!.led_colors.push(Hex2Rgb(device.led_colors![i]))
   }
-  store.light_config!.low_speed_color = Hex2Rgb(store.low_speed_color!)
-  store.light_config!.high_speed_color = Hex2Rgb(store.high_speed_color!)
+  device.light_config!.low_speed_color = Hex2Rgb(device.low_speed_color!)
+  device.light_config!.high_speed_color = Hex2Rgb(device.high_speed_color!)
 
-  store.light_config!.change_color_when_pressed = store.change_color_when_pressed == Toggle.On ? true : false
-  store.light_config!.random_color_mode = store.random_color_mode == Toggle.On ? true : false
-  store.light_config!.is_flow_delay = store.is_flow_delay == Toggle.On ? true : false
+  device.light_config!.change_color_when_pressed = device.change_color_when_pressed == Toggle.On ? true : false
+  device.light_config!.random_color_mode = device.random_color_mode == Toggle.On ? true : false
+  device.light_config!.is_flow_delay = device.is_flow_delay == Toggle.On ? true : false
 
-  store.light_config!.max_brightness = Math.round(store.max_brightness / 2)
+  device.light_config!.max_brightness = Math.round(device.max_brightness / 2)
 
-  await api4k.set_light_config(store.light_config!);
+  await api4k.set_light_config(device.light_config!);
 }
 
 async function save_config() {
@@ -312,8 +313,8 @@ async function sync_config() {
     }
 
   } catch (e) {
-    store.light_config = undefined
-    store.connected = false
+    device.light_config = undefined
+    device.connected = false
     store.status = "error"
     store.status_str = t('sync_error', { e: getErrorMsg(t, e as IError) })
     console.error(e)
@@ -327,12 +328,12 @@ async function sync_config_raw() {
   store.status = "warning"
   store.status_str = t('syncing_config')
   try {
-    await api4k.save_raw_config(store.raw_config!)
+    await api4k.save_raw_config(device.raw_config!)
     store.status = "success"
     store.status_str = t('sync_success')
   } catch (e) {
-    store.raw_config = undefined
-    store.connected = false
+    device.raw_config = undefined
+    device.connected = false
     store.status = "error"
     store.status_str = t('sync_error', { e: getErrorMsg(t, e as IError) })
     console.error(e)
@@ -342,7 +343,7 @@ async function sync_config_raw() {
 
 function exit_developer_mode() {
   store.developer_mode = false
-  store.connected = false
+  device.connected = false
   store.status = undefined
   store.status_str = t("device_disconnected")
 }
@@ -425,11 +426,11 @@ async function debug() {
 async function erase_firmware() {
   try {
     await api4k.erase_firmware()
-    store.connected = false
+    device.connected = false
     store.status = undefined
     store.status_str = t("device_disconnected")
   } catch (e) {
-    store.connected = false
+    device.connected = false
     store.status = "error"
     store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
     console.error(e)
@@ -444,14 +445,14 @@ async function erase_firmware() {
     </n-card>
   </n-modal>
   <div class="left">
-    <n-select v-if="!store.connected" class="ml" @update:value="handleChange" v-model:value="state.currentLang"
+    <n-select v-if="!device.connected" class="ml" @update:value="handleChange" v-model:value="state.currentLang"
       placeholder="Language" :options="state.options"></n-select>
     <n-button class="ml" id="msgbox" :loading="store.loading" :type="store.status" strong secondary>{{ store.status_str
       }}</n-button>
   </div>
   <div class="right">
     <div v-if="store.developer_mode">
-      <div v-if="!store.connected">
+      <div v-if="!device.connected">
         <div v-if="store.iap_connected">
           <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_iap_mode">{{
     $t('exit') }}</n-button>
@@ -480,7 +481,7 @@ async function erase_firmware() {
       </div>
     </div>
     <div v-else>
-      <div v-if="!store.connected">
+      <div v-if="!device.connected">
         <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button>
         <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
       </div>

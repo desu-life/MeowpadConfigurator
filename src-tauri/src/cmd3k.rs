@@ -1,11 +1,17 @@
 
 use std::sync::Mutex;
 use hidapi::HidApi;
-use meowpad::models::KeyRTStatus;
+use meowpad::models::{KeyRTStatus, KeyState};
 use meowpad3k::Meowpad;
 use tauri::State;
 use crate::{device::HidDevice, error::{self, Error, Result}};
 use log::*;
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
+struct DebugValue {
+    pub key: [KeyRTStatus; 3],
+    pub btn: KeyState,
+}
 
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
@@ -23,10 +29,14 @@ pub fn calibration_key_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevic
 }
 
 #[tauri::command]
-pub fn get_debug_value_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<[KeyRTStatus; 3]> {
+pub fn get_debug_value_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<DebugValue> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    Ok(d.get_debug_value()?)
+    let v = d.get_debug_value()?;
+    Ok(DebugValue {
+        key: v.0,
+        btn: v.1,
+    })
 }
 
 #[tauri::command]

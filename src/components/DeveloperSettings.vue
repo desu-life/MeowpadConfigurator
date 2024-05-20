@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useStore } from '@/store'
+import { useDeviceStore, useStore } from '@/store'
 import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 import IAP from '@/components/IAP.vue'
 import { useI18n } from "vue-i18n";
@@ -8,6 +8,7 @@ import * as api4k from '@/apis/meowpad4k/api'
 
 const { t } = useI18n();
 const store = useStore()
+const device = useDeviceStore()
 
 const input_status = ref<FormValidationStatus | undefined>(undefined)
 
@@ -27,12 +28,12 @@ async function check_raw_config(value: string): Promise<void> {
 <template>
       <n-alert :title="$t('warning')" type="warning" style="margin-bottom: 10px;">
         {{ $t('developer_warning_2') }} </n-alert>
-      <div v-if="store.connected">
+      <div v-if="device.connected">
         <div v-if="store.debug_mode">
           <Debug></Debug>
         </div>
-        <div v-else-if="store.raw_config != undefined">
-          <n-input type="textarea" v-model:value="store.raw_config" :on-input="check_raw_config" :status="input_status"
+        <div v-else-if="device.raw_config != undefined">
+          <n-input type="textarea" v-model:value="device.raw_config" :on-input="check_raw_config" :status="input_status"
             :autosize="{
               minRows: 3,
               maxRows: 15

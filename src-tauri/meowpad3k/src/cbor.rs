@@ -26,6 +26,8 @@ pub struct KeyRTConfig {
 pub struct Keyboard {
     #[serde(rename = "ks")]
     pub KeyConfigs: [KeyRTConfig; 3],
+    #[serde(rename = "sbd")]
+    pub SideBtnKeyData: [u8; 6],
     #[serde(rename = "jet")]
     pub JittersEliminationTime: u16,
     #[serde(rename = "cr")]
@@ -87,6 +89,7 @@ impl From<config::Key> for Keyboard {
 
         Keyboard {
             KeyConfigs: key_configs,
+            SideBtnKeyData: cfg.side_btn.into_iter().collect::<KbReport>().into(),
             ContinuousReport: cfg.continuous_report,
             KalmanFilter: cfg.kalman_filter,
             JittersEliminationTime: cfg.jitters_elimination_time,
@@ -134,6 +137,7 @@ impl Default for Keyboard {
         ];
         Self {
             KeyConfigs: key_configs,
+            SideBtnKeyData: KeyCode::Escape.to_report().into(),
             ContinuousReport: false,
             KalmanFilter: true,
             JittersEliminationTime: 15,

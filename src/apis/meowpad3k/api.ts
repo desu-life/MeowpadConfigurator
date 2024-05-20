@@ -1,12 +1,11 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { IKeyRTStatus } from "..";
-import { IKeyboard, ILighting } from "./config";
+import { IDebugValue, IKeyboard, ILighting } from "./config";
 
 export async function calibration_key() {
   return (await invoke("calibration_key_3k")) as void;
 }
 export async function get_debug_value() {
-  return (await invoke("get_debug_value_3k")) as IKeyRTStatus[];
+  return (await invoke("get_debug_value_3k")) as IDebugValue;
 }
 export async function erase_firmware() {
   return (await invoke("erase_firmware_3k")) as void;

@@ -83,7 +83,7 @@ impl<D: Device> Meowpad<D> {
         }
     }
 
-    pub fn get_debug_value(&mut self) -> Result<[KeyRTStatus; 3]> {
+    pub fn get_debug_value(&mut self) -> Result<([KeyRTStatus; 3], KeyState)> {
         self.write(Packet::new(PacketID::Debug, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
@@ -95,11 +95,12 @@ impl<D: Device> Meowpad<D> {
                 key.press_percentage = cur.read_u16::<BigEndian>()? as u8;
                 key.key_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
             }
+            let btn_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
             let rem = cur.remaining_slice();
             if !rem.is_empty() {
                 println!("{:?}", cur.remaining_slice());
             }
-            Ok(keys)
+            Ok((keys, btn_state))
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());

@@ -30,6 +30,7 @@ pub struct KeyConfig {
 #[derive(Serialize, Deserialize, Clone, Debug, Copy)]
 pub struct Key {
     pub keys: [KeyConfig; 3],
+    pub side_btn: [KeyCode; 6],
     pub jitters_elimination_time: u16,
     pub continuous_report: bool,
     pub kalman_filter: bool
@@ -55,6 +56,7 @@ impl TryFrom<cbor::Keyboard> for Key {
 
         Ok(Key {
             keys,
+            side_btn: KbReport::from(cfg.SideBtnKeyData).into(),
             continuous_report: cfg.ContinuousReport,
             kalman_filter: cfg.KalmanFilter,
             jitters_elimination_time: cfg.JittersEliminationTime,

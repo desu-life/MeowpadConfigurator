@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useStore } from '@/store'
+import { useDeviceStore, useStore } from '@/store'
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
 import Settings from '@/components/meowpad4k/Settings.vue'
 import DeveloperSettings from '@/components/DeveloperSettings.vue'
@@ -7,6 +7,7 @@ import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
 const store = useStore()
+const device = useDeviceStore()
 </script>
 
 <template>
@@ -15,7 +16,7 @@ const store = useStore()
       <DeveloperSettings></DeveloperSettings>
     </div>
 
-    <div v-else-if="store.key_config != undefined && store.light_config != undefined && store.connected">
+    <div v-else-if="device.key_config != undefined && device.light_config != undefined && device.connected">
       <Settings></Settings>
     </div>
 

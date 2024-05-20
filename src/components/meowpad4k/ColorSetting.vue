@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { LightingMode } from '@/apis/meowpad4k/config';
 import { Toggle } from '@/interface';
-import { useStore } from '@/store'
+import { useDeviceStore, useStore } from '@/store'
 import { Rgb2Hex, Hex2Rgb, IsModifierKey, compareArray } from '@/utils';
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
-const store = useStore()
+const store = useDeviceStore()
 
 const canChangeColor = ref(true)
 const lightingMode = ref(LightingMode.Solid)

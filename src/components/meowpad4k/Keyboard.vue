@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useStore } from '@/store'
+import { useDeviceStore, useStore } from '@/store'
 import { useI18n } from "vue-i18n";
 import Key from '@/components/Key.vue'
 import KeyShow from '@/components/KeyShow.vue'
@@ -10,7 +10,7 @@ import { formatKeys, IsModifierKey, compareArray } from '@/utils'
 const { t } = useI18n();
 const message = useMessage()
 const dialog = useDialog()
-const store = useStore()
+const store = useDeviceStore()
 
 import { KeyCode, jsToHid } from '@/keycode';
 

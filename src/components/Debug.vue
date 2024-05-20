@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { IError, IKeyRTStatus } from '@/apis';
 import { get_debug_value } from '@/apis/meowpad4k/api';
-import { useStore } from '@/store'
+import { useDeviceStore, useStore } from '@/store'
 import { getErrorMsg } from '@/utils';
 import { DataTableColumns } from 'naive-ui';
 import { useI18n } from "vue-i18n";
 
 const store = useStore()
+const device = useDeviceStore()
 const { t } = useI18n();
 
 const debug_data = ref<IKeyRTStatus[]>()
@@ -37,7 +38,7 @@ onMounted(() => {
       debug_data.value = await get_debug_value();
     } catch (e) {
       console.log(e)
-      store.connected = false
+      device.connected = false
       store.status = "error"
       store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
       store.debug_mode = false

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useStore } from '@/store'
+import { useDeviceStore, useStore } from '@/store'
 import KeyModal from '@/components/KeyModal.vue'
 import Keyboard from '@/components/Keyboard.vue'
 import { h } from 'vue'
@@ -13,7 +13,7 @@ const keymap: IKeymap[][] = meowpad;
 const { t } = useI18n();
 const message = useMessage()
 const dialog = useDialog()
-const store = useStore()
+const store = useDeviceStore()
 
 
 const ToggleSel = [
