@@ -14,7 +14,7 @@ const device = useDeviceStore()
 const input_status = ref<FormValidationStatus | undefined>(undefined)
 
 async function check_raw_config(value: string): Promise<void> {
-  const res: boolean = await api4k.check_raw_config(value)
+  const res = await device.check_config_raw()
   if (res) {
     store.can_sync = true
     input_status.value = undefined

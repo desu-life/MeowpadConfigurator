@@ -7,14 +7,19 @@ import { h } from 'vue'
 import { useI18n } from "vue-i18n";
 import { IKeymap, Toggle } from '@/interface';
 import { LightingMode } from '@/apis/meowpad4k/config';
+
 import meowpad from '@/meowpad4k.json'
 const keymap: IKeymap[][] = meowpad;
 
+import { ILighting } from "@/apis/meowpad4k/config";
+import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
 const message = useMessage()
 const dialog = useDialog()
 const store = useDeviceStore()
+const { light_config } = storeToRefs(store)
+const light_cfg = light_config as Ref<ILighting>;
 
 
 const ToggleSel = [
@@ -28,7 +33,7 @@ const ToggleSel = [
   },
 ]
 
-const LighingModeSelWooting = [
+const LighingModeSel = [
   {
     value: LightingMode.Off,
     label: t('off')
@@ -72,7 +77,7 @@ const LighingModeSelWooting = [
 ]
 
 function GetLighingModeSel() {
-  return LighingModeSelWooting
+  return LighingModeSel
 }
 function GetToggleSel() {
   return ToggleSel
@@ -104,12 +109,12 @@ function GetToggleSel() {
     </n-gi>
     <n-gi :span="10">
       <n-form-item :label="$t('lighting_mode')" path="lighting_mode">
-        <n-select v-model:value="store.light_config!.lighting_mode" :options="GetLighingModeSel()" />
+        <n-select v-model:value="light_cfg!.lighting_mode" :options="GetLighingModeSel()" />
       </n-form-item>
     </n-gi>
     <n-gi :span="5">
       <n-form-item :label="$t('device_sleep_idle_time')" path="sleep_time">
-        <n-input-number v-model:value="store.light_config!.sleep_time" :min="0" :max="65535">
+        <n-input-number v-model:value="light_cfg!.sleep_time" :min="0" :max="65535">
           <template #suffix>
             {{ $t('sec') }}
           </template>
@@ -123,7 +128,7 @@ function GetToggleSel() {
     </n-gi>
     <n-gi :span="10">
       <n-form-item :label="$t('lighting_mode_sleep')" path="lighting_mode_sleep">
-        <n-select v-model:value="store.light_config!.lighting_mode_sleep" :options="GetLighingModeSel()" />
+        <n-select v-model:value="light_cfg!.lighting_mode_sleep" :options="GetLighingModeSel()" />
       </n-form-item>
     </n-gi>
     <n-gi :span="5">

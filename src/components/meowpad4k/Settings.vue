@@ -12,11 +12,9 @@ import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { Keyboard24Regular, Lightbulb24Regular } from '@vicons/fluent'
 import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
-import ColorSetting from '@/components/meowpad4k/ColorSetting.vue'
-import DeviceSetting from '@/components/meowpad4k/DeviceSetting.vue'
+import ColorSetting from './ColorSetting.vue'
+import DeviceSetting from './DeviceSetting.vue'
 import { useI18n } from "vue-i18n";
-import * as api4k from '@/apis/meowpad4k/api'
-import type { UploadFileInfo } from 'naive-ui'
 
 const { t } = useI18n();
 const device = useDeviceStore()

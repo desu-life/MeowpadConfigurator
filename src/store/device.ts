@@ -15,7 +15,7 @@ export const useDeviceStore = defineStore("device", () => {
 
   const raw_config = ref<string | undefined>(undefined);
 
-  // 4k configs
+  // configs
   const key_config = ref<IKB4K | IKB3K | undefined>(undefined);
   const light_config = ref<ILT4K | ILT3K | undefined>(undefined);
   const led_colors = ref<string[] | null>(null);
@@ -77,6 +77,17 @@ export const useDeviceStore = defineStore("device", () => {
     }
   }
 
+  async function check_config_raw() {
+    if (is_4k()) {
+      return await api4k.check_raw_config(raw_config.value!)
+    }
+    if (is_3k()) {
+      return await api3k.check_raw_config(raw_config.value!)
+    }
+    // 无设备连接时不检查，永远通过
+    return true
+  }
+
   function store_key_config_4k() {
     let config = key_config as Ref<IKB4K>;
     for (let i = 0; i < config.value!.keys.length; i++) {
@@ -98,7 +109,7 @@ export const useDeviceStore = defineStore("device", () => {
     let config = light_config as Ref<ILT4K>;
     config.value!.led_colors = []
     for (let i = 0; i < led_colors.value!.length; i++) {
-      config.value!.led_colors.push(Hex2Rgb(led_colors![i]))
+      config.value!.led_colors.push(Hex2Rgb(led_colors.value![i]))
     }
     config.value!.low_speed_color = Hex2Rgb(low_speed_color.value!)
     config.value!.high_speed_color = Hex2Rgb(high_speed_color.value!)
@@ -127,11 +138,68 @@ export const useDeviceStore = defineStore("device", () => {
     for (let i = 0; i < config.value!.led_colors.length; i++) {
       led_colors.value.push(Rgb2Hex(config.value!.led_colors[i]))
     }
+
     low_speed_color.value = Rgb2Hex(config.value!.low_speed_color)
     high_speed_color.value = Rgb2Hex(config.value!.high_speed_color)
     change_color_when_pressed.value = config.value!.change_color_when_pressed == true ? Toggle.On : Toggle.Off
     random_color_mode.value = config.value!.random_color_mode == true ? Toggle.On : Toggle.Off
     is_flow_delay.value = config.value!.is_flow_delay == true ? Toggle.On : Toggle.Off
+    max_brightness.value = Math.floor(config.value!.max_brightness * 2)
+  }
+
+  
+  function store_key_config_3k() {
+    let config = key_config as Ref<IKB3K>;
+    for (let i = 0; i < config.value!.keys.length; i++) {
+      while (config.value!.keys[i].key_data.length < 6) {
+        config.value!.keys[i].key_data.push(KeyCode.None)
+      }
+  
+      while (config.value!.keys[i].key_data.length > 6) {
+        config.value!.keys[i].key_data.pop()
+      }
+    }
+
+    while (config.value!.side_btn.length < 6) {
+      config.value!.side_btn.push(KeyCode.None)
+    }
+
+    while (config.value!.side_btn.length > 6) {
+      config.value!.side_btn.pop()
+    }
+
+    config.value!.jitters_elimination_time = Math.round(jitters_elimination_time.value)
+    config.value!.continuous_report = continuous_report.value == Toggle.On ? true : false
+    config.value!.kalman_filter = kalman_filter.value == Toggle.On ? true : false
+  }
+
+  function store_light_config_3k() {
+    let config = light_config as Ref<ILT3K>;
+    config.value!.led_colors = []
+    for (let i = 0; i < led_colors.value!.length; i++) {
+      config.value!.led_colors.push(Hex2Rgb(led_colors.value![i]))
+    }
+
+    config.value!.max_brightness = Math.round(max_brightness.value / 2)
+  }
+
+  function extract_key_config_3k() {
+    let config = key_config as Ref<IKB3K>;
+    jitters_elimination_time.value = config.value!.jitters_elimination_time
+    continuous_report.value = config.value!.continuous_report == true ? Toggle.On : Toggle.Off
+    kalman_filter.value = config.value!.kalman_filter == true ? Toggle.On : Toggle.Off
+    for (let i = 0; i < config.value.keys.length; i++) {
+      config.value.keys[i].key_data = config.value.keys[i].key_data.filter(k => k != KeyCode.None)
+    }
+    config.value.side_btn = config.value.side_btn.filter(k => k != KeyCode.None)
+  }
+
+  function extract_light_config_3k() {
+    let config = light_config as Ref<ILT3K>;
+    led_colors.value = []
+    for (let i = 0; i < config.value!.led_colors.length; i++) {
+      led_colors.value.push(Rgb2Hex(config.value!.led_colors[i]))
+    }
     max_brightness.value = Math.floor(config.value!.max_brightness * 2)
   }
 
@@ -144,7 +212,9 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (is_3k()) {
       key_config.value = await api3k.get_key_config()
+      extract_key_config_3k()
       light_config.value = await api3k.get_light_config()
+      extract_light_config_3k()
     }
   }
 
@@ -157,7 +227,9 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (is_3k()) {
       key_config.value = await api3k.get_default_key_config()
+      extract_key_config_3k()
       light_config.value = await api3k.get_default_light_config()
+      extract_light_config_3k()
     }
   }
 
@@ -169,7 +241,9 @@ export const useDeviceStore = defineStore("device", () => {
       await api4k.set_light_config(light_config.value! as ILT4K)
     }
     if (is_3k()) {
+      store_key_config_3k()
       await api3k.set_key_config(key_config.value! as IKB3K)
+      store_light_config_3k()
       await api3k.set_light_config(light_config.value! as ILT3K)
     }
   }
@@ -217,12 +291,13 @@ export const useDeviceStore = defineStore("device", () => {
     try_connect,
     get_status,
     get_config_raw,
+    check_config_raw,
     save_config_raw,
     get_config,
     get_default_config,
     sync_config,
     save_config,
-    calibration_key
+    calibration_key,
   };
 });
 

@@ -147,7 +147,6 @@ impl<D: Device> Meowpad<D> {
         info!("写入键盘配置：{:?}", config);
         self.write_large(Packet::new(PacketID::SetKeyConfig, config.to_cbor()))?;
         let packet = self.read()?; // 读取
-        dbg!(config.to_cbor().len());
         if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
@@ -162,7 +161,6 @@ impl<D: Device> Meowpad<D> {
         info!("写入键盘配置：{:?}", config);
         self.write_large(Packet::new(PacketID::SetLightConfig, config.to_cbor()))?;
         let packet = self.read()?; // 读取
-        dbg!(config.to_cbor().len());
         if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {

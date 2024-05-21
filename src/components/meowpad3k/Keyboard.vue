@@ -8,10 +8,15 @@ import type { IKeymap } from '@/interface';
 import { ref } from 'vue';
 import { formatKeys, IsModifierKey, compareArray } from '@/utils'
 
+import { IKeyboard } from "@/apis/meowpad3k/config";
+import { storeToRefs } from 'pinia';
+
 const { t } = useI18n();
 const message = useMessage()
 const dialog = useDialog()
 const store = useDeviceStore()
+const { key_config } = storeToRefs(store)
+const key_cfg = key_config as Ref<IKeyboard>;
 
 import { KeyCode, jsToHid } from '@/keycode';
 
@@ -56,8 +61,13 @@ let keynum = 0;
 
 function clearset() {
   let keycodes = pressedkeycodes.value.sort((l, r) => r - l)
-  if (keycodes.length > 0)
-    compareArray(store.key_config!.keys[keynum].key_data, keycodes) ? store.key_config!.keys[keynum].key_data = [] : store.key_config!.keys[keynum].key_data = keycodes
+  if (keycodes.length > 0) {
+    if (keynum == -1) {
+      compareArray(key_cfg.value!.side_btn, keycodes) ? key_cfg.value!.side_btn = [] : key_cfg.value!.side_btn = keycodes
+    } else {
+      compareArray(key_cfg.value!.keys[keynum].key_data, keycodes) ? key_cfg.value!.keys[keynum].key_data = [] : key_cfg.value!.keys[keynum].key_data = keycodes
+    }
+  }
 
   pressedkeycodes.value = []
   presskeycodes.value = []
@@ -88,7 +98,11 @@ function setKeys(keyNum: number) {
           keycodes.push(HidCodeUP)
           if (presskeycodes.value.length === 0) {
             keycodes = keycodes.sort((l, r) => r - l)
-            compareArray(store.key_config!.keys[keyNum].key_data, keycodes) ? store.key_config!.keys[keyNum].key_data = [] : store.key_config!.keys[keyNum].key_data = keycodes
+            if (keynum == -1) {
+              compareArray(key_cfg.value!.side_btn, keycodes) ? key_cfg.value!.side_btn = [] : key_cfg.value!.side_btn = keycodes
+            } else {
+            compareArray(key_cfg.value!.keys[keyNum].key_data, keycodes) ? key_cfg.value!.keys[keyNum].key_data = [] : key_cfg.value!.keys[keyNum].key_data = keycodes
+            }
             showModal.value = false
             document.onkeyup = null
           }
@@ -115,15 +129,32 @@ function clickKey(k: number) {
 
 function applyKeySetting() {
   if (selectedKey.value == null) { return }
-  const key = store.key_config!.keys[selectedKey.value]
-  for (let i = 0; i < store.key_config!.keys.length; i++) {
+  const key = key_cfg.value!.keys[selectedKey.value]
+  for (let i = 0; i < key_cfg.value!.keys.length; i++) {
     if (i != selectedKey.value) {
-      store.key_config!.keys[i].dead_zone = key.dead_zone
-      store.key_config!.keys[i].press_percentage = key.press_percentage
-      store.key_config!.keys[i].release_percentage = key.release_percentage
+      key_cfg.value!.keys[i].dead_zone = key.dead_zone
+      key_cfg.value!.keys[i].press_percentage = key.press_percentage
+      key_cfg.value!.keys[i].release_percentage = key.release_percentage
     }
   }
   message.success(t('apply_done'))
+}
+
+function getKeyDataLen(index: number) {
+  if (index == -1) {
+    return key_cfg.value!.side_btn.length
+  } else {
+    return key_cfg.value!.keys[index].key_data.length
+  }
+}
+
+
+function getKeyText(index: number) {
+  if (index != -1) {
+    return formatKeys(key_cfg.value!.keys[index].key_data)
+  } else {
+    return formatKeys(key_cfg.value!.side_btn)
+  }
 }
 
 </script>
@@ -137,30 +168,40 @@ function applyKeySetting() {
         <div v-for="key in line" :class="key.name == null ? 'hidden' : ''">
           <Key :unit-width="key.width" :key-num="key.index" :on-click="k => clickKey(k)"
             :selected="key.index == selectedKey">
-            <div v-if="key.index != undefined && store.key_config!.keys[key.index].key_data.length <= 1">
-              {{ formatKeys(store.key_config!.keys[key.index].key_data) }}
+            <div v-if="key.index != undefined && getKeyDataLen(key.index) <= 1">
+              {{ getKeyText(key.index) }}
             </div>
             <div v-else>
               ...
             </div>
           </Key>
         </div>
+        <Key :unit-width="0.75" :key-num="-1" :on-click="k => clickKey(k)"
+          :selected="-1 == selectedKey">
+          <div v-if="key_cfg!.side_btn.length <= 1">
+            {{ getKeyText(-1) }}
+          </div>
+          <div v-else>
+            ...
+          </div>
+        </Key>
       </div>
+
       <transition name="fade">
-        <div class="line" v-if="selectedKey != null && store.key_config!.keys[selectedKey!].key_data.length > 1">
+        <div class="line" v-if="selectedKey != null && getKeyDataLen(selectedKey) > 1">
           <KeyShow :unit-width="4.2" style="--default-key-font-size: 13px;--default-key-height: 45px;">
-            {{ formatKeys(store.key_config!.keys[selectedKey!].key_data) }}
+            {{ getKeyText(selectedKey) }}
           </KeyShow>
         </div>
       </transition>
     </div>
     <transition name="fade">
-      <div v-if="selectedKey != null">
+      <div v-if="selectedKey != null && selectedKey != -1">
         <div style="max-width: 400px;min-width: 200px;">
           <!-- <n-button type="error" class="badge" @click="set_auto_config">
             {{ $t('need_help') }} </n-button> -->
           <n-form-item :label="$t('dead_zone')" path="dead_zone" label-placement="left" :show-feedback="false">
-            <n-input-number v-model:value="store.key_config!.keys[selectedKey!].dead_zone" :min="1" :max="100"
+            <n-input-number v-model:value="key_cfg!.keys[selectedKey!].dead_zone" :min="1" :max="100"
               :placeholder="$t('no_data')">
               <template #suffix>
                 %
@@ -169,7 +210,7 @@ function applyKeySetting() {
           </n-form-item>
           <n-form-item :label="$t('key_trigger_degree')" path="press_percentage" label-placement="left"
             :show-feedback="false">
-            <n-input-number v-model:value="store.key_config!.keys[selectedKey!].press_percentage" :min="1" :max="100"
+            <n-input-number v-model:value="key_cfg!.keys[selectedKey!].press_percentage" :min="1" :max="100"
               :placeholder="$t('no_data')">
               <template #suffix>
                 %
@@ -178,7 +219,7 @@ function applyKeySetting() {
           </n-form-item>
           <n-form-item :label="$t('key_release_degree')" path="release_percentage" label-placement="left"
             :show-feedback="false">
-            <n-input-number v-model:value="store.key_config!.keys[selectedKey!].release_percentage" :min="1" :max="100"
+            <n-input-number v-model:value="key_cfg!.keys[selectedKey!].release_percentage" :min="1" :max="100"
               :placeholder="$t('no_data')">
               <template #suffix>
                 %

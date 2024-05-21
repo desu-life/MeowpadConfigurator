@@ -82,13 +82,13 @@ pub fn erase_firmware_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice
 }
 
 #[tauri::command]
-pub fn get_default_key_config_3k() -> meowpad4k::config::Key {
-    meowpad4k::cbor::Keyboard::default().try_into().unwrap()
+pub fn get_default_key_config_3k() -> meowpad3k::config::Key {
+    meowpad3k::cbor::Keyboard::default().try_into().unwrap()
 }
 
 #[tauri::command]
-pub fn get_default_light_config_3k() -> meowpad4k::config::Light {
-    meowpad4k::cbor::Light::default().try_into().unwrap()
+pub fn get_default_light_config_3k() -> meowpad3k::config::Light {
+    meowpad3k::cbor::Light::default().try_into().unwrap()
 }
 
 #[tauri::command]

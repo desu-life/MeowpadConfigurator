@@ -13,8 +13,9 @@ import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
 import { IError } from '@/apis';
 import { Toggle } from '@/interface';
-import { IKeyboard, ILighting } from '@/apis/meowpad4k/config';
 import { KeyCode } from '@/keycode';
+import { IKeyboard as IKB3K } from "@/apis/meowpad3k/config";
+import { storeToRefs } from 'pinia';
 
 
 const { t } = useI18n();
@@ -169,19 +170,27 @@ async function get_default_config() {
 
 const need_check = ref(false)
 
-function key_config_4k_post_process() {
-  for (let i = 0; i < device.key_config!.keys.length; i++) {
-    device.key_config!.keys[i].key_data = device.key_config!.keys[i].key_data.filter(k => k != KeyCode.None)
+function key_config_post_process() {
+  const { key_config } = storeToRefs(device)
+  const cfg = key_config;
+  
+  for (let i = 0; i < cfg.value!.keys.length; i++) {
+    cfg.value!.keys[i].key_data = cfg.value!.keys[i].key_data.filter(k => k != KeyCode.None)
 
-    if (device.key_config!.keys[i].dead_zone < 5) {
+    if (cfg.value!.keys[i].dead_zone < 5) {
       need_check.value = true
     }
-    if (device.key_config!.keys[i].press_percentage < 3) {
+    if (cfg.value!.keys[i].press_percentage < 3) {
       need_check.value = true
     }
-    if (device.key_config!.keys[i].release_percentage < 3) {
+    if (cfg.value!.keys[i].release_percentage < 3) {
       need_check.value = true
     }
+  }
+
+  if (device.is_3k()) {
+    const cfg_3k = cfg as Ref<IKB3K>;
+    cfg_3k.value!.side_btn = cfg_3k.value!.side_btn.filter(k => k != KeyCode.None)
   }
 }
 
@@ -200,10 +209,7 @@ async function sync_config() {
   store.status_str = t('syncing_config')
   try {
     await device.sync_config()
-    
-    if (device.is_4k()) {
-      key_config_4k_post_process()
-    }
+    key_config_post_process()
 
     if (need_check.value) {
       store.status = "warning"
