@@ -5,7 +5,7 @@ import * as api3k from '@/apis/meowpad3k/api'
 import * as api from '@/apis/api'
 
 export declare type Error = 'DeviceDisconnected' | 'DeviceNotFound' | 'Network' | 'Meowpad' | 'Iap';
-export declare type DeviceName = 'Meowpad' | 'Meowpad3K';
+export declare type DeviceName = 'Meowpad' | 'Meowpad SE v2';
 
 export interface IError {
     type: Error

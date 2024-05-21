@@ -17,15 +17,3 @@ export async function check_update(version: IVersion) {
 export async function get_latest_version() {
   return (await invoke("get_latest_version")) as IVersion;
 }
-export async function get_firmware_4k_version() {
-  return (await invoke("get_firmware_4k_version")) as string;
-}
-export async function get_firmware_3k_version() {
-  return (await invoke("get_firmware_3k_version")) as string;
-}
-export async function get_device_info() {
-return (await invoke("get_device_info")) as IDeviceInfo;
-}
-export async function get_device_status() {
-return (await invoke("get_device_status")) as IDeviceStatus;
-}

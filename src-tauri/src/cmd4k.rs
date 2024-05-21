@@ -1,17 +1,49 @@
 
 use std::sync::Mutex;
 use hidapi::HidApi;
-use meowpad::models::KeyRTStatus;
+use meowpad::models::{DeviceStatus, KeyRTStatus};
 use meowpad4k::Meowpad;
 use tauri::State;
-use crate::{device::HidDevice, error::{self, Error, Result}};
+use crate::{device::HidDevice, error::{Error, Result}, FIRMWARE_VERSION_4K};
 use log::*;
-
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
 struct Config {
     key: meowpad4k::config::Key,
     light: meowpad4k::config::Light,
+}
+
+#[tauri::command]
+pub fn get_firmware_4k_version(_app: tauri::AppHandle) -> &'static str {
+    FIRMWARE_VERSION_4K
+}
+
+#[tauri::command]
+pub fn get_device_info_4k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<serde_json::Value> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    d.get_device_name()?;
+    d.get_firmware_version()?;
+    let name = d.device_name.as_ref().expect("参数错误");
+    let version = d.firmware_version.as_ref().expect("参数错误");
+    info!("设备名称：{}", name);
+    info!("固件版本：{}", version);
+    Ok(serde_json::json!({
+        "name": name,
+        "version": version
+    }))
+}
+
+#[tauri::command]
+pub fn get_device_status_4k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<DeviceStatus> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    let status = d.get_status()?;
+    info!(
+        "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
+        status.key, status.light, status.hall, status.enabled
+    );
+    Ok(status)
 }
 
 #[tauri::command]
