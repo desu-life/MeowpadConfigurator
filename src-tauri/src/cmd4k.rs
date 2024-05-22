@@ -55,7 +55,25 @@ pub fn calibration_key_4k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevic
 }
 
 #[tauri::command]
-pub fn get_debug_value_4k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<[KeyRTStatus; 4]> {
+pub fn clear_config_4k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<()> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    d.clear_hall_config()?;
+    d.clear_key_config()?;
+    d.clear_light_config()?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn reset_device_4k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<()> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    d.reset_device()?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_debug_value_4k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<[KeyRTStatus; 4]> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_debug_value()?)

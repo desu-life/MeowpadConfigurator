@@ -63,7 +63,25 @@ pub fn calibration_key_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevic
 }
 
 #[tauri::command]
-pub fn get_debug_value_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<DebugValue> {
+pub fn clear_config_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<()> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    d.clear_hall_config()?;
+    d.clear_key_config()?;
+    d.clear_light_config()?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn reset_device_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<()> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    d.reset_device()?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_debug_value_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<DebugValue> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     let v = d.get_debug_value()?;

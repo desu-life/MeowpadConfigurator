@@ -294,7 +294,18 @@ async function device_update() {
   store.status = "warning"
   store.status_str = t('connecting')
   try {
-    await api4k.connect()
+    if (!await device.try_connect()) {
+      store.status = "error"
+      store.status_str = t('connection_broke', { e: t('device_not_found') })
+      store.loading = false
+      return
+    }
+    if (!device.is_4k()) {
+      store.status = "error"
+      store.status_str = t('device_not_support')
+      store.loading = false
+      return
+    }
     dialog.warning({
       title: t('warning'),
       content: t('device_update_warn'),
@@ -342,6 +353,21 @@ async function erase_firmware() {
     console.error(e)
   }
 }
+
+async function clear_config() {
+  try {
+    await api3k.clear_config()
+    await api3k.reset_device()
+    device.connected = false
+    store.status = undefined
+    store.status_str = t("device_disconnected")
+  } catch (e) {
+    device.connected = false
+    store.status = "error"
+    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
+    console.error(e)
+  }
+}
 </script>
 
 <template>
@@ -374,7 +400,8 @@ async function erase_firmware() {
           {{ store.debug_mode ? $t('exit') : t('debug_mode') }}
         </n-button>
         <template v-if="!store.debug_mode">
-          <n-button class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
+          <n-button  v-if="device.is_4k()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
+          <n-button  v-if="device.is_3k()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
           <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
           <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
         </template>
@@ -422,4 +449,3 @@ async function erase_firmware() {
   pointer-events: none;
 }
 </style>
-@/apis/api@/apis/interface@/store/store

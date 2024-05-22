@@ -35,6 +35,9 @@ export async function save_key_config() {
 export async function save_light_config() {
   return (await invoke("save_light_config_3k")) as void;
 }
+export async function clear_config() {
+  return (await invoke("clear_config_3k")) as void;
+}
 export async function get_raw_config() {
   return (await invoke("get_raw_config_3k")) as string;
 }
@@ -46,6 +49,9 @@ export async function save_raw_config(config: string) {
 }
 export async function connect() {
   return (await invoke("connect_3k")) as boolean;
+}
+export async function reset_device() {
+  return (await invoke("reset_device_3k")) as boolean;
 }
 export async function get_device_info() {
   return (await invoke("get_device_info_3k")) as IDeviceInfo;

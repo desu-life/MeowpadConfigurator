@@ -23,7 +23,6 @@ export function formatKeys(keycodes: KeyCode[]) {
 }
 
 export function Hex2Rgb(hex: string): IRgb {
-  console.log(hex)
   var match;
   if (
     (match = /^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex))

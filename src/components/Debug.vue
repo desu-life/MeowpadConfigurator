@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { IError, IKeyRTStatus } from '@/apis';
-import { get_debug_value } from '@/apis/meowpad4k/api';
+import { IError, IKeyRTStatus, KeyState } from '@/apis';
+import * as api4k from '@/apis/meowpad4k/api'
+import * as api3k from '@/apis/meowpad3k/api'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { getErrorMsg } from '@/utils';
@@ -12,6 +13,7 @@ const device = useDeviceStore()
 const { t } = useI18n();
 
 const debug_data = ref<IKeyRTStatus[]>()
+const btn_state = ref<KeyState>()
 
 
 const columns: DataTableColumns<IKeyRTStatus> = [
@@ -36,7 +38,17 @@ const columns: DataTableColumns<IKeyRTStatus> = [
 onMounted(() => {
   const interval = setInterval(async () => {
     try {
-      debug_data.value = await get_debug_value();
+      if (!device.connected) {
+        return
+      }
+      if (device.is_4k()) {
+        debug_data.value = await api4k.get_debug_value();
+      }
+      if (device.is_3k()) {
+        let v = await api3k.get_debug_value();
+        debug_data.value = v.key;
+        btn_state.value = v.btn;
+      }
     } catch (e) {
       console.log(e)
       device.connected = false
@@ -59,11 +71,16 @@ onMounted(() => {
     pagination-behavior-on-filter="first"
     :columns="columns"
     :data="debug_data"
-  />
+    />
+  </div>
+  <div v-if="btn_state" class="side-btn">
+    侧键状态：{{ btn_state }}
   </div>
 </template>
 
 
 <style lang="scss" scoped>
-
-</style>@/store/store
+.side-btn {
+  padding: 10px;
+}
+</style>

@@ -1,4 +1,4 @@
-use crate::config;
+use crate::config::{self, LightingMode};
 use meowpad::{KeyCode, KbReport};
 use palette::rgb::channels::Argb;
 use palette::Srgb;
@@ -44,6 +44,8 @@ pub struct Keyboard {
 pub struct Light {
     #[serde(rename = "c")]
     pub led_colors: [u32; 3],
+    #[serde(rename = "km")]
+    pub led_mode: u8,
     #[serde(rename = "mb")]
     pub max_brightness: u8,
     #[serde(rename = "st")]
@@ -106,6 +108,7 @@ impl From<config::Light> for Light {
 
         Light {
             led_colors: led_colors,
+            led_mode: cfg.lighting_mode as u8,
             max_brightness: cfg.max_brightness,
             sleep_time: cfg.sleep_time,
         }
@@ -121,6 +124,7 @@ impl Default for Light {
         ];
         Self {
             led_colors: led_colors,
+            led_mode: LightingMode::Solid as u8,
             max_brightness: 50,
             sleep_time: 120,
         }
@@ -130,9 +134,9 @@ impl Default for Light {
 impl Default for Keyboard {
     fn default() -> Self {
         let key_configs = [
-            KeyRTConfig::with_key(KeyCode::A),
-            KeyRTConfig::with_key(KeyCode::S),
-            KeyRTConfig::with_key(KeyCode::Space),
+            KeyRTConfig::with_key(KeyCode::Z),
+            KeyRTConfig::with_key(KeyCode::X),
+            KeyRTConfig::with_key(KeyCode::C),
             // KeyRTConfig::default(),
         ];
         Self {

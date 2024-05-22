@@ -8,7 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Application: typeof import('./src/components/Application.vue')['default']
-    ColorSetting: typeof import('./src/components/meowpad3k/ColorSetting.vue')['default']
+    ColorSetting: typeof import('./src/components/meowpad4k/ColorSetting.vue')['default']
     Debug: typeof import('./src/components/Debug.vue')['default']
     DeveloperSettings: typeof import('./src/components/DeveloperSettings.vue')['default']
     DeviceSetting: typeof import('./src/components/meowpad3k/DeviceSetting.vue')['default']
@@ -28,6 +28,7 @@ declare module 'vue' {
     NColorPicker: typeof import('naive-ui')['NColorPicker']
     NDataTable: typeof import('naive-ui')['NDataTable']
     NDialogProvider: typeof import('naive-ui')['NDialogProvider']
+    NDivider: typeof import('naive-ui')['NDivider']
     NEmpty: typeof import('naive-ui')['NEmpty']
     NForm: typeof import('naive-ui')['NForm']
     NFormItem: typeof import('naive-ui')['NFormItem']
@@ -48,6 +49,7 @@ declare module 'vue' {
     NSelect: typeof import('naive-ui')['NSelect']
     NSlider: typeof import('naive-ui')['NSlider']
     NSpin: typeof import('naive-ui')['NSpin']
+    NSwitch: typeof import('naive-ui')['NSwitch']
     NText: typeof import('naive-ui')['NText']
     NTooltip: typeof import('naive-ui')['NTooltip']
     NUpload: typeof import('naive-ui')['NUpload']

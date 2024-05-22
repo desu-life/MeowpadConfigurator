@@ -1,5 +1,6 @@
 use crate::cbor;
 use meowpad::{KeyCode, error::Error, KbReport};
+use num::FromPrimitive;
 use num_derive::{FromPrimitive, ToPrimitive};
 use palette::rgb::channels::Argb;
 use palette::Srgb;
@@ -41,6 +42,7 @@ pub struct Light {
     /// LED灯颜色
     pub led_colors: [Srgb<u8>; 3],
     /// 灯效模式
+    pub lighting_mode: LightingMode,
     pub max_brightness: u8,
     pub sleep_time: u16,
 
@@ -74,6 +76,9 @@ impl TryFrom<cbor::Light> for Light {
 
         Ok(Light {
             led_colors,
+            lighting_mode: LightingMode::from_u8(cfg.led_mode).ok_or(
+                Error::ConfigDataCheckFailed("lighting_mode", cfg.led_mode as usize),
+            )?,
             max_brightness: cfg.max_brightness,
             sleep_time: cfg.sleep_time,
         })

@@ -1,7 +1,7 @@
 import { IDeviceInfo, IDeviceStatus } from "../apis";
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { IKeyboard as IKB4K, ILighting as ILT4K } from "../apis/meowpad4k/config";
-import { IKeyboard as IKB3K, ILighting as ILT3K } from "../apis/meowpad3k/config";
+import { IKeyboard as IKB3K, ILighting as ILT3K, LightingMode as LM3K } from "../apis/meowpad3k/config";
 import { Toggle } from "../interface";
 import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
@@ -29,6 +29,7 @@ export const useDeviceStore = defineStore("device", () => {
   const jitters_elimination_time = ref<number>(0);
   const continuous_report = ref<Toggle>(Toggle.Off);
   const kalman_filter = ref<Toggle>(Toggle.Off);
+  const enable_light = ref<Toggle>(Toggle.Off);
 
   function is_4k() {
     return device_info.value?.name == 'Meowpad'
@@ -181,6 +182,7 @@ export const useDeviceStore = defineStore("device", () => {
     }
 
     config.value!.max_brightness = Math.round(max_brightness.value / 2)
+    config.value!.lighting_mode = enable_light.value == Toggle.On ? LM3K.Solid : LM3K.Off
   }
 
   function extract_key_config_3k() {
@@ -201,6 +203,7 @@ export const useDeviceStore = defineStore("device", () => {
       led_colors.value.push(Rgb2Hex(config.value!.led_colors[i]))
     }
     max_brightness.value = Math.floor(config.value!.max_brightness * 2)
+    enable_light.value = config.value!.lighting_mode == LM3K.Solid ? Toggle.On : Toggle.Off
   }
 
   async function get_config() {
@@ -286,6 +289,7 @@ export const useDeviceStore = defineStore("device", () => {
     change_color_when_pressed,
     random_color_mode,
     is_flow_delay,
+    enable_light,
     is_4k,
     is_3k,
     try_connect,

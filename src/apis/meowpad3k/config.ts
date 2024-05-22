@@ -12,6 +12,7 @@ export interface IKeyboard {
 
 export interface ILighting {
     led_colors: IRgb[]
+    lighting_mode: LightingMode
     max_brightness: number
     sleep_time: number
 }

@@ -156,7 +156,7 @@ function applyKeySetting() {
     </div>
     <transition name="fade">
       <div v-if="selectedKey != null">
-        <div style="max-width: 400px;min-width: 200px;">
+        <div class="hall-config">
           <!-- <n-button type="error" class="badge" @click="set_auto_config">
             {{ $t('need_help') }} </n-button> -->
           <n-form-item :label="$t('dead_zone')" path="dead_zone" label-placement="left" :show-feedback="false">
@@ -195,6 +195,13 @@ function applyKeySetting() {
 </template>
 
 <style>
+.hall-config {
+  max-width: 400px;
+  min-width: 200px;
+  top: 20px;
+  position: relative;
+}
+
 .apply-to-all {
   display: flex;
   justify-content: flex-end;

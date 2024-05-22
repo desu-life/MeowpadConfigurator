@@ -101,7 +101,7 @@ function setKeys(keyNum: number) {
             if (keynum == -1) {
               compareArray(key_cfg.value!.side_btn, keycodes) ? key_cfg.value!.side_btn = [] : key_cfg.value!.side_btn = keycodes
             } else {
-            compareArray(key_cfg.value!.keys[keyNum].key_data, keycodes) ? key_cfg.value!.keys[keyNum].key_data = [] : key_cfg.value!.keys[keyNum].key_data = keycodes
+              compareArray(key_cfg.value!.keys[keyNum].key_data, keycodes) ? key_cfg.value!.keys[keyNum].key_data = [] : key_cfg.value!.keys[keyNum].key_data = keycodes
             }
             showModal.value = false
             document.onkeyup = null
@@ -176,28 +176,31 @@ function getKeyText(index: number) {
             </div>
           </Key>
         </div>
-        <Key :unit-width="0.75" :key-num="-1" :on-click="k => clickKey(k)"
-          :selected="-1 == selectedKey">
-          <div v-if="key_cfg!.side_btn.length <= 1">
-            {{ getKeyText(-1) }}
-          </div>
-          <div v-else>
-            ...
-          </div>
-        </Key>
+        <n-divider vertical />
+        <div class="keyboard-side" :style="keymapStyle">
+          <Key :unit-width="0.75" :key-num="-1" :on-click="k => clickKey(k)" :selected="-1 == selectedKey">
+            <div v-if="key_cfg!.side_btn.length <= 1">
+              {{ getKeyText(-1) }}
+            </div>
+            <div v-else>
+              ...
+            </div>
+          </Key>
+        </div>
       </div>
-
       <transition name="fade">
         <div class="line" v-if="selectedKey != null && getKeyDataLen(selectedKey) > 1">
-          <KeyShow :unit-width="4.2" style="--default-key-font-size: 13px;--default-key-height: 45px;">
+          <KeyShow :unit-width="3.87" style="--default-key-font-size: 13px;--default-key-height: 45px;">
             {{ getKeyText(selectedKey) }}
           </KeyShow>
         </div>
       </transition>
     </div>
+
+
     <transition name="fade">
       <div v-if="selectedKey != null && selectedKey != -1">
-        <div style="max-width: 400px;min-width: 200px;">
+        <div class="hall-config">
           <!-- <n-button type="error" class="badge" @click="set_auto_config">
             {{ $t('need_help') }} </n-button> -->
           <n-form-item :label="$t('dead_zone')" path="dead_zone" label-placement="left" :show-feedback="false">
@@ -236,6 +239,13 @@ function getKeyText(index: number) {
 </template>
 
 <style>
+.hall-config {
+  max-width: 400px;
+  min-width: 200px;
+  top: 20px;
+  position: relative;
+}
+
 .apply-to-all {
   display: flex;
   justify-content: flex-end;
@@ -248,6 +258,12 @@ function getKeyText(index: number) {
   align-items: center;
   justify-content: space-between;
   height: 120px;
+}
+
+.n-divider.n-divider--vertical {
+    height: auto !important;
+    width: 3px;
+    border-radius: 1.5px;
 }
 
 .keyboard {
@@ -283,4 +299,3 @@ function getKeyText(index: number) {
   opacity: 0;
 }
 </style>
-@/apis/interface@/apis/interface@/store/store
