@@ -1,6 +1,6 @@
 [package]
 name = "meowpad_configurator"
-version = "1.0.1"
+version = "1.0.2"
 description = "A Tauri App"
 authors = ["fantasyzhjk", "monodesu"]
 license = ""
@@ -25,7 +25,6 @@ anyhow = "1.0.86"
 log = "0.4.21"
 env_logger = "0.11.3"
 toml = "0.8.13"
-notify = "4.0.17"
 meowpad4k = { path = "./meowpad4k" }
 meowpad3k = { path = "./meowpad3k" }
 meowpad = { path = "./meowpad" }
