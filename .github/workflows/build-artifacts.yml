@@ -59,13 +59,13 @@ jobs:
           pnpm run tauri build
 
       - uses: actions/upload-artifact@v4
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-20.04'
         with:
           name: linux-deb
           path: ./src-tauri/target/release/bundle/deb/*.deb
 
       - uses: actions/upload-artifact@v4
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-20.04'
         with:
           name: linux-appimage
           path: ./src-tauri/target/release/bundle/appimage/*.AppImage
