@@ -95,4 +95,10 @@ jobs:
         if: matrix.platform == 'macos-latest'
         with:
           name: macos-app
-          path: ./src-tauri/target/release/bundle/macos/*.app
+          path: ./src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.platform == 'macos-latest'
+        with:
+          name: macos-dmg
+          path: ./src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
