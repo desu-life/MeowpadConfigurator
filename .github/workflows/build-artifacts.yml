@@ -54,9 +54,18 @@ jobs:
         run: pnpm install --no-frozen-lockfile # Change this to npm, yarn or pnpm.
 
       - name: build artifacts
+        if: matrix.platform != 'macos-latest'
         working-directory: ./
         run: |
           pnpm run tauri build
+
+      - name: build artifacts (MacOS)
+        if: matrix.platform == 'macos-latest'
+        working-directory: ./
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+          pnpm run tauri build --target universal-apple-darwin
 
       - uses: actions/upload-artifact@v4
         if: matrix.platform == 'ubuntu-20.04'
