@@ -9,7 +9,7 @@ import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { IVersion } from './apis';
-import { check_update, get_latest_version } from './apis/api';
+import { check_update, get_latest_version, get_theme } from './apis/api';
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
@@ -19,7 +19,7 @@ const lightThemeOverrides: GlobalThemeOverrides = {
 }
 
 const store = useStore()
-const theme = ref<Theme | null>(null)
+const theme = ref<string>()
 
 // 禁用webkit右键菜单
 document.body.onselectstart = document.body.oncontextmenu = () => false
@@ -34,9 +34,10 @@ onMounted(async () => {
     });
   });
 
-  theme.value = await appWindow.theme()
+  theme.value = await get_theme();
+  console.log(theme.value)
   await appWindow.onThemeChanged(({ payload: t }) => {
-    theme.value = t
+    theme.value = t as string
   })
 
   setTimeout(async () => {
@@ -90,4 +91,3 @@ $header-height: 56px;
   align-items: center;
 }
 </style>
-@/store/store

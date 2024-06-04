@@ -79,6 +79,36 @@ async fn get_latest_version(client: State<'_, Client>) -> Result<Version> {
     Ok(Version::get(client.deref()).await?)
 }
 
+#[tauri::command]
+async fn get_theme(_window: tauri::Window) -> &'static str {
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            let Ok(settings) = ashpd::desktop::settings::Settings::new().await else {
+                return "dark";
+            };
+            let Ok(color_scheme) = settings.color_scheme().await else {
+                return "dark";
+            };
+            match color_scheme {
+                ashpd::desktop::settings::ColorScheme::NoPreference => "dark",
+                ashpd::desktop::settings::ColorScheme::PreferDark => "dark",
+                ashpd::desktop::settings::ColorScheme::PreferLight => "light",
+            }
+        } else {
+            let Ok(color_scheme) = _window.theme() else {
+                return "dark";
+            };
+        
+            match color_scheme {
+                tauri::Theme::Light => "light",
+                tauri::Theme::Dark => "dark",
+                _ => "dark",
+            }
+        }
+    }
+}
+
+
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Version {
@@ -150,6 +180,7 @@ fn main() -> AnyResult<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            get_theme,
             calibration_key_4k,
             get_debug_value_4k,
             erase_firmware_4k,

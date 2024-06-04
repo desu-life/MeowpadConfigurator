@@ -17,3 +17,6 @@ export async function check_update(version: IVersion) {
 export async function get_latest_version() {
   return (await invoke("get_latest_version")) as IVersion;
 }
+export async function get_theme() {
+  return (await invoke("get_theme")) as string;
+}
