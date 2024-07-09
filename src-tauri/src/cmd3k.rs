@@ -49,7 +49,7 @@ pub fn get_device_status_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDev
     let status = d.get_status()?;
     info!(
         "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
-        status.key, status.light, status.hall, status.enabled
+        status.key, status.light.unwrap(), status.hall, status.enabled
     );
     Ok(status)
 }

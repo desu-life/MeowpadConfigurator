@@ -23,10 +23,12 @@ pub struct KeyHallConfig {
     pub hall_middle: u16,
 }
 
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default)]
 pub struct DeviceStatus {
     pub key: bool,
-    pub light: bool,
+    pub light: Option<bool>,
     pub hall: bool,
     pub enabled: bool,
 }
+

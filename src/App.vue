@@ -4,7 +4,7 @@
 import Main from '@/components/Main.vue'
 import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
-import { appWindow, Theme } from "@tauri-apps/api/window";
+import { appWindow, LogicalSize, Theme } from "@tauri-apps/api/window";
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
@@ -27,13 +27,6 @@ document.body.onselectstart = document.body.oncontextmenu = () => false
 onMounted(async () => {
   let show = true;
   
-  get_latest_version().then((version: IVersion) => {
-    store.version_info = version
-    check_update(version).then((res: boolean) => {
-      show = res;
-    });
-  });
-
   theme.value = await appWindow.theme()
   await appWindow.onThemeChanged(({ payload: t }) => {
     theme.value = t
@@ -44,6 +37,8 @@ onMounted(async () => {
       await appWindow.show()
     }
   }, 500)
+
+  appWindow.setSize(new LogicalSize(1280, 720))
 })
 </script>
 

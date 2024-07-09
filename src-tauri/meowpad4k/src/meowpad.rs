@@ -72,7 +72,7 @@ impl<D: Device> Meowpad<D> {
         if packet.id == PacketID::Ok as u8 {
             Ok(DeviceStatus {
                 key: packet.data[0] != 0,
-                light: packet.data[1] != 0,
+                light: Some(packet.data[1] != 0),
                 hall: packet.data[2] != 0,
                 enabled: packet.data[3] != 0,
             })
