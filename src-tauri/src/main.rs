@@ -210,7 +210,17 @@ fn main() -> AnyResult<()> {
             set_key_config_kb,
             save_key_config_kb,
             clear_config_kb,
-            get_device_status_kb
+            get_device_status_kb,
+            get_keystates_kb,
+            get_keyvalues_kb,
+            get_device_info_kb,
+            get_raw_config_kb,
+            check_raw_config_kb,
+            save_raw_config_kb,
+            get_firmware_kb_version,
+            get_key_calibrate_status_kb,
+            get_debug_value_part_kb,
+            get_hall_config_kb
         ])
         .manage(
             Client::builder()

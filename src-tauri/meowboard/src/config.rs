@@ -1,4 +1,4 @@
-use crate::cbor;
+use crate::{cbor, keymap};
 use meowpad::{KeyCode, error::Error, KbReport};
 use num::FromPrimitive;
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -40,25 +40,32 @@ pub struct KeyConfig {
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, Copy)]
-pub struct Key {
+pub struct Device {
     #[serde_as(as = "[_; 64]")]
     pub keys: [KeyConfig; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub normal_layer: [KeyCode; 64],
+    #[serde_as(as = "[_; 64]")]
+    pub fn_layer: [KeyCode; 64],
     pub jitters_elimination_time: u16,
     pub continuous_report: bool,
     pub kalman_filter: bool,
     pub enable_hs: bool
 }
 
-impl TryFrom<cbor::Keyboard> for Key {
+impl TryFrom<cbor::Device> for Device {
     type Error = Error;
-    fn try_from(cfg: cbor::Keyboard) -> Result<Self, Self::Error> {
+    fn try_from(cfg: cbor::Device) -> Result<Self, Self::Error> {
         let mut keys = [KeyConfig::default(); 64];
         for i in 0..64 {
             keys[i] = KeyConfig::from(cfg.KeyConfigs[i]);
         }
+        let map: [[KeyCode; 64]; 2] = keymap::KeyMap::from(cfg.KeyMap).into();
 
-        Ok(Key {
+        Ok(Device {
             keys,
+            normal_layer: map[0],
+            fn_layer: map[1],
             continuous_report: cfg.ContinuousReport,
             kalman_filter: cfg.KalmanFilter,
             jitters_elimination_time: cfg.JittersEliminationTime,

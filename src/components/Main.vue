@@ -20,6 +20,11 @@ import KeyCalibrate from "@/components/Keyboard/KeyCalibrate.vue";
 import { ComponentPublicInstance, createVNode } from "vue";
 
 import * as apib from '@/apis/meowboard/api'
+import { KeyState } from "@/apis";
+import { KeyCode, mapping } from "@/keycode";
+import { useStore } from "@/store/main";
+
+const store = useStore()
 
 
 function splitArray<T>(array: T[], sizes: number[]): T[][] {
@@ -50,6 +55,7 @@ const keyWidth = ref([  // 每个键的ui里的宽度
   1.25, 1.25, 1.25, 6.25, 1, 1, 1, 1, 1
 ])
 
+// const keyStrs = ref<string[]>(new Array(64))
 const keyStrs = ref([
   '\`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace',
   'Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\',
@@ -60,6 +66,8 @@ const keyStrs = ref([
 
 // 0-校准 1-调试
 const mode = ref(0);
+
+
 
 interface DebugVars {
   hallValue: number;
@@ -94,6 +102,21 @@ function selectAllKeyCalibrate(on: boolean) {
   })
 }
 
+
+
+function selectKeyCalibrate() {
+  let indexs: number[] = []
+  for (let i = 0; i < 64; i++) {
+    if (keyCalibrateRefs.value[i].isSelected) {
+      indexs.push(i)
+      keyCalibrateRefs.value[i].isSelected = false;
+    }
+  }
+  console.log(indexs)
+  if (indexs.length == 0) return
+  apib.calibration_key(indexs)
+}
+
 function setKeyDebugHallValue(value: number) {
   // keyDebugRefs.value[35].hallValue = 100
   // keyDebugRefs.value[35].hallValuePercentage = value
@@ -101,6 +124,23 @@ function setKeyDebugHallValue(value: number) {
   // keyDebugRefs.value[36].hallValuePercentage = value
   keyDebugRefs.value[37].hallValue = 100
   keyDebugRefs.value[37].hallValuePercentage = value
+}
+
+async function updateKey() {
+  store.loading = true
+  let states = await apib.get_keystates()
+  console.log(states)
+  let cali_status = await apib.get_key_calibrate_status()
+  console.log(cali_status)
+  let value = await apib.get_debug_value()
+
+  for (let i = 0; i < 64; i++) {
+    keyCalibrateRefs.value[i].isCalibrated = cali_status[i]
+    keyCalibrateRefs.value[i].isCalibrating = states[i] == KeyState.Calibrating
+    keyDebugRefs.value[i].hallValue = value[i].adc_value
+    keyDebugRefs.value[i].hallValuePercentage = value[i].press_percentage
+  }
+  store.loading = false
 }
 
 
@@ -123,7 +163,9 @@ onMounted(async () => {
   //   await apib.get_key_config()
   // } catch (e) {
   // }
+  store.loading = true
   let status = await apib.get_device_status()
+  console.log(status)
   if (status.key == false) {
     let config = await apib.get_default_key_config()
     await apib.set_key_config(config)
@@ -133,26 +175,44 @@ onMounted(async () => {
   let config = await apib.get_key_config()
   console.log(config)
 
-  setTimeout(async () => {
-    try {
-      if (is_connected.value == false) {
-        return
-      }
-      while (1) {
-        let value = await apib.get_debug_value(debug_index.value)
-        debug_index.value += 1;
-        if (debug_index.value >= 8) {
-          debug_index.value = 0
-        }
-        for (let i = 0; i < 8; i++) {
-          keyDebugRefs.value[debug_index.value * 8 + i].hallValue = value[i].adc_value
-          keyDebugRefs.value[debug_index.value * 8 + i].hallValuePercentage = value[i].press_percentage
-        }
-      }
-    } catch (e) {
-      console.log(e)
-    }
-  }, 500)
+  let hall_config = await apib.get_hall_config()
+  console.log(hall_config)
+
+  for (let i = 0; i < 64; i++) {
+    keyStrs.value[i] = mapping[config.normal_layer[i]] ?? "None"
+  }
+  keyStrs.value[60] = "Fn"
+
+  await updateKey()
+  
+  store.loading = false
+
+  // await apib.calibration_key([1]);
+
+  
+
+
+  // setTimeout(async () => {
+  //   try {
+  //     if (is_connected.value == false) {
+  //       return
+  //     }
+      
+  //     while (1) {
+  //       let value = await apib.get_debug_value_part(debug_index.value)
+  //       debug_index.value += 1;
+  //       if (debug_index.value >= 8) {
+  //         debug_index.value = 0
+  //       }
+  //       for (let i = 0; i < 8; i++) {
+  //         keyDebugRefs.value[debug_index.value * 8 + i].hallValue = value[i].adc_value
+  //         keyDebugRefs.value[debug_index.value * 8 + i].hallValuePercentage = value[i].press_percentage
+  //       }
+  //     }
+  //   } catch (e) {
+  //     console.log(e)
+  //   }
+  // }, 500)
 
 
 
@@ -186,6 +246,10 @@ onMounted(async () => {
 <template>
   <div>
     <div class="temp-test">
+      <n-button @click="() => updateKey()">
+        刷新
+      </n-button>
+
       <n-space vertical>
         <n-radio-group v-model:value="mode" name="modes">
           <n-radio-button
@@ -218,7 +282,11 @@ onMounted(async () => {
           set 100%
         </n-button>
       </n-button-group>
+      <n-button v-if="mode === 0" @click="() => selectKeyCalibrate()">
+        校准选中的键
+      </n-button>
     </div>
+
 
     <n-divider/>
 
@@ -240,15 +308,16 @@ onMounted(async () => {
               <KeyCalibrate
                   v-if="mode === 0"
                   :keyStr="keyStrs[i]"
-                  :isSelected="keyCalibrateRefs[i].isSelected"
-                  :isCalibrated="keyCalibrateRefs[i].isCalibrated"
-                  :isCalibrating="keyCalibrateRefs[i].isCalibrating"
+                  v-model:isSelected="keyCalibrateRefs[i].isSelected"
+                  v-model:isCalibrated="keyCalibrateRefs[i].isCalibrated"
+                  v-model:isCalibrating="keyCalibrateRefs[i].isCalibrating"
+                  
               />
               <KeyDebug
                   v-if="mode === 1"
                   :keyStr="keyStrs[i]"
-                  :hallValue="keyDebugRefs[i].hallValue"
-                  :hallValuePercentage="keyDebugRefs[i].hallValuePercentage"
+                  v-model:hallValue="keyDebugRefs[i].hallValue"
+                  v-model:hallValuePercentage="keyDebugRefs[i].hallValuePercentage"
               />
             </KeyFrame>
           </div>

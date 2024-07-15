@@ -10,7 +10,7 @@ use std::{io::Cursor, thread, time::Duration};
 use crate::cbor::CborConvertor;
 
 pub struct Meowboard<D: Device> {
-    pub key_config: Option<cbor::Keyboard>,
+    pub key_config: Option<cbor::Device>,
     pub device_name: Option<String>,
     pub firmware_version: Option<String>,
     device: D,
@@ -114,6 +114,66 @@ impl<D: Device> Meowboard<D> {
         Ok(keys)
     }
 
+    pub fn get_keystates(&mut self) -> Result<[KeyState; 64]> {
+        let mut index = 0;
+        let mut keys = [KeyState::default(); 64];
+        self.write(Packet::new(PacketID::DebugKeyState, [0]))?;
+        let data = self.read()?.data;
+        for i in 0..32 {
+            keys[index] = KeyState::from_u8(data[i]).ok_or(Error::InvalidPacket)?;
+            index += 1;
+        }
+        self.write(Packet::new(PacketID::DebugKeyState, [1]))?;
+        let data = self.read()?.data;
+        for i in 0..32 {
+            keys[index] = KeyState::from_u8(data[i]).ok_or(Error::InvalidPacket)?;
+            index += 1;
+        }
+        Ok(keys)
+    }
+    
+    pub fn get_key_calibrate_status(&mut self) -> Result<[bool; 64]> {
+        let mut index = 0;
+        let mut keys = [false; 64];
+        self.write(Packet::new(PacketID::CalibrateKeyStatus, [0]))?;
+        let data = self.read()?.data;
+        for i in 0..32 {
+            keys[index] = data[i] != 0;
+            index += 1;
+        }
+        self.write(Packet::new(PacketID::CalibrateKeyStatus, [1]))?;
+        let data = self.read()?.data;
+        for i in 0..32 {
+            keys[index] = data[i] != 0;
+            index += 1;
+        }
+        Ok(keys)
+    }
+
+    pub fn get_keyvalues(&mut self) -> Result<[u16; 64]> {
+        let mut index = 0;
+        let mut keys = [0u16; 64];
+        self.write(Packet::new(PacketID::DebugValue, [0]))?;
+        let mut cur = Cursor::new(self.read()?.data);
+        for _ in 0..30 {
+            keys[index] = cur.read_u16::<BigEndian>()?;
+            index += 1;
+        }
+        self.write(Packet::new(PacketID::DebugValue, [1]))?;
+        let mut cur = Cursor::new(self.read()?.data);
+        for _ in 0..30 {
+            keys[index] = cur.read_u16::<BigEndian>()?;
+            index += 1;
+        }
+        self.write(Packet::new(PacketID::DebugValue, [2]))?;
+        let mut cur = Cursor::new(self.read()?.data);
+        for _ in 0..4 {
+            keys[index] = cur.read_u16::<BigEndian>()?;
+            index += 1;
+        }
+        Ok(keys)
+    }
+
     pub fn get_hall_config_part(&mut self, index: u8) -> Result<[KeyHallConfig; 8]> {
         self.write(Packet::new(PacketID::GetHallConfig, [index]))?;
         let packet = self.read()?; // 读取
@@ -146,7 +206,7 @@ impl<D: Device> Meowboard<D> {
     pub fn load_key_config(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::GetKeyConfig, []))?;
         let packet = self.read()?;
-        self.key_config = Some(cbor::Keyboard::from_cbor(packet.data)?);
+        self.key_config = Some(cbor::Device::from_cbor(packet.data)?);
         Ok(())
     }
 
@@ -178,18 +238,6 @@ impl<D: Device> Meowboard<D> {
     }
 
     pub fn clear_key_config(&mut self) -> Result<()> {
-        self.write(Packet::new(PacketID::ClearLightConfig, []))?;
-        let packet = self.read()?;
-        if packet.id == PacketID::Ok as u8 {
-            Ok(())
-        } else {
-            dbg!(packet.id);
-            dbg!(packet.data.hex_dump());
-            Err(Error::UnexceptedResponse(packet))
-        }
-    }
-    
-    pub fn clear_light_config(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::ClearKeyConfig, []))?;
         let packet = self.read()?;
         if packet.id == PacketID::Ok as u8 {
@@ -221,19 +269,19 @@ impl<D: Device> Meowboard<D> {
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            Err(Error::Other("在校准轴体时出错"))
+            Err(Error::Other("中点设置出错"))
         }
     }
 
-    pub fn calibration_key(&self) -> Result<()> {
-        self.write(Packet::new(PacketID::CalibrationKey, []))?;
+    pub fn calibration_key(&self, key_indexs: &[u8]) -> Result<()> {
+        self.write(Packet::new(PacketID::CalibrationKey, key_indexs))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
             Ok(())
         } else {
             dbg!(packet.id);
             dbg!(packet.data.hex_dump());
-            Err(Error::Other("在校准轴体时出错"))
+            Err(Error::Other("校准轴体出错"))
         }
     }
 

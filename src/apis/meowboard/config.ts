@@ -1,5 +1,6 @@
 import { IRgb } from "@/interface"
 import { IKeyConfig } from ".."
+import { KeyCode } from "@/keycode"
 
 export interface IKeyConfigBoard {
     press_percentage: number
@@ -11,6 +12,8 @@ export interface IKeyConfigBoard {
 
 export interface IKeyboard {
     keys: IKeyConfigBoard[]
+    normal_layer: KeyCode[]
+    fn_layer: KeyCode[]
     jitters_elimination_time: number
     continuous_report: boolean
     kalman_filter: boolean

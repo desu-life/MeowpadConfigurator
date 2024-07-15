@@ -3,8 +3,8 @@ use num_derive::{FromPrimitive, ToPrimitive};
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default, FromPrimitive, ToPrimitive)]
 pub enum KeyState {
     #[default]
-    Pressed,
     Released,
+    Pressed,
     Calibrating
 }
 

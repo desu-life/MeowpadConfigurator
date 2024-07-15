@@ -1,4 +1,5 @@
 use crate::config::{self, LightingMode};
+use crate::keymap;
 use meowpad::{KeyCode, KbReport};
 use palette::{rgb::channels::Argb, WithAlpha};
 use palette::Srgb;
@@ -30,10 +31,13 @@ pub struct KeyRTConfig {
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[allow(non_snake_case)]
-pub struct Keyboard {
+pub struct Device {
     #[serde(rename = "ks")]
     #[serde_as(as = "[_; 64]")]
     pub KeyConfigs: [KeyRTConfig; 64],
+    #[serde(rename = "km")]
+    #[serde_as(as = "[_; 128]")]
+    pub KeyMap: [u8; 128],
     #[serde(rename = "jet")]
     pub JittersEliminationTime: u16,
     #[serde(rename = "cr")]
@@ -60,7 +64,7 @@ where
     }
 }
 
-impl CborConvertor for Keyboard {}
+impl CborConvertor for Device {}
 
 impl From<config::KeyConfig> for KeyRTConfig {
     fn from(cfg: config::KeyConfig) -> Self {
@@ -73,15 +77,17 @@ impl From<config::KeyConfig> for KeyRTConfig {
     }
 }
 
-impl From<config::Key> for Keyboard {
-    fn from(cfg: config::Key) -> Self {
+impl From<config::Device> for Device {
+    fn from(cfg: config::Device) -> Self {
         let mut key_configs = [KeyRTConfig::default(); 64];
         for i in 0..64 {
             key_configs[i] = cfg.keys[i].into();
         }
+        let map = keymap::KeyMap::from([cfg.normal_layer, cfg.fn_layer]).into();
 
-        Keyboard {
+        Device {
             KeyConfigs: key_configs,
+            KeyMap: map,
             ContinuousReport: cfg.continuous_report,
             KalmanFilter: cfg.kalman_filter,
             JittersEliminationTime: cfg.jitters_elimination_time,
@@ -90,11 +96,13 @@ impl From<config::Key> for Keyboard {
     }
 }
 
-impl Default for Keyboard {
+impl Default for Device {
     fn default() -> Self {
         let key_configs = [KeyRTConfig::default(); 64];
+        let key_maps = keymap::KeyMap::default();
         Self {
             KeyConfigs: key_configs,
+            KeyMap: key_maps.into(),
             ContinuousReport: false,
             KalmanFilter: true,
             JittersEliminationTime: 15 * 8,

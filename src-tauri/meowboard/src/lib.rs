@@ -2,10 +2,11 @@
 
 pub mod cbor;
 pub mod config;
-mod meowpad;
+mod meowboard;
 mod packet_id;
+mod keymap;
 
-pub use crate::meowpad::*;
+pub use crate::meowboard::*;
 pub use crate::packet_id::PacketID;
 
 #[cfg(test)]
@@ -107,7 +108,7 @@ mod tests {
 
     #[test]
     fn cbor_kb() {
-        let c = cbor::Keyboard::default().to_cbor();
+        let c = cbor::Device::default().to_cbor();
         dbg!(c.hex_dump());
         assert!(c.len() <= 1);
     }

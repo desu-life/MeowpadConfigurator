@@ -47,10 +47,16 @@ export interface IKeyConfig {
     key_data: KeyCode[]
 }
 
+export interface IKeyHallConfig {
+    adc_min: number
+    adc_max: number
+    hall_middle: number
+}
+
 
 export enum KeyState {
-    Pressed = 0,
-    Released = 1,
+    Released = 0,
+    Pressed = 1,
     Calibrating = 2
 }
 

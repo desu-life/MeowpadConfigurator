@@ -25,15 +25,16 @@ pub enum PacketID {
     Reset              = 15,
     GetStatus          = 16,
 
+    // debug extra
+    DebugValue = 50,
+    DebugKeyState = 51,
+    CalibrateKeyStatus = 52,
+
     // 配置部分
     GetKeyConfig     = 100,
-    GetLightConfig   = 101,
     SetKeyConfig     = 102,
-    SetLightConfig   = 103,
     SaveKeyConfig    = 104,
-    SaveLightConfig  = 105,
     ClearKeyConfig   = 106,
-    ClearLightConfig = 107,
     GetHallConfig    = 108,
     ClearHallConfig  = 109,
 }

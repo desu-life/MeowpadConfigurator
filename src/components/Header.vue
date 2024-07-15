@@ -409,8 +409,8 @@ async function clear_config() {
     </template>
     <template v-else>
       <template v-if="!device.connected">
-        <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button>
-        <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
+        <!-- <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button> -->
+        <!-- <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button> -->
       </template>
       <template v-else>
         <n-button class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device') }}</n-button>

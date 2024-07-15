@@ -194,7 +194,7 @@ impl<D: Device> Meowpad<D> {
     }
 
     pub fn clear_key_config(&mut self) -> Result<()> {
-        self.write(Packet::new(PacketID::ClearLightConfig, []))?;
+        self.write(Packet::new(PacketID::ClearKeyConfig, []))?;
         let packet = self.read()?;
         if packet.id == PacketID::Ok as u8 {
             Ok(())
@@ -206,7 +206,7 @@ impl<D: Device> Meowpad<D> {
     }
     
     pub fn clear_light_config(&mut self) -> Result<()> {
-        self.write(Packet::new(PacketID::ClearKeyConfig, []))?;
+        self.write(Packet::new(PacketID::ClearLightConfig, []))?;
         let packet = self.read()?;
         if packet.id == PacketID::Ok as u8 {
             Ok(())

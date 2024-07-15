@@ -1,7 +1,7 @@
 
 use std::sync::Mutex;
 use hidapi::HidApi;
-use meowpad::models::{DeviceStatus, KeyRTStatus};
+use meowpad::models::{DeviceStatus, KeyHallConfig, KeyRTStatus, KeyState};
 use meowboard::Meowboard;
 use tauri::State;
 use crate::{device::HidDevice, error::{Error, Result}};
@@ -9,7 +9,7 @@ use log::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
 struct Config {
-    key: meowboard::config::Key,
+    key: meowboard::config::Device,
 }
 
 #[tauri::command]
@@ -46,10 +46,10 @@ pub fn get_device_status_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidD
 }
 
 #[tauri::command]
-pub fn calibration_key_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<()> {
+pub fn calibration_key_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, key_indexs: Vec<u8>) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.calibration_key()?;
+    d.calibration_key(&key_indexs)?;
     Ok(())
 }
 
@@ -59,7 +59,6 @@ pub fn clear_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.clear_hall_config()?;
     d.clear_key_config()?;
-    d.clear_light_config()?;
     Ok(())
 }
 
@@ -72,10 +71,45 @@ pub fn reset_device_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice
 }
 
 #[tauri::command]
-pub async fn get_debug_value_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, index: u8) -> Result<Vec<KeyRTStatus>> {
+pub async fn get_debug_value_part_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, index: u8) -> Result<Vec<KeyRTStatus>> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_debug_value_part(index)?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_debug_value_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<KeyRTStatus>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_debug_value()?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_hall_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<KeyHallConfig>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_hall_config()?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_keystates_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<KeyState>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_keystates()?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_keyvalues_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<u16>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_keyvalues()?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_key_calibrate_status_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<bool>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_key_calibrate_status()?.to_vec())
 }
 
 #[tauri::command]
@@ -87,12 +121,12 @@ pub fn erase_firmware_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevi
 }
 
 #[tauri::command]
-pub fn get_default_key_config_kb() -> meowboard::config::Key {
-    meowboard::cbor::Keyboard::default().try_into().unwrap()
+pub fn get_default_key_config_kb() -> meowboard::config::Device {
+    meowboard::cbor::Device::default().try_into().unwrap()
 }
 
 #[tauri::command]
-pub fn get_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<meowboard::config::Key> {
+pub fn get_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<meowboard::config::Device> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_key_config()?;
@@ -100,7 +134,7 @@ pub fn get_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevi
 }
 
 #[tauri::command]
-pub fn set_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, config: meowboard::config::Key) -> Result<()> {
+pub fn set_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, config: meowboard::config::Device) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.key_config = Some(config.into());
