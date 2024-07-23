@@ -81,8 +81,10 @@ impl<D: Device> Meowboard<D> {
         }
     }
 
+
     pub fn get_debug_value_part(&mut self, index: u8) -> Result<[KeyRTStatus; 8]> {
-        self.write(Packet::new(PacketID::Debug, [index]))?;
+        let p = Packet::new(PacketID::Debug, [index]);
+        self.write(p)?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
             let mut keys = [KeyRTStatus::default(); 8];
@@ -92,10 +94,6 @@ impl<D: Device> Meowboard<D> {
                 key.linear_value = cur.read_u16::<BigEndian>()?;
                 key.press_percentage = cur.read_u8()? as u8;
                 key.key_state = KeyState::from_u8(cur.read_u8()?).ok_or(Error::InvalidPacket)?;
-            }
-            let rem = cur.remaining_slice();
-            if !rem.is_empty() {
-                println!("{:?}", cur.remaining_slice());
             }
             Ok(keys)
         } else {
@@ -213,7 +211,7 @@ impl<D: Device> Meowboard<D> {
 
     pub fn set_key_config(&self) -> Result<()> {
         let config = self.key_config.ok_or(Error::EmptyConfig)?;
-        debug!("写入键盘配置：{:?}", config);
+        // debug!("写入键盘配置：{:?}", config);
         self.write(Packet::new(PacketID::SetKeyConfig, config.to_cbor()))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
@@ -313,9 +311,8 @@ impl<D: Device> Meowboard<D> {
         debug!("发送：{:?}", packet);
         debug!("总数据大小：{}", packet.data.len());
         for v in packet.build_packets() {
-            debug!("raw：{:?}", v.hex_dump());
+            // debug!("raw：{:?}", v.hex_dump());
             self.device.write(&v)?;
-            thread::sleep(Duration::from_millis(50));
         }
         Ok(())
     }
@@ -323,7 +320,7 @@ impl<D: Device> Meowboard<D> {
     fn read_timeout(&self, timeout: i32) -> Result<Packet> {
         let mut buf = Cursor::new([0u8; 64]);
         self.device.read_timeout(buf.get_mut(), timeout)?;
-        // debug!("收到数据包: {:?}", buf.get_ref().hex_dump());
+        debug!("收到数据包: {:?}", buf.get_ref().hex_dump());
         let packet_id = PacketID::from_u8(buf.read_u8()?).ok_or(Error::InvalidPacket)?;
         let packet_len = buf.read_u16::<BigEndian>()? as usize;
         let mut data = Vec::with_capacity(packet_len);

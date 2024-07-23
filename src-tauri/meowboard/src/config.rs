@@ -8,27 +8,6 @@ use serde::{Deserialize, Serialize};
 use serde_repr::*;
 use serde_with::*;
 
-#[derive(
-    Serialize_repr, Deserialize_repr, FromPrimitive, ToPrimitive, Copy, Clone, Debug, Eq, PartialEq,
-)]
-#[repr(u8)]
-pub enum LightingMode {
-    Off,
-    Calibration,
-    Error,
-
-    Solid,
-    RainbowMode,
-    RainbowFlowMode,
-    PressRadianceMode,
-
-    BreatheGlowMode,
-    BreatheGlowAsyncMode,
-
-    RainDropMode,
-    TapToGlowMode,
-    SpeedLightMode
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy)]
 pub struct KeyConfig {
@@ -36,6 +15,7 @@ pub struct KeyConfig {
     pub release_percentage: u8,
     pub dead_zone: u8,   // 0-30
     pub release_dead_zone: u8,   // 0-30
+    pub rt_enabled: bool
 }
 
 #[serde_as]
@@ -49,8 +29,8 @@ pub struct Device {
     pub fn_layer: [KeyCode; 64],
     pub jitters_elimination_time: u16,
     pub continuous_report: bool,
-    pub kalman_filter: bool,
-    pub enable_hs: bool
+    pub hall_filter: u8,
+    pub max_brightness: u8,
 }
 
 impl TryFrom<cbor::Device> for Device {
@@ -67,9 +47,9 @@ impl TryFrom<cbor::Device> for Device {
             normal_layer: map[0],
             fn_layer: map[1],
             continuous_report: cfg.ContinuousReport,
-            kalman_filter: cfg.KalmanFilter,
+            hall_filter: cfg.HallFilter,
             jitters_elimination_time: cfg.JittersEliminationTime,
-            enable_hs: cfg.EnableHS
+            max_brightness: cfg.MaxBrightness,
         })
     }
 }
@@ -81,6 +61,7 @@ impl From<cbor::KeyRTConfig> for KeyConfig {
             release_percentage: cfg.ReleasePercentage,
             dead_zone: cfg.DeadZone,
             release_dead_zone: cfg.ReleaseDeadZone,
+            rt_enabled: cfg.RtEnabled
         }
     }
 }

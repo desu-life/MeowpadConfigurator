@@ -9,6 +9,7 @@ defineProps({
 const hallValue = defineModel("hallValue", { type: Number, default: 0 });
 // const isSelected = ref(false);
 const hallValuePercentage = defineModel("hallValuePercentage", { type: Number, default: 0 });
+const isPressed = defineModel("isPressed", { type: Boolean, default: false });
 function isActive() {
   return hallValue.value! > 0
 }
@@ -17,7 +18,11 @@ function isActive() {
 </script>
 
 <template>
-  <div class="key-debug">
+  <div class="key-debug"
+    :class="{
+        pressed: isPressed,
+    }"
+  >
       <div class="label-frame">
         <div class="key-debug-text">
           {{ keyStr }}
@@ -50,6 +55,10 @@ function isActive() {
   //background-color: #33a06f;
 
   border-radius: inherit;
+
+  &.pressed {
+    background-color: rgba(251, 255, 19, 0.37)
+  }
 
   .label-frame {
     display: flex;

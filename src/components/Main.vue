@@ -16,6 +16,7 @@
 
 import KeyFrame from "@/components/Keyboard/KeyFrame.vue";
 import KeyDebug from "@/components/Keyboard/KeyDebug.vue";
+import KeySelect from "@/components/Keyboard/KeySelect.vue";
 import KeyCalibrate from "@/components/Keyboard/KeyCalibrate.vue";
 import { ComponentPublicInstance, createVNode } from "vue";
 
@@ -23,6 +24,8 @@ import * as apib from '@/apis/meowboard/api'
 import { KeyState } from "@/apis";
 import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
+import { IKeyboard } from "@/apis/meowboard/config";
+import KeyHall from "./Keyboard/KeyHall.vue";
 
 const store = useStore()
 
@@ -42,8 +45,8 @@ function splitArray<T>(array: T[], sizes: number[]): T[][] {
 
 const KeysOfEachLine = [14, 14, 13, 14, 9];
 const keyIndexes = splitArray(
-    Array.from({length: 64}, (v, i) => i),
-    KeysOfEachLine
+  Array.from({ length: 64 }, (v, i) => i),
+  KeysOfEachLine
 );
 
 
@@ -72,6 +75,7 @@ const mode = ref(0);
 interface DebugVars {
   hallValue: number;
   hallValuePercentage: number;
+  isPressed: boolean;
 }
 
 interface CalibrateVars {
@@ -80,25 +84,31 @@ interface CalibrateVars {
   isCalibrating: boolean;
 }
 
-const keyCalibrateRefs = ref<CalibrateVars[]> (new Array(64));
+const keyCalibrateRefs = ref<CalibrateVars[]>(new Array(64));
 const keyDebugRefs = ref<DebugVars[]>(new Array(64));
 
 for (let i = 0; i < 64; i++) {
-    keyCalibrateRefs.value[i] = {
-      isSelected: false,
-      isCalibrated: false,
-      isCalibrating: false
-    }
-    keyDebugRefs.value[i] = {
-      hallValue: 0,
-      hallValuePercentage: 0
-    }
+  keyCalibrateRefs.value[i] = {
+    isSelected: false,
+    isCalibrated: false,
+    isCalibrating: false
   }
+  keyDebugRefs.value[i] = {
+    hallValue: 0,
+    hallValuePercentage: 0,
+    isPressed: false
+  }
+}
 
 
-function selectAllKeyCalibrate(on: boolean) {
+function selectAllKey(on: boolean) {
   keyCalibrateRefs.value.forEach((key) => {
     key.isSelected = on;
+  })
+}
+function selectReverse() {
+  keyCalibrateRefs.value.forEach((key) => {
+    key.isSelected = !key.isSelected;
   })
 }
 
@@ -109,12 +119,44 @@ function selectKeyCalibrate() {
   for (let i = 0; i < 64; i++) {
     if (keyCalibrateRefs.value[i].isSelected) {
       indexs.push(i)
-      keyCalibrateRefs.value[i].isSelected = false;
     }
   }
   console.log(indexs)
   if (indexs.length == 0) return
   apib.calibration_key(indexs)
+
+  for (let i = 0; i < indexs.length; i++) {
+    keyCalibrateRefs.value[indexs[i]].isSelected = false;
+    keyCalibrateRefs.value[indexs[i]].isCalibrating = true;
+    keyCalibrateRefs.value[indexs[i]].isCalibrated = false;
+  }
+
+  const interval = setInterval(async () => {
+    try {
+      if (is_connected.value == false) {
+        return
+      }
+
+      let success_count = 0;
+
+      let cali_status = await apib.get_key_calibrate_status()
+      for (let i = 0; i < indexs.length; i++) {
+        if (cali_status[indexs[i]]) {
+          keyCalibrateRefs.value[indexs[i]].isCalibrated = true
+          keyCalibrateRefs.value[indexs[i]].isCalibrating = false
+          success_count += 1
+        }
+      }
+
+      if (success_count == indexs.length) {
+        clearInterval(interval)
+      }
+    } catch (e) {
+      console.log(e)
+      store.status_str = "连接断开"
+      store.status = "error"
+    }
+  }, 100)
 }
 
 function setKeyDebugHallValue(value: number) {
@@ -127,20 +169,22 @@ function setKeyDebugHallValue(value: number) {
 }
 
 async function updateKey() {
-  store.loading = true
-  let states = await apib.get_keystates()
-  console.log(states)
-  let cali_status = await apib.get_key_calibrate_status()
-  console.log(cali_status)
-  let value = await apib.get_debug_value()
+  if (mode.value == 2) {
+    let states = await apib.get_keystates()
+    let cali_status = await apib.get_key_calibrate_status()
+    for (let i = 0; i < 64; i++) {
+      keyCalibrateRefs.value[i].isCalibrated = cali_status[i]
+      keyCalibrateRefs.value[i].isCalibrating = states[i] == KeyState.Calibrating
+    }
+  } else if (mode.value == 3) {
+    let value = await apib.get_debug_value()
 
-  for (let i = 0; i < 64; i++) {
-    keyCalibrateRefs.value[i].isCalibrated = cali_status[i]
-    keyCalibrateRefs.value[i].isCalibrating = states[i] == KeyState.Calibrating
-    keyDebugRefs.value[i].hallValue = value[i].adc_value
-    keyDebugRefs.value[i].hallValuePercentage = value[i].press_percentage
+    for (let i = 0; i < 64; i++) {
+      keyDebugRefs.value[i].hallValue = value[i].adc_value
+      keyDebugRefs.value[i].hallValuePercentage = value[i].press_percentage
+      keyDebugRefs.value[i].isPressed = value[i].key_state == KeyState.Pressed
+    }
   }
-  store.loading = false
 }
 
 
@@ -150,12 +194,16 @@ defineExpose({
 
 const is_connected = ref(false)
 const debug_index = ref(0)
+const device_config = ref<IKeyboard | null>(null)
 
 onMounted(async () => {
   console.log('mounted')
   let connected = await apib.connect();
   if (!connected) {
     console.log('connect failed')
+    store.loading = false
+    store.status_str = "连接失败"
+    store.status = "error"
     return
   }
   is_connected.value = true
@@ -175,70 +223,39 @@ onMounted(async () => {
   let config = await apib.get_key_config()
   console.log(config)
 
+  device_config.value = config
+
   let hall_config = await apib.get_hall_config()
   console.log(hall_config)
 
   for (let i = 0; i < 64; i++) {
-    keyStrs.value[i] = mapping[config.normal_layer[i]] ?? "None"
+    keyStrs.value[i] = mapping[config.normal_layer[i]] ?? ""
   }
   keyStrs.value[60] = "Fn"
 
   await updateKey()
-  
+
   store.loading = false
-
-  // await apib.calibration_key([1]);
-
-  
+  store.status_str = "已连接"
+  store.status = "success"
 
 
-  // setTimeout(async () => {
-  //   try {
-  //     if (is_connected.value == false) {
-  //       return
-  //     }
-      
-  //     while (1) {
-  //       let value = await apib.get_debug_value_part(debug_index.value)
-  //       debug_index.value += 1;
-  //       if (debug_index.value >= 8) {
-  //         debug_index.value = 0
-  //       }
-  //       for (let i = 0; i < 8; i++) {
-  //         keyDebugRefs.value[debug_index.value * 8 + i].hallValue = value[i].adc_value
-  //         keyDebugRefs.value[debug_index.value * 8 + i].hallValuePercentage = value[i].press_percentage
-  //       }
-  //     }
-  //   } catch (e) {
-  //     console.log(e)
-  //   }
-  // }, 500)
+  const interval = setInterval(async () => {
+    try {
+      if (is_connected.value == false) {
+        return
+      }
 
+      await updateKey()
+    } catch (e) {
+      console.log(e)
+      is_connected.value = false
+    }
+  }, 100)
 
-
-  // const interval = setInterval(async () => {
-  //   try {
-  //     if (is_connected.value == false) {
-  //       return
-  //     }
-
-  //     let value = await apib.get_debug_value(debug_index.value)
-  //     debug_index.value += 1;
-  //     if (debug_index.value >= 8) {
-  //       debug_index.value = 0
-  //     }
-  //     for (let i = 0; i < 8; i++) {
-  //       keyDebugRefs.value[debug_index.value * 8 + i].hallValue = value[i].adc_value
-  //       keyDebugRefs.value[debug_index.value * 8 + i].hallValuePercentage = value[i].press_percentage
-  //     }
-  //   } catch (e) {
-  //     console.log(e)
-  //   }
-  // }, 50)
-
-  // onUnmounted(() => {
-  //   clearInterval(interval)
-  // })
+  onUnmounted(() => {
+    clearInterval(interval)
+  })
 })
 
 </script>
@@ -252,83 +269,68 @@ onMounted(async () => {
 
       <n-space vertical>
         <n-radio-group v-model:value="mode" name="modes">
-          <n-radio-button
-              :key="0"
-              :value="0"
-              :label="'校准'"
-          />
-          <n-radio-button
-              :key="1"
-              :value="1"
-              :label="'调试'"
-          />
+          <n-radio-button :key="0" :value="0" :label="'霍尔'" />
+          <n-radio-button :key="1" :value="1" :label="'按键'" />
+          <n-radio-button :key="2" :value="2" :label="'校准'" />
+          <n-radio-button :key="3" :value="3" :label="'调试'" />
         </n-radio-group>
       </n-space>
 
       <n-button-group>
-        <n-button v-if="mode === 0" @click="() => selectAllKeyCalibrate(true)">
-          select all
+        <n-button v-if="mode === 0 || mode === 1 || mode === 2" @click="() => selectAllKey(true)">
+          全选
         </n-button>
-        <n-button v-if="mode === 0" @click="() => selectAllKeyCalibrate(false)">
-          unselect all
+        <n-button v-if="mode === 0 || mode === 1 || mode === 2" @click="() => selectAllKey(false)">
+          取消全选
         </n-button>
-        <n-button v-if="mode === 1" @click="() => setKeyDebugHallValue(0)">
-          set 0%
-        </n-button>
-        <n-button v-if="mode === 1" @click="() => setKeyDebugHallValue(20)">
-          set 20%
-        </n-button>
-        <n-button v-if="mode === 1" @click="() => setKeyDebugHallValue(100)">
-          set 100%
+        <n-button v-if="mode === 0 || mode === 1 || mode === 2" @click="() => selectReverse()">
+          反选
         </n-button>
       </n-button-group>
-      <n-button v-if="mode === 0" @click="() => selectKeyCalibrate()">
+      <n-button v-if="mode === 2" @click="() => selectKeyCalibrate()">
         校准选中的键
       </n-button>
     </div>
 
 
-    <n-divider/>
+    <n-divider />
 
-    <div class="keyboard-frame">
+    <div class="keyboard-frame" v-if="device_config != null">
       <div class="keyboard">
-        <div
-            v-for="(keyIndex, lineIndex) in keyIndexes"
-            :key="lineIndex"
-            class="keyLine"
-        >
-          <div
-              v-for="i in keyIndex"
-              :key="i"
-              class="keyIndividual"
-          >
-            <KeyFrame
-                :width="(keyWidth[i] * 64).toString() + 'px'"
-            >
-              <KeyCalibrate
-                  v-if="mode === 0"
-                  :keyStr="keyStrs[i]"
-                  v-model:isSelected="keyCalibrateRefs[i].isSelected"
-                  v-model:isCalibrated="keyCalibrateRefs[i].isCalibrated"
-                  v-model:isCalibrating="keyCalibrateRefs[i].isCalibrating"
-                  
-              />
-              <KeyDebug
-                  v-if="mode === 1"
-                  :keyStr="keyStrs[i]"
-                  v-model:hallValue="keyDebugRefs[i].hallValue"
-                  v-model:hallValuePercentage="keyDebugRefs[i].hallValuePercentage"
-              />
+        <div v-for="(keyIndex, lineIndex) in keyIndexes" :key="lineIndex" class="keyLine">
+          <div v-for="i in keyIndex" :key="i" class="keyIndividual">
+            <KeyFrame :width="(keyWidth[i] * 64).toString() + 'px'">
+              <KeyHall v-if="mode === 0" :keyStr="keyStrs[i]" v-model:isSelected="keyCalibrateRefs[i].isSelected"
+                v-model:press_percentage="device_config.keys[i].press_percentage"
+                v-model:release_percentage="device_config.keys[i].release_percentage"
+                v-model:dead_zone="device_config.keys[i].dead_zone"
+                v-model:release_dead_zone="device_config.keys[i].release_dead_zone"
+                v-model:rt_enabled="device_config.keys[i].rt_enabled" />
+              <KeySelect v-if="mode === 1" :keyStr="keyStrs[i]" v-model:isSelected="keyCalibrateRefs[i].isSelected" />
+              <KeyCalibrate v-if="mode === 2" :keyStr="keyStrs[i]" v-model:isSelected="keyCalibrateRefs[i].isSelected"
+                v-model:isCalibrated="keyCalibrateRefs[i].isCalibrated"
+                v-model:isCalibrating="keyCalibrateRefs[i].isCalibrating" />
+              <KeyDebug v-if="mode === 3" :keyStr="keyStrs[i]" v-model:hallValue="keyDebugRefs[i].hallValue"
+                v-model:hallValuePercentage="keyDebugRefs[i].hallValuePercentage" v-model:isPressed="keyDebugRefs[i].isPressed" />
             </KeyFrame>
           </div>
         </div>
       </div>
     </div>
+
+    <n-divider />
+
+    <div class="keyboard-config" v-if="device_config != null && mode === 0">
+      <n-input-number v-model:value="device_config!.jitters_elimination_time" :min="0" :max="50" :step="0.5">
+        <template #suffix>
+          ms
+        </template>
+      </n-input-number>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-
 .temp-test {
   display: flex;
   flex-direction: row;
@@ -359,5 +361,4 @@ onMounted(async () => {
     }
   }
 }
-
 </style>

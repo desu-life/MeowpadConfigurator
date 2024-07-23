@@ -316,12 +316,12 @@ export let mapping = {
     0x43: "F10",
     0x44: "F11",
     0x45: "F12",
-    0x49: "Insert",
+    0x49: "Ins",
     0x4a: "Home",
-    0x4b: "PageUp",
-    0x4c: "Delete",
+    0x4b: "PgUp",
+    0x4c: "Del",
     0x4d: "End",
-    0x4e: "PageDown",
+    0x4e: "PgDn",
     0x50: "←",
     0x51: "↓",
     0x52: "↑",
@@ -356,7 +356,7 @@ export let mapping = {
     0x87: "IntlRo",
     0x7d: "IntlYen",
     0x28: "Enter",
-    0x29: "Escape",
+    0x29: "Esc",
 };
 
 export let jsToHid = {

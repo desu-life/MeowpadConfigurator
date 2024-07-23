@@ -1,4 +1,4 @@
-use crate::config::{self, LightingMode};
+use crate::config;
 use crate::keymap;
 use meowpad::{KeyCode, KbReport};
 use palette::{rgb::channels::Argb, WithAlpha};
@@ -24,6 +24,8 @@ pub struct KeyRTConfig {
     pub DeadZone: u8,
     #[serde(rename = "rdz")]
     pub ReleaseDeadZone: u8,
+    #[serde(rename = "rte")]
+    pub RtEnabled: bool,
     
 }
 
@@ -42,10 +44,10 @@ pub struct Device {
     pub JittersEliminationTime: u16,
     #[serde(rename = "cr")]
     pub ContinuousReport: bool,
-    #[serde(rename = "kf")]
-    pub KalmanFilter: bool,
-    #[serde(rename = "ehs")]
-    pub EnableHS: bool,
+    #[serde(rename = "hf")]
+    pub HallFilter: u8,
+    #[serde(rename = "mb")]
+    pub MaxBrightness: u8,
 }
 
 pub trait CborConvertor
@@ -73,6 +75,7 @@ impl From<config::KeyConfig> for KeyRTConfig {
             ReleasePercentage: cfg.release_percentage,
             DeadZone: cfg.dead_zone,
             ReleaseDeadZone: cfg.release_dead_zone,
+            RtEnabled: cfg.rt_enabled,
         }
     }
 }
@@ -89,9 +92,9 @@ impl From<config::Device> for Device {
             KeyConfigs: key_configs,
             KeyMap: map,
             ContinuousReport: cfg.continuous_report,
-            KalmanFilter: cfg.kalman_filter,
             JittersEliminationTime: cfg.jitters_elimination_time,
-            EnableHS: cfg.enable_hs
+            HallFilter: cfg.hall_filter,
+            MaxBrightness: cfg.max_brightness,
         }
     }
 }
@@ -104,9 +107,9 @@ impl Default for Device {
             KeyConfigs: key_configs,
             KeyMap: key_maps.into(),
             ContinuousReport: false,
-            KalmanFilter: true,
             JittersEliminationTime: 15 * 8,
-            EnableHS: true
+            HallFilter: 1,
+            MaxBrightness: 5,
         }
     }
 }
@@ -118,6 +121,7 @@ impl Default for KeyRTConfig {
             ReleasePercentage: 8,
             DeadZone: 15,
             ReleaseDeadZone: 5,
+            RtEnabled: true,
         }
     }
 }

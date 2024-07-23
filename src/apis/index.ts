@@ -55,8 +55,8 @@ export interface IKeyHallConfig {
 
 
 export enum KeyState {
-    Released = 0,
-    Pressed = 1,
+    Pressed = 0,
+    Released = 1,
     Calibrating = 2
 }
 

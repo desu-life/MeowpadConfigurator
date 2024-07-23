@@ -27,10 +27,12 @@ document.body.onselectstart = document.body.oncontextmenu = () => false
 onMounted(async () => {
   let show = true;
   
-  theme.value = await appWindow.theme()
-  await appWindow.onThemeChanged(({ payload: t }) => {
-    theme.value = t
-  })
+  // theme.value = await appWindow.theme()
+  // await appWindow.onThemeChanged(({ payload: t }) => {
+  //   theme.value = t
+  // })
+
+  theme.value = "dark"
 
   setTimeout(async () => {
     if (show) {

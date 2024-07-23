@@ -4,7 +4,7 @@ use hidapi::HidApi;
 use meowpad::models::{DeviceStatus, KeyHallConfig, KeyRTStatus, KeyState};
 use meowboard::Meowboard;
 use tauri::State;
-use crate::{device::HidDevice, error::{Error, Result}};
+use crate::{device::HidDevice, error::{Error, Result}, FIRMWARE_VERSION_KB};
 use log::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
@@ -14,7 +14,7 @@ struct Config {
 
 #[tauri::command]
 pub fn get_firmware_kb_version(_app: tauri::AppHandle) -> &'static str {
-    "0"
+    FIRMWARE_VERSION_KB
 }
 
 #[tauri::command]
@@ -204,8 +204,8 @@ fn find_device() -> Option<Meowboard<HidDevice>> {
     let api = HidApi::new().unwrap();
 
     // 期望的设备VID和PID
-    const VID: u16 = 0x2E3C;
-    const PID: u16 = 0x5745;
+    const VID: u16 = 0x5D3E;
+    const PID: u16 = 0xFB01;
 
     // 迭代设备列表，查找符合条件的设备
     let mut devices = api.device_list();

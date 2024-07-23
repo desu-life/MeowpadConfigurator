@@ -6,7 +6,8 @@ export interface IKeyConfigBoard {
     press_percentage: number
     release_percentage: number
     dead_zone: number
-    release_key_data: number
+    release_dead_zone: number
+    rt_enabled: boolean
 }
 
 
@@ -16,6 +17,6 @@ export interface IKeyboard {
     fn_layer: KeyCode[]
     jitters_elimination_time: number
     continuous_report: boolean
-    kalman_filter: boolean
-    enable_hs: boolean
+    hall_filter: number
+    max_brightness: number
 }
