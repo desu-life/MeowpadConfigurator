@@ -26,6 +26,9 @@ import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
 import { IKeyboard } from "@/apis/meowboard/config";
 import KeyHall from "./Keyboard/KeyHall.vue";
+import KeyModify from "./Keyboard/KeyModify.vue";
+import KeyModifyOption from "./Keyboard/KeyModifyOption.vue";
+import emitter from "@/mitt";
 
 const store = useStore()
 
@@ -44,10 +47,12 @@ function splitArray<T>(array: T[], sizes: number[]): T[][] {
 }
 
 const KeysOfEachLine = [14, 14, 13, 14, 9];
-const keyIndexes = splitArray(
+
+const keyIndexesRaw = computed(() => splitArray(
   Array.from({ length: 64 }, (v, i) => i),
   KeysOfEachLine
-);
+))
+const keyIndexes = ref(keyIndexesRaw.value)
 
 
 const keyWidth = ref([  // 每个键的ui里的宽度
@@ -68,7 +73,7 @@ const keyStrs = ref([
 ])
 
 // 0-校准 1-调试
-const mode = ref(0);
+const mode = ref(1);
 
 
 
@@ -239,6 +244,9 @@ onMounted(async () => {
   store.status_str = "已连接"
   store.status = "success"
 
+  for (let i in mapping) {
+    console.log(i, mapping[i])
+  }
 
   const interval = setInterval(async () => {
     try {
@@ -258,10 +266,67 @@ onMounted(async () => {
   })
 })
 
+
+const keyModifyDraggedKey = ref("no-drag");
+const keyDraggingStyle = ref({
+  left: "0px",
+  top: "0px",
+});
+const keyLayer = ref(0);
+
+emitter.on('global-mouse-move', onMouseMove)
+emitter.on('global-mouse-up', onMouseUp)
+
+function onMouseMove(event: MouseEvent) {
+  keyDraggingStyle.value.left = `${event.pageX - 32}px`;
+  keyDraggingStyle.value.top = `${event.pageY - 32}px`;
+}
+
+function onMouseUp(event: MouseEvent) {
+  keyModifyDraggedKey.value = "no-drag";
+}
+
+function onMouseEnter(event: MouseEvent) {
+  keyModifyDraggedKey.value = "no-drag";
+}
+
+emitter.on('key-str-modify', onKeyStrModify)
+function onKeyStrModify(event: { rawIndex: number; newValue: string }) {
+  keyStrs.value[event.rawIndex] = event.newValue
+}
+
+async function onLayerChange() {
+  let config = await apib.get_key_config()
+
+  if (keyLayer.value == 0) {
+    for (let i = 0; i < 64; i++) {
+      keyStrs.value[i] = mapping[config.fn_layer[i]] ?? ""
+    }
+    keyStrs.value[60] = "Fn"
+    keyLayer.value = 1
+  } else {
+    for (let i = 0; i < 64; i++) {
+      keyStrs.value[i] = mapping[config.normal_layer[i]] ?? ""
+    }
+    keyStrs.value[60] = "Fn"
+    keyLayer.value = 0
+  }
+
+}
+
 </script>
 
 <template>
-  <div>
+  <div class="main-keyboard">
+    <!-- 拖拽的键 -->
+    <Teleport to="body">
+      <div class="dragging-key" v-if="keyModifyDraggedKey!='no-drag'" :style="keyDraggingStyle">
+          <KeyFrame :width="(1 * 64).toString() + 'px'">
+            {{ keyModifyDraggedKey }}
+          </KeyFrame>
+      </div>
+    </Teleport>
+
     <div class="temp-test">
       <n-button @click="() => updateKey()">
         刷新
@@ -277,18 +342,21 @@ onMounted(async () => {
       </n-space>
 
       <n-button-group>
-        <n-button v-if="mode === 0 || mode === 1 || mode === 2" @click="() => selectAllKey(true)">
+        <n-button v-if="mode === 0|| mode === 2" @click="() => selectAllKey(true)">
           全选
         </n-button>
-        <n-button v-if="mode === 0 || mode === 1 || mode === 2" @click="() => selectAllKey(false)">
+        <n-button v-if="mode === 0|| mode === 2" @click="() => selectAllKey(false)">
           取消全选
         </n-button>
-        <n-button v-if="mode === 0 || mode === 1 || mode === 2" @click="() => selectReverse()">
+        <n-button v-if="mode === 0|| mode === 2" @click="() => selectReverse()">
           反选
         </n-button>
       </n-button-group>
       <n-button v-if="mode === 2" @click="() => selectKeyCalibrate()">
         校准选中的键
+      </n-button>
+      <n-button v-if="mode === 1" @click="onLayerChange">
+        切换Fn层
       </n-button>
     </div>
 
@@ -306,7 +374,7 @@ onMounted(async () => {
                 v-model:dead_zone="device_config.keys[i].dead_zone"
                 v-model:release_dead_zone="device_config.keys[i].release_dead_zone"
                 v-model:rt_enabled="device_config.keys[i].rt_enabled" />
-              <KeySelect v-if="mode === 1" :keyStr="keyStrs[i]" v-model:isSelected="keyCalibrateRefs[i].isSelected" />
+                <KeyModify v-if="mode === 1" :keyStr="keyStrs[i]" :keyStrIndex="i" v-model:keyDragged="keyModifyDraggedKey" />
               <KeyCalibrate v-if="mode === 2" :keyStr="keyStrs[i]" v-model:isSelected="keyCalibrateRefs[i].isSelected"
                 v-model:isCalibrated="keyCalibrateRefs[i].isCalibrated"
                 v-model:isCalibrating="keyCalibrateRefs[i].isCalibrating" />
@@ -320,12 +388,26 @@ onMounted(async () => {
 
     <n-divider />
 
-    <div class="keyboard-config" v-if="device_config != null && mode === 0">
-      <n-input-number v-model:value="device_config!.jitters_elimination_time" :min="0" :max="50" :step="0.5">
-        <template #suffix>
-          ms
-        </template>
-      </n-input-number>
+    <div>
+      <div  v-if="mode === 1">
+        <n-scrollbar style="max-height: 220px">
+          <div class="key-modify-config">
+            <div v-for="i in mapping" :key="i">
+              <KeyFrame class="key-modify-config-key" :width="(1 * 64).toString() + 'px'">
+                <KeyModifyOption :keyStr="i" v-model:keyDragged="keyModifyDraggedKey"/>
+              </KeyFrame>
+            </div>
+          </div>
+        </n-scrollbar>
+      </div>
+
+      <div class="keyboard-config" v-if="device_config != null && mode === 0">
+        <n-input-number v-model:value="device_config!.jitters_elimination_time" :min="0" :max="50" :step="0.5">
+          <template #suffix>
+            ms
+          </template>
+        </n-input-number>
+      </div>
     </div>
   </div>
 </template>
@@ -337,6 +419,24 @@ onMounted(async () => {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
+}
+
+.dragging-key {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.8;
+  z-index: 1000;
+  transform: rotate(15deg);
+}
+
+.key-modify-config {
+  display: flex;
+  flex-wrap: wrap;
+  overflow-wrap: break-word;
+  max-width: 100%;
+
+  overflow-y: 50px;
 }
 
 .keyboard-frame {
@@ -360,5 +460,11 @@ onMounted(async () => {
       }
     }
   }
+}
+
+.main-keyboard {
+  display: flex;
+  flex-direction: column;
+  max-width: min-content;
 }
 </style>

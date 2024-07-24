@@ -10,6 +10,18 @@ import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { IVersion } from './apis';
 import { check_update, get_latest_version } from './apis/api';
+import emitter from './mitt';
+
+function onGlobalMouseMove(event: MouseEvent) {
+  // TODO: 写这一块的时候发现了性能问题，配置器动不动就会拿到10%以上的cpu占用
+  emitter.emit('global-mouse-move', event)
+}
+
+emitter.off("mouse-move-for-key-drag")
+
+function onGlobalMouseUp(event: MouseEvent) {
+  emitter.emit('global-mouse-up', event)
+}
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
@@ -40,7 +52,7 @@ onMounted(async () => {
     }
   }, 500)
 
-  appWindow.setSize(new LogicalSize(1280, 720))
+  appWindow.setSize(new LogicalSize(1080, 900))
 })
 </script>
 
@@ -54,7 +66,7 @@ onMounted(async () => {
           <Header />
         </n-layout-header>
         <n-layout-content class="main">
-          <div id="main">
+          <div id="main"  @mousemove="onGlobalMouseMove" @mouseup="onGlobalMouseUp">
             <Main />
           </div>
         </n-layout-content>
