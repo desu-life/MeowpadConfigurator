@@ -2453,33 +2453,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "meowpad_configurator"
-version = "1.0.2"
-dependencies = [
- "anyhow",
- "better-panic",
- "env_logger",
- "hid-iap",
- "hidapi",
- "log",
- "meowboard",
- "meowpad",
- "meowpad3k",
- "meowpad4k",
- "once_cell",
- "pretty-hex",
- "regex",
- "reqwest 0.12.4",
- "serde",
- "serde_json",
- "serde_with",
- "tauri",
- "tauri-build",
- "thiserror",
- "toml 0.8.13",
-]
-
-[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3399,6 +3372,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b33eb56c327dec362a9e55b3ad14f9d2f0904fb5a5b03b513ab5465399e9f43"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "pure64_configurator"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "better-panic",
+ "env_logger",
+ "hid-iap",
+ "hidapi",
+ "log",
+ "meowboard",
+ "meowpad",
+ "meowpad3k",
+ "meowpad4k",
+ "once_cell",
+ "pretty-hex",
+ "regex",
+ "reqwest 0.12.4",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "tauri",
+ "tauri-build",
+ "thiserror",
+ "toml 0.8.13",
 ]
 
 [[package]]

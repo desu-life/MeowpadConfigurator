@@ -357,6 +357,7 @@ export let mapping = {
     0x7d: "IntlYen",
     0x28: "Enter",
     0x29: "Esc",
+    70: "PScreen"
 };
 
 export let jsToHid = {
@@ -467,4 +468,5 @@ export let jsToHid = {
     "IntlRo": 0x87,
     "IntlYen": 0x7d,
     "IntlHash": 0x32,
+
 };

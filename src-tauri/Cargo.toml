@@ -1,11 +1,11 @@
 [package]
-name = "meowpad_configurator"
-version = "1.0.2"
+name = "pure64_configurator"
+version = "0.2.0"
 description = "A Tauri App"
 authors = ["fantasyzhjk", "monodesu"]
 license = ""
 repository = ""
-default-run = "meowpad_configurator"
+default-run = "pure64_configurator"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
