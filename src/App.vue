@@ -52,7 +52,7 @@ onMounted(async () => {
     }
   }, 500)
 
-  appWindow.setSize(new LogicalSize(1080, 900))
+  // appWindow.setSize(new LogicalSize(1080, 900))
 })
 </script>
 
@@ -65,7 +65,7 @@ onMounted(async () => {
         <n-layout-header class="header">
           <Header />
         </n-layout-header>
-        <n-layout-content class="main">
+        <n-layout-content>
           <div id="main"  @mousemove="onGlobalMouseMove" @mouseup="onGlobalMouseUp">
             <Main />
           </div>
@@ -87,16 +87,9 @@ $header-height: 56px;
   justify-content: space-between;
 }
 
-.main {
-  height: calc(100vh - $header-height);
-}
 
 #main {
-  height: 100%;
+  height: calc(100vh - $header-height);
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 </style>
-@/store/store

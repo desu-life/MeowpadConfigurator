@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Checkmark16Filled from '@vicons/fluent/Checkmark16Filled'
 import { IKeyConfigBoard } from "@/apis/meowboard/config";
-
+import emitter from "@/mitt";
 
 defineProps({
   keyStr: {
@@ -19,6 +19,7 @@ const rt_enabled = defineModel("rt_enabled", { type: Boolean, default: false });
 
 function handleClick() {
   isSelected.value = !isSelected.value;
+  emitter.emit('key-select')
 }
 
 </script>
@@ -34,10 +35,10 @@ function handleClick() {
     <div class="label-frame">
       <div v-if="rt_enabled" class="rt-label">
         <div>
-          {{ press_percentage }} ↓
+          {{ dead_zone }}
         </div>
         <div>
-          {{ release_percentage }} ↑
+          {{ press_percentage }} ↓ {{ release_percentage }} ↑
         </div>
       </div>
       <div v-else class="normal-label">

@@ -109,7 +109,7 @@ impl Default for Device {
             ContinuousReport: false,
             JittersEliminationTime: 15 * 8,
             HallFilter: 1,
-            MaxBrightness: 5,
+            MaxBrightness: 50,
         }
     }
 }

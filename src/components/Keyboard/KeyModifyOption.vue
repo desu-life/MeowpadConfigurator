@@ -5,13 +5,17 @@ const props = defineProps({
   keyStr: {
     type: String,
     required: true
+  },
+  KeyValue: {
+    type: Number,
+    required: true
   }
 })
 
-const keyDragged = defineModel("keyDragged", { type: String, default: "no-drag" });
+const keyDragged = defineModel("keyDragged", { type: Number, default: -1 });
 
 function onKeyStartDrag(event: MouseEvent) {
-  keyDragged.value = props.keyStr
+  keyDragged.value = props.KeyValue
   console.log("StartDrag", keyDragged.value)
   event.preventDefault()
 }
@@ -38,6 +42,10 @@ function onKeyStartDrag(event: MouseEvent) {
 <style scoped lang="scss">
 @mixin transition-bg-color($duration, $timing-function: ease-in-out) {
   transition: background-color $duration $timing-function;
+}
+
+.key-modify-option-text {
+  text-align: center;
 }
 
 .key-modify-option {

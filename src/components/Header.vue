@@ -9,14 +9,14 @@ import { setI18nLanguage, i18n } from '@/locales/index'
 import { Rgb2Hex, Hex2Rgb, getErrorMsg } from '@/utils';
 import { useDialog } from 'naive-ui'
 import * as api from '@/apis/api'
-import * as api4k from '@/apis/meowpad4k/api'
-import * as api3k from '@/apis/meowpad3k/api'
+import * as apib from '@/apis/meowboard/api'
 import { IError } from '@/apis';
 import { Toggle } from '@/interface';
 import { KeyCode } from '@/keycode';
 import { IKeyboard as IKB3K } from "@/apis/meowpad3k/config";
 import { storeToRefs } from 'pinia';
-
+import { appWindow, LogicalSize } from '@tauri-apps/api/window';
+import emitter from "@/mitt";
 
 const { t } = useI18n();
 const dialog = useDialog()
@@ -26,6 +26,10 @@ const message = useMessage()
 store.status_str = t("device_disconnected")
 const show_calibrate_msg = ref(false)
 const sync_btn_type = ref<Type | undefined>("default")
+
+emitter.on('need-save', () => {
+  sync_btn_type.value = "primary"
+})
 
 const state = ref({
   options: [
@@ -60,8 +64,7 @@ async function connect() {
     console.table(device.device_info)
 
     let firmware_version = "";
-    if (device.is_4k()) firmware_version = await api4k.get_firmware_version()
-    else if (device.is_3k()) firmware_version = await api3k.get_firmware_version()
+    firmware_version = await apib.get_firmware_version()
 
     if (firmware_version === "") {
       store.loading = false
@@ -84,24 +87,24 @@ async function connect() {
 
     await device.get_status()
 
-    if (device.device_status!.key == false || device.device_status!.light == false) {
+    if (device.device_status!.key == false) {
       await device.get_default_config()
       await device.sync_config()
       await device.save_config()
     }
 
-    if (device.device_status!.hall == false) {
-      dialog.warning({
-        title: t('warning'),
-        content: t('device_cali_warn'),
-        positiveText: t('yes'),
-        negativeText: t('no'),
-        maskClosable: false,
-        onPositiveClick: () => {
-          calibration_key()
-        },
-      })
-    }
+    // if (device.device_status!.hall == false) {
+    //   dialog.warning({
+    //     title: t('warning'),
+    //     content: t('device_cali_warn'),
+    //     positiveText: t('yes'),
+    //     negativeText: t('no'),
+    //     maskClosable: false,
+    //     onPositiveClick: () => {
+    //       calibration_key()
+    //     },
+    //   })
+    // }
 
     if (device.device_info === undefined) {
       store.status_str = t('connected')
@@ -128,39 +131,26 @@ async function connect() {
     console.error(es)
     return;
   }
+
+  if (!store.developer_mode) {
+    appWindow.setSize(new LogicalSize(1080, 900))
+    emitter.emit('kb-init')
+  }
   // 不管怎么样总之是连上了
   store.status = "success"
   device.connected = true
   store.loading = false
 }
 
-async function calibration_key() {
-  store.loading = true
-  try {
-    await device.calibration_key()
-  } catch (e) {
-    device.connected = false
-    store.status = "error"
-    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
-    console.error(e)
-    store.loading = false
-    return
-  }
-  store.loading = false
-  show_calibrate_msg.value = true
-  setTimeout(() => {
-    show_calibrate_msg.value = false
-  }, 3000)
-}
-
-
 
 async function get_default_config() {
   store.loading = true
   setTimeout(async () => {
     await device.get_default_config()
+    emitter.emit('kb-init')
+    emitter.emit('need-save')
 
-    sync_btn_type.value = "primary"
+    
     store.status = "success"
     store.status_str = t('reset_success')
     store.loading = false
@@ -168,15 +158,14 @@ async function get_default_config() {
 }
 
 
+
 const need_check = ref(false)
 
 function key_config_post_process() {
-  const { key_config } = storeToRefs(device)
-  const cfg = key_config;
+  const { device_config } = storeToRefs(device)
+  const cfg = device_config;
   
   for (let i = 0; i < cfg.value!.keys.length; i++) {
-    cfg.value!.keys[i].key_data = cfg.value!.keys[i].key_data.filter(k => k != KeyCode.None)
-
     if (cfg.value!.keys[i].dead_zone < 5) {
       need_check.value = true
     }
@@ -186,11 +175,6 @@ function key_config_post_process() {
     if (cfg.value!.keys[i].release_percentage < 3) {
       need_check.value = true
     }
-  }
-
-  if (device.is_3k()) {
-    const cfg_3k = cfg as Ref<IKB3K>;
-    cfg_3k.value!.side_btn = cfg_3k.value!.side_btn.filter(k => k != KeyCode.None)
   }
 }
 
@@ -210,6 +194,7 @@ async function sync_config() {
   try {
     await device.sync_config()
     key_config_post_process()
+    emitter.emit('kb-init')
 
     if (need_check.value) {
       store.status = "warning"
@@ -219,7 +204,6 @@ async function sync_config() {
       await save_config()
     }
   } catch (e) {
-    device.light_config = undefined
     device.connected = false
     store.status = "error"
     store.status_str = t('sync_error', { e: getErrorMsg(t, e as IError) })
@@ -273,76 +257,9 @@ function developer_mode() {
   })
 }
 
-async function enter_iap() {
-  try {
-    await api.connect_iap()
-    // 不管怎么样总之是连上了
-    store.iap_connected = true
-    store.status = "warning"
-    store.status_str = t('iap_connected')
-  } catch (e) {
-    store.iap_connected = false
-    store.status = "error"
-    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
-    console.error(e)
-  }
-}
-
-
-async function device_update() {
-  store.loading = true
-  store.status = "warning"
-  store.status_str = t('connecting')
-  try {
-    if (!await device.try_connect()) {
-      store.status = "error"
-      store.status_str = t('connection_broke', { e: t('device_not_found') })
-      store.loading = false
-      return
-    }
-    if (!device.is_4k()) {
-      store.status = "error"
-      store.status_str = t('device_not_support')
-      store.loading = false
-      return
-    }
-    dialog.warning({
-      title: t('warning'),
-      content: t('device_update_warn'),
-      positiveText: t('yes'),
-      negativeText: t('no'),
-      maskClosable: false,
-      onPositiveClick: async () => {
-        await api4k.erase_firmware()
-        setTimeout(async () => {
-          await enter_iap()
-          store.loading = false
-        }, 1000);
-      },
-      onNegativeClick: () => {
-        store.loading = false
-        store.status = undefined
-        store.status_str = t("device_disconnected")
-      },
-    })
-  } catch (e) {
-    await enter_iap()
-    store.loading = false
-  }
-}
-
-const regex = /(\d)\/d:(\d*),f:(\d*)\*/gm;
-
-
-
-async function debug() {
-  store.debug_mode = !store.debug_mode
-
-}
-
 async function erase_firmware() {
   try {
-    await api4k.erase_firmware()
+    await apib.erase_firmware()
     device.connected = false
     store.status = undefined
     store.status_str = t("device_disconnected")
@@ -354,31 +271,16 @@ async function erase_firmware() {
   }
 }
 
-async function clear_config() {
-  try {
-    await api3k.clear_config()
-    await api3k.reset_device()
-    device.connected = false
-    store.status = undefined
-    store.status_str = t("device_disconnected")
-  } catch (e) {
-    device.connected = false
-    store.status = "error"
-    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
-    console.error(e)
-  }
-}
+onMounted(async () => {
+  appWindow.setSize(new LogicalSize(800, 600))
+})
+
+  
+
 </script>
 
 <template>
-  <n-modal v-model:show="show_calibrate_msg" transform-origin="center">
-    <n-card style="width: fit-content;border-radius: 5px;align-items: center;" :bordered="false" :title="$t('cali_msg')"
-      role="dialog" aria-modal="true">
-    </n-card>
-  </n-modal>
   <div class="left">
-    <n-select v-if="!device.connected" class="ml" @update:value="handleChange" v-model:value="state.currentLang"
-      placeholder="Language" :options="state.options"></n-select>
     <n-button class="ml" id="msgbox" :loading="store.loading" :type="store.status" strong secondary>{{ store.status_str
       }}</n-button>
   </div>
@@ -390,30 +292,22 @@ async function clear_config() {
     $t('exit') }}</n-button>
         </template>
         <template v-else>
-          <n-button class="mr" :disabled="store.loading" @click="device_update">{{ $t('device_update') }}</n-button>
           <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
           <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
         </template>
       </template>
       <template v-else>
-        <n-button class="mr" :disabled="store.loading" @click="debug">
-          {{ store.debug_mode ? $t('exit') : t('debug_mode') }}
-        </n-button>
-        <template v-if="!store.debug_mode">
-          <n-button  v-if="device.is_4k()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
-          <n-button  v-if="device.is_3k()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
-          <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
-          <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
-        </template>
+        <n-button class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
+        <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
       </template>
     </template>
     <template v-else>
       <template v-if="!device.connected">
-        <!-- <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button> -->
-        <!-- <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button> -->
+        <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button>
+        <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
       </template>
       <template v-else>
-        <n-button class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device') }}</n-button>
         <n-button class="mr" :disabled="store.loading" @click="get_default_config">{{ $t('default_config') }}</n-button>
         <n-button class="mr" :disabled="store.loading" v-if="!need_check" @click="sync_config" :type="sync_btn_type">{{ $t('sync_config') }}</n-button>
         <n-button class="mr" :disabled="store.loading" v-if="need_check" @click="save_config" type="warning">{{ $t('save_config') }}</n-button>

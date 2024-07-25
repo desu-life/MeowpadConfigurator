@@ -62,3 +62,9 @@ export async function get_device_status() {
 export async function get_hall_config() {
   return (await invoke("get_hall_config_kb")) as IKeyHallConfig[];
 }
+export async function get_firmware_version() {
+  return (await invoke("get_firmware_kb_version")) as string;
+}
+export async function erase_firmware() {
+  return (await invoke("erase_firmware_kb")) as void;
+}

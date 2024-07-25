@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import emitter from "@/mitt";
+import { useMessage } from 'naive-ui'
 
 const props = defineProps({
   keyStr: {
@@ -12,24 +13,36 @@ const props = defineProps({
   }
 })
 
-const keyDragged = defineModel("keyDragged", { type: String, default: "no-drag" });
+const message = useMessage()
+
+const keyDragged = defineModel("keyDragged", { type: Number, default: -1 });
 
 function onMouseUp(event: MouseEvent) {
-  if (keyDragged.value != "no-drag") {
+  if (keyDragged.value != -1) {
     console.log("Up", keyDragged.value)
     emitter.emit('key-str-modify', { rawIndex: props.keyStrIndex, newValue: keyDragged.value})
   }
 }
 
+function onClick(event: MouseEvent) {
+  emitter.emit('key-str-modify', { rawIndex: props.keyStrIndex, newValue: 0})
+}
+
 </script>
 
 <template>
+  <n-popconfirm
+    @positive-click="onClick"
+    :show-icon="false"
+    positive-text="确定"
+    :negative-text="null"
+  >
+  <template #trigger>
   <div
       class="key-modify"
       :class="{
       }"
       :draggable="true"
-      @click=""
       @mouseup="onMouseUp($event)"
   >
     <div class="label-frame">
@@ -38,6 +51,9 @@ function onMouseUp(event: MouseEvent) {
       </div>
     </div>
   </div>
+  </template>
+  清除按键？
+  </n-popconfirm>
 </template>
 
 <style scoped lang="scss">
