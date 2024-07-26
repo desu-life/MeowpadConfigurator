@@ -486,11 +486,11 @@ function formatPercentTooltip(percentage: number) {
                   <n-tooltip trigger="hover" :delay="200">
                     <template #trigger>
                       <n-text underline>
-                        触底防误触
+                        触底防双击
                       </n-text>
                     </template>
                     <template #default>
-                      防止轴体触底震动导致误触，推荐开启
+                      防止轴体触底震动导致双击，推荐开启
                     </template>
                   </n-tooltip>
                 </template>

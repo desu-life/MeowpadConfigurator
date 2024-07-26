@@ -3,6 +3,7 @@ import { IVersion, KeyState } from "@/apis";
 import { Type } from "naive-ui/es/button/src/interface";
 import * as apib from '@/apis/meowboard/api'
 import { mapping } from "@/keycode";
+import emitter from "@/mitt";
 
 interface DebugVars {
   hallValue: number;
@@ -48,11 +49,15 @@ export const useKeyboard = defineStore("keyboard", () => {
     keyVarsRefs.value.forEach((key) => {
       key.isSelected = on;
     })
+
+    emitter.emit('key-select')
   }
   function selectReverse() {
     keyVarsRefs.value.forEach((key) => {
       key.isSelected = !key.isSelected;
     })
+
+    emitter.emit('key-select')
   }
 
   async function updateKey() {
