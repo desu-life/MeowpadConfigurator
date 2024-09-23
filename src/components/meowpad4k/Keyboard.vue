@@ -2,8 +2,9 @@
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { useI18n } from "vue-i18n";
-import Key from '@/components/Key.vue'
-import KeyShow from '@/components/KeyShow.vue'
+import Key from '@/components/KeyComponents/Key.vue'
+import KeyShow from '@/components/KeyComponents/KeyShow.vue'
+import KeyModal from '@/components/KeyComponents/KeyModal.vue'
 import type { IKeymap } from '@/interface';
 import { ref } from 'vue';
 import { formatKeys, IsModifierKey, compareArray } from '@/utils'

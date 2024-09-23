@@ -43,7 +43,7 @@ emitter.on('calibration-key', async () => {
 
 emitter.on('get-default-config', async () => {
   emitter.emit('loading')
-  if (device.is_4k()) {
+  if (device.is_3k()) {
     try {
       device.key_config = await api3k.get_default_key_config()
       device.extract_key_config_3k()

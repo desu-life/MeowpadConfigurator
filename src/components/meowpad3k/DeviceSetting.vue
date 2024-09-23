@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
-import KeyModal from '@/components/KeyModal.vue'
 import Keyboard from './Keyboard.vue'
 import { h } from 'vue'
 import { useI18n } from "vue-i18n";
