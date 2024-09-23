@@ -41,8 +41,8 @@ pub struct Device {
     pub KeyMap: [u8; 256],
     #[serde(rename = "jet")]
     pub JittersEliminationTime: u16,
-    #[serde(rename = "cr")]
-    pub ContinuousReport: bool,
+    #[serde(rename = "hr")]
+    pub HighReportRate: bool,
     #[serde(rename = "hf")]
     pub HallFilter: u8,
     #[serde(rename = "mb")]
@@ -90,7 +90,7 @@ impl From<config::Device> for Device {
         Device {
             KeyConfigs: key_configs,
             KeyMap: map,
-            ContinuousReport: cfg.continuous_report,
+            HighReportRate: cfg.high_reportrate,
             JittersEliminationTime: cfg.jitters_elimination_time,
             HallFilter: cfg.hall_filter,
             MaxBrightness: cfg.max_brightness,
@@ -105,7 +105,7 @@ impl Default for Device {
         Self {
             KeyConfigs: key_configs,
             KeyMap: key_maps.into(),
-            ContinuousReport: false,
+            HighReportRate: true,
             JittersEliminationTime: 15 * 8,
             HallFilter: 1,
             MaxBrightness: 50,

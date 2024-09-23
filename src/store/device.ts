@@ -2,9 +2,11 @@ import { IDeviceInfo, IDeviceStatus } from "../apis";
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { IKeyboard as IKB4K, ILighting as ILT4K } from "../apis/meowpad4k/config";
 import { IKeyboard as IKB3K, ILighting as ILT3K, LightingMode as LM3K } from "../apis/meowpad3k/config";
+import { IKeyboard as IKBB } from "../apis/meowboard/config";
 import { Toggle } from "../interface";
 import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
+import * as apib from '@/apis/meowboard/api'
 import { Hex2Rgb, Rgb2Hex } from "@/utils";
 import { KeyCode } from "@/keycode";
 
@@ -16,6 +18,7 @@ export const useDeviceStore = defineStore("device", () => {
   const raw_config = ref<string | undefined>(undefined);
 
   // configs
+  const device_config = ref<IKBB | undefined>(undefined);
   const key_config = ref<IKB4K | IKB3K | undefined>(undefined);
   const light_config = ref<ILT4K | ILT3K | undefined>(undefined);
   const led_colors = ref<string[] | null>(null);
@@ -30,6 +33,8 @@ export const useDeviceStore = defineStore("device", () => {
   const continuous_report = ref<Toggle>(Toggle.Off);
   const kalman_filter = ref<Toggle>(Toggle.Off);
   const enable_light = ref<Toggle>(Toggle.Off);
+  const fangwuchu = ref<Toggle>(Toggle.Off)
+  const hall_filter = ref<number>(0);
 
   function is_4k() {
     return device_info.value?.name == 'Meowpad'
@@ -39,6 +44,10 @@ export const useDeviceStore = defineStore("device", () => {
     return device_info.value?.name == 'Meowpad SE v2'
   }
 
+  function is_pure() {
+    return device_info.value?.name == 'Pure64'
+  }
+
   async function try_connect() {
     if (await api4k.connect()) {
       device_info.value = await api4k.get_device_info()
@@ -46,6 +55,10 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (await api3k.connect()) {
       device_info.value = await api3k.get_device_info()
+      return true
+    }
+    if (await apib.connect()) {
+      device_info.value = await apib.get_device_info()
       return true
     }
     return false;
@@ -58,6 +71,9 @@ export const useDeviceStore = defineStore("device", () => {
     if (is_3k()) {
       device_status.value = await api3k.get_device_status()
     }
+    if (is_pure()) {
+      device_status.value = await apib.get_device_status()
+    }
   }
 
   async function get_config_raw() {
@@ -66,6 +82,9 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (is_3k()) {
       raw_config.value = await api3k.get_raw_config()
+    }
+    if (is_pure()) {
+      raw_config.value = await apib.get_raw_config()
     }
   }
 
@@ -76,6 +95,9 @@ export const useDeviceStore = defineStore("device", () => {
     if (is_3k()) {
       await api3k.save_raw_config(raw_config.value!)
     }
+    if (is_pure()) {
+      await apib.save_raw_config(raw_config.value!)
+    }
   }
 
   async function check_config_raw() {
@@ -85,9 +107,47 @@ export const useDeviceStore = defineStore("device", () => {
     if (is_3k()) {
       return await api3k.check_raw_config(raw_config.value!)
     }
+    if (is_pure()) {
+      return await apib.check_raw_config(raw_config.value!)
+    }
     // 无设备连接时不检查，永远通过
     return true
   }
+
+  function store_key_config_pure64() {
+    let config = device_config as Ref<IKBB>;
+    config.value!.jitters_elimination_time = Math.round(jitters_elimination_time.value * 8)
+    config.value!.continuous_report = continuous_report.value == Toggle.On ? true : false
+    config.value!.hall_filter = hall_filter.value
+    config.value!.max_brightness = Math.floor(max_brightness.value / 2)
+
+    for (let i = 0; i < 64; i++) {
+      config.value!.keys[i].release_dead_zone = fangwuchu.value == Toggle.On ? 10 : 0
+      config.value!.keys[i].press_percentage = Math.floor(config.value!.keys[i].press_percentage * 2)
+      config.value!.keys[i].release_percentage = Math.floor(config.value!.keys[i].release_percentage * 2)
+      config.value!.keys[i].dead_zone = Math.floor(config.value!.keys[i].dead_zone * 2)
+    }
+  }
+
+
+  function extract_key_config_pure64() {
+    let config = device_config as Ref<IKBB>;
+    jitters_elimination_time.value = config.value!.jitters_elimination_time / 8
+    continuous_report.value = config.value!.continuous_report == true ? Toggle.On : Toggle.Off
+    hall_filter.value = config.value!.hall_filter
+    max_brightness.value = Math.floor(config.value!.max_brightness * 2)
+
+    for (let i = 0; i < 64; i++) {
+      if (config.value!.keys[i].release_dead_zone == 10) {
+        fangwuchu.value = Toggle.On
+      }
+
+      config.value!.keys[i].press_percentage = config.value!.keys[i].press_percentage / 2
+      config.value!.keys[i].release_percentage = config.value!.keys[i].release_percentage / 2
+      config.value!.keys[i].dead_zone = config.value!.keys[i].dead_zone / 2
+    }
+  }
+  
 
   function store_key_config_4k() {
     let config = key_config as Ref<IKB4K>;
@@ -226,8 +286,12 @@ export const useDeviceStore = defineStore("device", () => {
     random_color_mode,
     is_flow_delay,
     enable_light,
+    hall_filter,
+    fangwuchu,
+    device_config,
     is_4k,
     is_3k,
+    is_pure,
     try_connect,
     get_status,
     get_config_raw,
@@ -240,7 +304,10 @@ export const useDeviceStore = defineStore("device", () => {
     extract_light_config_3k,
     store_light_config_3k,
     extract_light_config_4k,
-    store_light_config_4k
+    store_light_config_4k,
+    store_key_config_pure64,
+    extract_key_config_pure64,
+
   };
 });
 

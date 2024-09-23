@@ -2,6 +2,7 @@
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
 import Settings4K from '@/components/meowpad4k/Settings.vue'
 import Settings3K from '@/components/meowpad3k/Settings.vue'
+import Pure64 from '@/components/meowboard/Keyboard.vue'
 import DeveloperSettings from '@/components/DeveloperSetting/DeveloperSettings.vue'
 import { useI18n } from "vue-i18n";
 import { useStore } from '@/store/main';
@@ -10,6 +11,7 @@ import emitter from "@/mitt";
 import * as api from '@/apis/api'
 import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
+import * as apib from '@/apis/meowboard/api'
 import { useDialog } from 'naive-ui'
 import { IError } from '@/apis';
 import { getErrorMsg } from '@/utils';
@@ -42,6 +44,7 @@ emitter.on('connect', async () => {
     let firmware_version = "";
     if (device.is_4k()) firmware_version = await api4k.get_firmware_version()
     else if (device.is_3k()) firmware_version = await api3k.get_firmware_version()
+    else if (device.is_pure()) firmware_version = await apib.get_firmware_version()
 
     if (firmware_version === "") {
       emitter.emit('header-msg-update', { status: "error", str: t('unknown_device') })
@@ -69,6 +72,10 @@ emitter.on('connect', async () => {
         await api3k.set_key_config(await api3k.get_default_key_config())
         await api3k.save_key_config()
       }
+      if (device.is_pure()) {
+        await apib.set_key_config(await apib.get_default_key_config())
+        await apib.save_key_config()
+      }
     }
 
     if (device.device_status!.light != undefined && device.device_status!.light != null) {
@@ -91,6 +98,9 @@ emitter.on('connect', async () => {
       if (device.is_3k()) {
         device.raw_config = await api3k.get_raw_config()
       }
+      if (device.is_pure()) {
+        device.raw_config = await apib.get_raw_config()
+      }
     } else {
       if (device.is_4k()) {
         device.key_config = await api4k.get_key_config()
@@ -103,6 +113,10 @@ emitter.on('connect', async () => {
         device.extract_key_config_3k()
         device.light_config = await api3k.get_light_config()
         device.extract_light_config_3k()
+      }
+      if (device.is_pure()) {
+        device.device_config = await apib.get_key_config()
+        device.extract_key_config_pure64()
       }
     }
 
@@ -149,6 +163,9 @@ emitter.on('connect', async () => {
         </div>
         <div v-else-if="device.is_3k()">
           <Settings3K></Settings3K>
+        </div>
+        <div v-else-if="device.is_pure()">
+          <Pure64></Pure64>
         </div>
       </div>
       

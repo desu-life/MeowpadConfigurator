@@ -42,7 +42,7 @@ pub struct Device {
     #[serde_as(as = "[_; 64]")]
     pub fn_layer: [KeyValue; 64],
     pub jitters_elimination_time: u16,
-    pub continuous_report: bool,
+    pub high_reportrate: bool,
     pub hall_filter: u8,
     pub max_brightness: u8,
 }
@@ -60,7 +60,7 @@ impl TryFrom<cbor::Device> for Device {
             keys,
             normal_layer: map[0],
             fn_layer: map[1],
-            continuous_report: cfg.ContinuousReport,
+            high_reportrate: cfg.HighReportRate,
             hall_filter: cfg.HallFilter,
             jitters_elimination_time: cfg.JittersEliminationTime,
             max_brightness: cfg.MaxBrightness,
