@@ -121,5 +121,6 @@
   "key_state": "Key State",
   "linear_adc_value": "Linear ADC Value",
   "adc_value": "ADC Value",
-  "unknown_device": "This device is not supported"
+  "unknown_device": "This device is not supported",
+  "update_warning": "An update to the configurator has been detected. Do you want to download it?"
 }

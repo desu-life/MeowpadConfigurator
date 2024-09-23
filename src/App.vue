@@ -9,7 +9,8 @@ import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { IVersion } from './apis';
-import { check_update, get_latest_version, get_theme } from './apis/api';
+import { check_update, get_latest_version, get_theme, open_update_url } from './apis/api';
+import { useI18n } from 'vue-i18n';
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
@@ -18,20 +19,21 @@ const lightThemeOverrides: GlobalThemeOverrides = {
   }
 }
 
+const { t } = useI18n();
 const store = useStore()
 const theme = ref<string>()
 
 // 禁用webkit右键菜单
 document.body.onselectstart = document.body.oncontextmenu = () => false
 
+
 onMounted(async () => {
-  let show = true;
-  
-  get_latest_version().then((version: IVersion) => {
+  get_latest_version().then(async (version: IVersion) => {
     store.version_info = version
-    check_update(version).then((res: boolean) => {
-      show = res;
-    });
+    let need_update = await check_update(version)
+    if (need_update) {
+      await open_update_url(version, t('update_warning'))
+    }
   });
 
   theme.value = await get_theme();
@@ -39,12 +41,8 @@ onMounted(async () => {
   await appWindow.onThemeChanged(({ payload: t }) => {
     theme.value = t as string
   })
-
-  setTimeout(async () => {
-    if (show) {
-      await appWindow.show()
-    }
-  }, 500)
+  
+  await appWindow.show()
 })
 </script>
 

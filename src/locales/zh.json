@@ -137,5 +137,6 @@
   "unknown_device": "不支持此设备",
   "enable_light": "灯光状态",
   "clear_config": "重置设备",
-  "device_not_support": "该设备不支持此功能"
+  "device_not_support": "该设备不支持此功能",
+  "update_warning": "检测到配置器有更新，是否前往下载？"
 }

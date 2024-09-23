@@ -10,6 +10,7 @@ use meowboard::Meowboard;
 use meowpad4k::Meowpad as Meowpad4k;
 use meowpad3k::Meowpad as Meowpad3k;
 use reqwest::Client;
+use tauri::api::dialog::MessageDialogBuilder;
 use std::env;
 use std::io::Write;
 use std::ops::Deref;
@@ -72,6 +73,17 @@ macro_rules! message_dialog_f {
         use tauri::api::dialog::{MessageDialogBuilder, MessageDialogButtons, MessageDialogKind};
         MessageDialogBuilder::new($title, $message)
             .buttons(MessageDialogButtons::Ok)
+            .kind(MessageDialogKind::Info)
+            .show($f);
+    }};
+}
+
+/// non_blocking_dialog_with_fn_yes_no
+macro_rules! message_dialog_f_yn {
+    ( $title:expr, $message:expr, $f:expr ) => {{
+        use tauri::api::dialog::{MessageDialogBuilder, MessageDialogButtons, MessageDialogKind};
+        MessageDialogBuilder::new($title, $message)
+            .buttons(MessageDialogButtons::YesNo)
             .kind(MessageDialogKind::Info)
             .show($f);
     }};
@@ -143,18 +155,32 @@ use crate::device::HidDevice;
 async fn check_update(window: tauri::Window, version: Version) -> bool {
     if compare_version(VERSION, &version.configurator_version) == std::cmp::Ordering::Less {
         warn!("最新版本信息：\n{:#?}", version);
-        window.hide().unwrap();
-        message_dialog_f!(
-            "Meowpad Configurator",
-            "检测到配置器未更新，请下载新版",
-            move |_| {
-                shell::open(&window.shell_scope(), version.download_url, None).unwrap();
-                window.close().unwrap();
-            }
-        );
-        return false;
+        // window.hide().unwrap();
+        // message_dialog_f!(
+        //     "Meowpad Configurator",
+        //     "检测到配置器未更新，请下载新版",
+        //     move |_| {
+        //         shell::open(&window.shell_scope(), version.download_url, None).unwrap();
+        //         // window.close().unwrap();
+        //     }
+        // );
+        return true;
     }
-    true
+    false
+}
+
+#[tauri::command]
+async fn open_update_url(window: tauri::Window, version: Version, str: String) {
+    message_dialog_f_yn!(
+        "Meowpad Configurator",
+        &str,
+        move |r| {
+            if r {
+                shell::open(&window.shell_scope(), version.download_url, None).unwrap();
+            }
+            // window.close().unwrap();
+        }
+    );
 }
 
 fn main() -> AnyResult<()> {
@@ -252,7 +278,8 @@ fn main() -> AnyResult<()> {
             get_firmware_kb_version,
             get_key_calibrate_status_kb,
             get_debug_value_part_kb,
-            get_hall_config_kb
+            get_hall_config_kb,
+            open_update_url
         ])
         .manage(
             Client::builder()

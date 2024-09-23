@@ -14,6 +14,9 @@ export async function iap_flush() {
 export async function check_update(version: IVersion) {
   return (await invoke("check_update", { version })) as boolean;
 }
+export async function open_update_url(version: IVersion, str: string) {
+  return (await invoke("open_update_url", { version, str })) as boolean;
+}
 export async function get_latest_version() {
   return (await invoke("get_latest_version")) as IVersion;
 }
