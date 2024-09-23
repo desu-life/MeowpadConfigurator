@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
-import IAP from '@/components/IAP.vue'
+import IAP from '@/components/DeveloperSetting/IAP.vue'
 import { useI18n } from "vue-i18n";
 import * as api4k from '@/apis/meowpad4k/api'
 

@@ -13,6 +13,8 @@ export const useStore = defineStore("main", () => {
   const developer_mode = ref<boolean>(false);
   const debug_mode = ref<boolean>(false);
   const can_sync = ref<boolean>(false);
+  const need_check = ref(false)
+
 
   return {
     status,
@@ -24,7 +26,8 @@ export const useStore = defineStore("main", () => {
     debug_mode,
     can_sync,
     latest_firmware_download_url,
-    loading
+    loading,
+    need_check
   };
 });
 

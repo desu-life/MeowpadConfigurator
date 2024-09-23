@@ -14,7 +14,7 @@ export interface IError {
 
 export interface IDeviceStatus {
     key: boolean
-    light: boolean
+    light?: boolean
     hall: boolean
     enabled: boolean
 }

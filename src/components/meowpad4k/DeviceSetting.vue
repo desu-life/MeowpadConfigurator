@@ -144,7 +144,7 @@ function GetToggleSel() {
   </n-grid>
 </template>
 
-<style>
+<style scoped>
 /* .hs_key_setting > .n-form-item-feedback-wrapper {
   display: block;
 } */
@@ -167,4 +167,4 @@ function GetToggleSel() {
   align-items: center;
   width: fit-content;
 }
-</style>@/store/store
+</style>

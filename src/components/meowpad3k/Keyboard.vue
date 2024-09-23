@@ -238,7 +238,7 @@ function getKeyText(index: number) {
   </div>
 </template>
 
-<style>
+<style scoped>
 .hall-config {
   max-width: 400px;
   min-width: 200px;

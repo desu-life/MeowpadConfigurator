@@ -16,4 +16,3 @@ const store = useStore()
             {{ $t('need_update_warning_4') }} </template>
     </n-result>
 </template>
-lk@/store/store

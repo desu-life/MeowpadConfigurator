@@ -194,7 +194,8 @@ function applyKeySetting() {
   </div>
 </template>
 
-<style>
+<style scoped>
+
 .hall-config {
   max-width: 400px;
   min-width: 200px;
@@ -249,4 +250,3 @@ function applyKeySetting() {
   opacity: 0;
 }
 </style>
-@/apis/interface@/apis/interface@/store/store

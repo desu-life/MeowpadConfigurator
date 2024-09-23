@@ -58,9 +58,7 @@ onMounted(async () => {
           <Header />
         </n-layout-header>
         <n-layout-content class="main">
-          <div id="main">
-            <Main />
-          </div>
+          <Main />
         </n-layout-content>
       </n-layout>
     </Application>
@@ -68,11 +66,10 @@ onMounted(async () => {
   <!-- </n-theme-editor> -->
 </template>
 
-<style lang="scss">
-$header-height: 56px;
+<style lang="scss" scoped>
 
 .header {
-  height: $header-height;
+  height: var(--header-height);
   display: flex;
   align-items: center;
   flex-direction: row;
@@ -80,14 +77,9 @@ $header-height: 56px;
 }
 
 .main {
-  height: calc(100vh - $header-height);
+  height: calc(100vh - var(--header-height));
+  color: var(--color-text);
+  background: var(--color-background);
 }
 
-#main {
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 </style>

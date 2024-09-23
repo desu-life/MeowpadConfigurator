@@ -263,4 +263,3 @@ function CanCanChangeColor() {
     </n-gi>
   </n-grid>
 </template>
-@/apis/interface@/store/store

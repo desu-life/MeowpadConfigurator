@@ -19,7 +19,7 @@
   --vt-c-white-mute: #f1f1f1;
   --vt-c-white-transparent: #f1f1f160;
 
-  --vt-c-black: #1a1a1a;
+  --vt-c-black: rgb(16, 16, 20);
   --vt-c-black-pure: #000000;
   --vt-c-black-soft: #242424;
   --vt-c-black-mute: #2f2f2f;
@@ -87,37 +87,24 @@
   --vt-c-purple-lighter: #f616f8;
   --vt-c-purple-dark: #823c83;
   --vt-c-purple-darker: #602960;
+
 }
 
 /* semantic color variables for this project */
 :root {
-  --color-background: var(--vt-c-white);
-  --color-background-soft: var(--vt-c-white-soft);
-  --color-background-mute: var(--vt-c-white-mute);
-  --color-background-transparent: var(--vt-c-white-transparent);
+  --color-background: var(--vt-c-black);
+  --color-background-soft: var(--vt-c-black-soft);
+  --color-background-mute: var(--vt-c-black-mute);
+  --color-background-transparent: var(--vt-c-black-transparent);
 
-  --color-border: var(--vt-c-divider-light-2);
-  --color-border-hover: var(--vt-c-divider-light-1);
+  --color-border: var(--vt-c-divider-dark-2);
+  --color-border-hover: var(--vt-c-divider-dark-1);
 
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
+  --color-heading: var(--vt-c-text-dark-1);
+  --color-text: var(--vt-c-text-dark-2);
 
   --section-gap: 160px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--vt-c-black);
-    --color-background-soft: var(--vt-c-black-soft);
-    --color-background-mute: var(--vt-c-black-mute);
-    --color-background-transparent: var(--vt-c-black-transparent);
-
-    --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
-
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
-  }
+  --header-height: 56px;
 }
 
 body {
@@ -125,11 +112,6 @@ body {
   font-weight: normal;
   margin: 0;
   min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  transition:
-    color 0.5s,
-    background-color 0.5s;
   line-height: 1.6;
   font-size: 15px;
   font-family:

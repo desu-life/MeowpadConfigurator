@@ -206,70 +206,6 @@ export const useDeviceStore = defineStore("device", () => {
     enable_light.value = config.value!.lighting_mode == LM3K.Solid ? Toggle.On : Toggle.Off
   }
 
-  async function get_config() {
-    if (is_4k()) {
-      key_config.value = await api4k.get_key_config()
-      extract_key_config_4k()
-      light_config.value = await api4k.get_light_config()
-      extract_light_config_4k()
-    }
-    if (is_3k()) {
-      key_config.value = await api3k.get_key_config()
-      extract_key_config_3k()
-      light_config.value = await api3k.get_light_config()
-      extract_light_config_3k()
-    }
-  }
-
-  async function get_default_config() {
-    if (is_4k()) {
-      key_config.value = await api4k.get_default_key_config()
-      extract_key_config_4k()
-      light_config.value = await api4k.get_default_light_config()
-      extract_light_config_4k()
-    }
-    if (is_3k()) {
-      key_config.value = await api3k.get_default_key_config()
-      extract_key_config_3k()
-      light_config.value = await api3k.get_default_light_config()
-      extract_light_config_3k()
-    }
-  }
-
-  async function sync_config() {
-    if (is_4k()) {
-      store_key_config_4k()
-      await api4k.set_key_config(key_config.value! as IKB4K)
-      store_light_config_4k()
-      await api4k.set_light_config(light_config.value! as ILT4K)
-    }
-    if (is_3k()) {
-      store_key_config_3k()
-      await api3k.set_key_config(key_config.value! as IKB3K)
-      store_light_config_3k()
-      await api3k.set_light_config(light_config.value! as ILT3K)
-    }
-  }
-
-  async function save_config() {
-    if (is_4k()) {
-      await api4k.save_key_config()
-      await api4k.save_light_config()
-    }
-    if (is_3k()) {
-      await api3k.save_key_config()
-      await api3k.save_light_config()
-    }
-  }
-
-  async function calibration_key() {
-    if (is_4k()) {
-      await api4k.calibration_key()
-    }
-    if (is_3k()) {
-      await api3k.calibration_key()
-    }
-  }
 
   return {
     key_config,
@@ -297,11 +233,14 @@ export const useDeviceStore = defineStore("device", () => {
     get_config_raw,
     check_config_raw,
     save_config_raw,
-    get_config,
-    get_default_config,
-    sync_config,
-    save_config,
-    calibration_key,
+    extract_key_config_3k,
+    store_key_config_3k,
+    extract_key_config_4k,
+    store_key_config_4k,
+    extract_light_config_3k,
+    store_light_config_3k,
+    extract_light_config_4k,
+    store_light_config_4k
   };
 });
 

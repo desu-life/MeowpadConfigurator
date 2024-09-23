@@ -15,9 +15,17 @@ import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 import ColorSetting from './ColorSetting.vue'
 import DeviceSetting from './DeviceSetting.vue'
 import { useI18n } from "vue-i18n";
+import emitter from "@/mitt";
+import * as api4k from '@/apis/meowpad4k/api'
+import { IKeyboard as IKB4K, ILighting as ILT4K } from "@/apis/meowpad4k/config";
+import { IError } from '@/apis';
+import { storeToRefs } from 'pinia';
+import { getErrorMsg } from '@/utils';
+import { stat } from 'fs';
 
 const { t } = useI18n();
 const device = useDeviceStore()
+const store = useStore()
 const formRef = ref<FormInst | null>(null)
 const message = useMessage()
 const configType = ref(0)
@@ -29,6 +37,94 @@ function switchConfig() {
     configType.value = 1
   }
 }
+
+emitter.on('calibration-key', async () => {
+  emitter.emit('loading')
+  if (device.is_4k()) {
+    try {
+      await api4k.calibration_key()
+    } catch (e) {
+      emitter.emit('connection-broke', {e: e as IError})
+    }
+  }
+  emitter.emit('loaded')
+})
+
+
+emitter.on('get-default-config', async () => {
+  emitter.emit('loading')
+  if (device.is_4k()) {
+    try {
+      device.key_config = await api4k.get_default_key_config()
+      device.extract_key_config_4k()
+      device.light_config = await api4k.get_default_light_config()
+      device.extract_light_config_4k()
+      emitter.emit('header-msg-update', { status: "success", str: t('reset_success') })
+      emitter.emit('sync-btn-highlight', { status: true })
+    } catch (e) {
+      emitter.emit('connection-broke', {e: e as IError})
+    }
+  }
+  emitter.emit('loaded')
+})
+
+emitter.on('save-config', async () => {
+  emitter.emit('loading')
+  if (device.is_4k()) {
+    try {
+      await api4k.save_key_config()
+      await api4k.save_light_config()
+      emitter.emit('header-msg-update', { status: "success", str: t('sync_success') })
+    } catch (e) {
+      emitter.emit('connection-broke', {e: e as IError})
+    }
+  }
+  emitter.emit('loaded')
+})
+
+
+emitter.on('sync-config', async () => {
+  emitter.emit('header-loading', { str: t('syncing_config') })
+  if (device.is_4k()) {
+    const { key_config } = storeToRefs(device)
+    const cfg = key_config;
+
+    try {
+      device.store_key_config_4k()
+      await api4k.set_key_config(device.key_config! as IKB4K)
+      device.store_light_config_4k()
+      await api4k.set_light_config(device.light_config! as ILT4K)
+
+      for (let i = 0; i < cfg.value!.keys.length; i++) {
+        if (cfg.value!.keys[i].dead_zone < 5) {
+          store.need_check = true
+        }
+        if (cfg.value!.keys[i].press_percentage < 3) {
+          store.need_check = true
+        }
+        if (cfg.value!.keys[i].release_percentage < 3) {
+          store.need_check = true
+        }
+      }
+
+      device.extract_key_config_4k()
+      device.extract_light_config_4k()
+
+      if (store.need_check) {
+        emitter.emit('header-msg-update', { status: "warning", str: t('applied_config') })
+        message.warning(t('check_config_msg'))
+      } else {
+        emitter.emit('save-config')
+      }
+    } catch (e) {
+      emitter.emit('connection-broke', {e: e as IError})
+      emitter.emit('header-msg-update', { status: "error", str: t('sync_error', { e: getErrorMsg(t, e as IError) }) })
+    }
+  }
+  emitter.emit('sync-btn-highlight', { status: false })
+  emitter.emit('loaded')
+})
+
 
 
 </script>
@@ -70,7 +166,7 @@ function switchConfig() {
     </n-form>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .switch-btn {
   position: fixed;
   z-index: 10;
