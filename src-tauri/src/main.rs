@@ -6,6 +6,7 @@
 use anyhow::Result as AnyResult;
 use hid_iap::iap::IAP;
 use log::*;
+use meowboard::Meowboard;
 use meowpad4k::Meowpad as Meowpad4k;
 use meowpad3k::Meowpad as Meowpad3k;
 use reqwest::Client;
@@ -25,8 +26,10 @@ mod utils;
 mod cmdiap;
 mod cmd4k;
 mod cmd3k;
+mod cmdkbd;
 use cmd3k::*;
 use cmd4k::*;
+use cmdkbd::*;
 use cmdiap::*;
 use consts::*;
 use error::Result;
@@ -74,10 +77,6 @@ macro_rules! message_dialog_f {
     }};
 }
 
-#[tauri::command]
-async fn get_latest_version(client: State<'_, Client>) -> Result<Version> {
-    Ok(Version::get(client.deref()).await?)
-}
 
 #[tauri::command]
 async fn get_theme(_window: tauri::Window) -> &'static str {
@@ -108,6 +107,11 @@ async fn get_theme(_window: tauri::Window) -> &'static str {
     }
 }
 
+
+#[tauri::command]
+async fn get_latest_version(client: State<'_, Client>) -> Result<Version> {
+    Ok(Version::get(client.deref()).await?)
+}
 
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -226,6 +230,29 @@ fn main() -> AnyResult<()> {
             connect_iap,
             iap_start,
             iap_flush,
+            connect_kb,
+            get_device_status_kb,
+            calibration_key_kb,
+            clear_config_kb,
+            reset_device_kb,
+            get_debug_value_kb,
+            erase_firmware_kb,
+            get_default_key_config_kb,
+            get_key_config_kb,
+            set_key_config_kb,
+            save_key_config_kb,
+            clear_config_kb,
+            get_device_status_kb,
+            get_keystates_kb,
+            get_keyvalues_kb,
+            get_device_info_kb,
+            get_raw_config_kb,
+            check_raw_config_kb,
+            save_raw_config_kb,
+            get_firmware_kb_version,
+            get_key_calibrate_status_kb,
+            get_debug_value_part_kb,
+            get_hall_config_kb
         ])
         .manage(
             Client::builder()
@@ -235,6 +262,7 @@ fn main() -> AnyResult<()> {
         )
         .manage::<Mutex<Option<Meowpad3k<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<Meowpad4k<HidDevice>>>>(Mutex::new(None))
+        .manage::<Mutex<Option<Meowboard<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<IAP>>>(Mutex::new(None))
         .manage::<Mutex<Option<Vec<u8>>>>(Mutex::new(None))
         .run(tauri::generate_context!())

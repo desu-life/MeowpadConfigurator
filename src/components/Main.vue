@@ -42,4 +42,4 @@ const device = useDeviceStore()
   height: 100%;
   min-height: 80vh;
 }
-</style>@/store/store
+</style>

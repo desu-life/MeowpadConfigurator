@@ -12,7 +12,7 @@ pub enum KeyState {
 pub struct KeyRTStatus {
     pub adc_value: u16,
     pub linear_value: u16,
-    pub press_percentage: u8,
+    pub press_percentage: f32,
     pub key_state: KeyState,
 }
 
@@ -26,7 +26,7 @@ pub struct KeyHallConfig {
 #[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default)]
 pub struct DeviceStatus {
     pub key: bool,
-    pub light: bool,
+    pub light: Option<bool>,
     pub hall: bool,
     pub enabled: bool,
 }

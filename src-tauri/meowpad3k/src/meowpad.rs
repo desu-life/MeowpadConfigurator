@@ -72,7 +72,7 @@ impl<D: Device> Meowpad<D> {
         if packet.id == PacketID::Ok as u8 {
             Ok(DeviceStatus {
                 key: packet.data[0] != 0,
-                light: packet.data[1] != 0,
+                light: Some(packet.data[1] != 0),
                 hall: packet.data[2] != 0,
                 enabled: packet.data[3] != 0,
             })
@@ -92,7 +92,7 @@ impl<D: Device> Meowpad<D> {
             for key in keys.iter_mut() {
                 key.adc_value = cur.read_u16::<BigEndian>()?;
                 key.linear_value = cur.read_u16::<BigEndian>()?;
-                key.press_percentage = cur.read_u16::<BigEndian>()? as u8;
+                key.press_percentage = cur.read_u16::<BigEndian>()? as f32;
                 key.key_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
             }
             let btn_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
@@ -195,7 +195,7 @@ impl<D: Device> Meowpad<D> {
     }
 
     pub fn clear_key_config(&mut self) -> Result<()> {
-        self.write(Packet::new(PacketID::ClearLightConfig, []))?;
+        self.write(Packet::new(PacketID::ClearKeyConfig, []))?;
         let packet = self.read()?;
         if packet.id == PacketID::Ok as u8 {
             Ok(())
@@ -207,7 +207,7 @@ impl<D: Device> Meowpad<D> {
     }
     
     pub fn clear_light_config(&mut self) -> Result<()> {
-        self.write(Packet::new(PacketID::ClearKeyConfig, []))?;
+        self.write(Packet::new(PacketID::ClearLightConfig, []))?;
         let packet = self.read()?;
         if packet.id == PacketID::Ok as u8 {
             Ok(())
