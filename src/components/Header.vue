@@ -125,16 +125,18 @@ async function sync_config_raw() {
 function exit_developer_mode() {
   store.developer_mode = false
   device.connected = false
-  store.status = undefined
-  store.status_str = t("device_disconnected")
+  emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
 }
 
 function exit_iap_mode() {
   store.iap_connected = false
-  store.status = undefined
-  store.status_str = t("device_disconnected")
+  emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
 }
 
+/**
+ * Enters developer mode. A warning dialog will be shown, and the user must click
+ * "confirm" to enter developer mode.
+ */
 function developer_mode() {
   dialog.warning({
     title: t('warning'),
@@ -148,37 +150,27 @@ function developer_mode() {
   })
 }
 
-async function enter_iap() {
+
+async function device_update() {
+  emitter.emit('header-loading', { str: t('connecting') })
+
   try {
     await api.connect_iap()
     // 不管怎么样总之是连上了
     store.iap_connected = true
-    store.status = "warning"
-    store.status_str = t('iap_connected')
+    emitter.emit('header-msg-update', { status: "warning", str: t('iap_connected') })
+    return
   } catch (e) {
     store.iap_connected = false
-    store.status = "error"
-    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
-    console.error(e)
   }
-}
 
-
-async function device_update() {
-  store.loading = true
-  store.status = "warning"
-  store.status_str = t('connecting')
   try {
     if (!await device.try_connect()) {
-      store.status = "error"
-      store.status_str = t('connection_broke', { e: t('device_not_found') })
-      store.loading = false
+      emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: t('device_not_found') }) })
       return
     }
     if (!device.is_4k()) {
-      store.status = "error"
-      store.status_str = t('device_not_support')
-      store.loading = false
+      emitter.emit('header-msg-update', { status: "error", str: t('device_not_support') })
       return
     }
     dialog.warning({
@@ -190,19 +182,22 @@ async function device_update() {
       onPositiveClick: async () => {
         await api4k.erase_firmware()
         setTimeout(async () => {
-          await enter_iap()
-          store.loading = false
+          try {
+            await api.connect_iap()
+            // 不管怎么样总之是连上了
+            store.iap_connected = true
+            emitter.emit('header-msg-update', { status: "warning", str: t('iap_connected') })
+          } catch (e) {
+            emitter.emit('connection-broke', {e: e as IError})
+          }
         }, 1000);
       },
       onNegativeClick: () => {
-        store.loading = false
-        store.status = undefined
-        store.status_str = t("device_disconnected")
+        emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
       },
     })
   } catch (e) {
-    await enter_iap()
-    store.loading = false
+    emitter.emit('connection-broke', {e: e as IError})
   }
 }
 
@@ -218,14 +213,9 @@ async function debug() {
 async function erase_firmware() {
   try {
     await api4k.erase_firmware()
-    device.connected = false
-    store.status = undefined
-    store.status_str = t("device_disconnected")
+    emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
   } catch (e) {
-    device.connected = false
-    store.status = "error"
-    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
-    console.error(e)
+    emitter.emit('connection-broke', {e: e as IError})
   }
 }
 
@@ -233,14 +223,9 @@ async function clear_config() {
   try {
     await api3k.clear_config()
     await api3k.reset_device()
-    device.connected = false
-    store.status = undefined
-    store.status_str = t("device_disconnected")
+    emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
   } catch (e) {
-    device.connected = false
-    store.status = "error"
-    store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
-    console.error(e)
+    emitter.emit('connection-broke', {e: e as IError})
   }
 }
 

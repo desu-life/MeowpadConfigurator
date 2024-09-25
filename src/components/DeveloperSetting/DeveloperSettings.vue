@@ -45,7 +45,3 @@ async function check_raw_config(value: string): Promise<void> {
         <IAP></IAP>
       </div>
 </template>
-
-<style lang="scss">
-
-</style>@/store/store

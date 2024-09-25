@@ -26,16 +26,21 @@ pub fn connect_iap(iap_device: State<'_, Mutex<Option<IAP>>>) -> Result<()> {
     }
 }
 
+fn check_firmware(data: &[u8]) -> bool {
+    if data.len() > 512 && data[52] == 0x73 && data[53] == 0x00 && data[54] == 0x10 && data[55] == 0x00 {
+        return true;
+    }
+    false
+}
+    
+
 #[tauri::command]
 pub fn iap_start(iap_device: State<'_, Mutex<Option<IAP>>>, data: Vec<u8>) -> Result<usize> {
+    if !check_firmware(&data) {
+        return Ok(0);
+    }
     let mut _iap = iap_device.lock().unwrap();
     let iap = _iap.as_mut().ok_or(Error::DeviceDisconnected)?;
-    // unsafe {
-    //     FIRMWARE_DATA = Some(data);
-    //     let data_ref = FIRMWARE_DATA.as_deref().unwrap();
-    //     let len = iap.start_program(data_ref)?;
-    //     Ok(len)
-    // }
     let len = iap.start_program(data)?;
     Ok(len)
 }

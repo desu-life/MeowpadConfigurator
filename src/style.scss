@@ -20,6 +20,7 @@
   --vt-c-white-transparent: #f1f1f160;
 
   --vt-c-black: rgb(16, 16, 20);
+  --vt-c-black-not-so-soft: rgb(26, 26, 26);
   --vt-c-black-pure: #000000;
   --vt-c-black-soft: #242424;
   --vt-c-black-mute: #2f2f2f;
@@ -93,6 +94,7 @@
 /* semantic color variables for this project */
 :root {
   --color-background: var(--vt-c-black);
+  --color-background-l2: var(--vt-c-black-not-so-soft);
   --color-background-soft: var(--vt-c-black-soft);
   --color-background-mute: var(--vt-c-black-mute);
   --color-background-transparent: var(--vt-c-black-transparent);

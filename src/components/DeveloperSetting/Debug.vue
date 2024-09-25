@@ -7,6 +7,7 @@ import { useDeviceStore } from '@/store/device';
 import { getErrorMsg } from '@/utils';
 import { DataTableColumns } from 'naive-ui';
 import { useI18n } from "vue-i18n";
+import emitter from '@/mitt';
 
 const store = useStore()
 const device = useDeviceStore()
@@ -50,13 +51,10 @@ onMounted(() => {
         btn_state.value = v.btn;
       }
     } catch (e) {
-      console.log(e)
-      device.connected = false
-      store.status = "error"
-      store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
+      emitter.emit('connection-broke', {e: e as IError})
       store.debug_mode = false
     }
-  }, 50)
+  }, 100)
 
   onUnmounted(() => {
     clearInterval(interval)

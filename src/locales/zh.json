@@ -133,7 +133,7 @@
   "press_percentage": "按下百分比",
   "drag_file": "点击或者拖动固件文件到该区域",
   "upload_firmware_success": "上传固件成功，已重启设备",
-  "firmware-file-error": "固件文件异常",
+  "firmware-file-error": "固件文件不匹配，请检查",
   "unknown_device": "不支持此设备",
   "enable_light": "灯光状态",
   "clear_config": "重置设备",

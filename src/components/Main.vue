@@ -29,6 +29,7 @@ emitter.on('connection-broke', async (event: {e: IError}) => {
   device.raw_config = undefined
   device.key_config = undefined
   device.light_config = undefined
+  store.iap_connected = false
 })
 
 

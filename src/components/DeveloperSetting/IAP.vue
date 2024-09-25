@@ -9,6 +9,7 @@ import { useI18n } from "vue-i18n";
 import * as api from '@/apis/api'
 import type { UploadFileInfo } from 'naive-ui'
 import { IError } from '@/apis'
+import emitter from "@/mitt";
 
 const { t } = useI18n();
 const store = useStore()
@@ -40,19 +41,28 @@ const uploadFirmware = async ({
     if (file.file) {
       downloading.value = true;
 
-      if (file.file.size > 131072 || file.file.size < 32768) {
-        message.error(t('firmware-file-error'))
-        onError()
-        store.iap_connected = false
-        store.status = undefined
-        store.status_str = t("device_disconnected")
-        file_list.value = []
-        return
-      }
+      // if (file.file.size > 131072 || file.file.size < 32768) {
+      //   message.error(t('firmware-file-error'))
+      //   onError()
+      //   store.iap_connected = false
+      //   store.status = undefined
+      //   store.status_str = t("device_disconnected")
+      //   file_list.value = []
+      //   return
+      // }
 
       var buffer = await file.file.arrayBuffer()
       var arr = Array.from(new Uint8Array(buffer))
       var file_length = await api.iap_start(arr)
+      if (file_length <= 512) {
+        message.error(t('firmware-file-error'))
+        onError()
+        // store.iap_connected = false
+        // store.status = undefined
+        // store.status_str = t("device_disconnected")
+        file_list.value = []
+        return
+      }
       const unlisten = await listen('iap_process', (event: any) => {
         var process = event.payload[0];
         var state = event.payload[1];
@@ -64,18 +74,13 @@ const uploadFirmware = async ({
       file_list.value = []
       message.info(t('upload_firmware_success'))
       store.iap_connected = false
-      store.status = undefined
-      store.status_str = t("device_disconnected")
+      emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
     } else {
       onError()
     }
   } catch (e) {
-    const es = e as IError
-    console.log(es)
     onError()
-    store.iap_connected = false
-    store.status = undefined
-    store.status_str = t("device_disconnected")
+    emitter.emit('connection-broke', {e: e as IError})
     file_list.value = []
   } finally {
     downloading.value = false;
@@ -99,7 +104,3 @@ const uploadFirmware = async ({
         </n-upload-dragger>
     </n-upload>
 </template>
-
-<style lang="scss">
-
-</style>@/store/store

@@ -59,7 +59,7 @@ const { t } = useI18n();
 
 .key {
   display: flex;
-  background-color: var(--color-background);
+  background-color: var(--color-background-l2);
   border-radius: 6px;
   width: calc(var(--unit-width) * var(--default-key-width) - (var(--default-key-margin) * 2));
   height: calc(var(--unit-height) * var(--default-key-height) - (var(--default-key-margin) * 2));

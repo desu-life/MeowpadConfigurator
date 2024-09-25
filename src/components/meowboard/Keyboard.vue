@@ -590,7 +590,7 @@ function formatPercentTooltip(percentage: number) {
   </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .temp-test {
   display: flex;
   flex-direction: row;
