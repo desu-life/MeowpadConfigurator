@@ -30,11 +30,12 @@ import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
 import { IKeyboard, IKeyConfigBoard } from "@/apis/meowboard/config";
 import emitter from "@/mitt";
-import { getErrorMsg } from "@/utils";
+import { getErrorMsg, most } from "@/utils";
 import { useI18n } from "vue-i18n";
 import { appWindow, LogicalSize } from "@tauri-apps/api/window";
 import { useKeyboard } from "@/store/keyboard";
 import { Toggle } from "@/interface";
+import { storeToRefs } from "pinia";
 
 const message = useMessage()
 const dialog = useDialog()
@@ -44,6 +45,18 @@ const kb = useKeyboard()
 const device = useDeviceStore()
 
 const keyconfig = ref<IKeyConfigBoard | null>(null)
+
+let default_height = ref(55)
+let default_width = ref(55)
+let default_margin = ref(2)
+let default_font_size = ref(15)
+
+let keymapStyle = ref({
+  "--default-key-height": default_height.value + "px",
+  "--default-key-width": default_width.value + "px",
+  "--default-key-margin": default_margin.value + "px",
+  "--default-key-font-size": default_font_size.value + "px",
+})
 
 const HallFilterSel = [
   {
@@ -238,18 +251,10 @@ function onKeyStrModify(event: { rawIndex: number; newValue: number }) {
   kb.showkeys[60] = 0
 
   if (keyLayer.value == 0) {
-    device.device_config!.normal_layer[event.rawIndex] = event.newValue
+    device.device_config!.normal_layer[event.rawIndex].c = event.newValue
   } else if (keyLayer.value == 1) {
-    device.device_config!.fn_layer[event.rawIndex] = event.newValue
+    device.device_config!.fn_layer[event.rawIndex].c = event.newValue
   }
-}
-
-emitter.on('kb-init', onKbInit);
-
-function onKbInit() {
-  onLayerUpdate()
-  kb.selectAllKey(false)
-  keyconfig.value = null
 }
 
 function onLayerUpdate() {
@@ -277,22 +282,16 @@ function onLayerChange() {
 function setLayer(layer) {
   if (layer == 0) {
     for (let i = 0; i < 64; i++) {
-      kb.showkeys[i] = device.device_config!.normal_layer[i]
+      kb.showkeys[i] = device.device_config!.normal_layer[i].c
     }
   } else {
     for (let i = 0; i < 64; i++) {
-      kb.showkeys[i] = device.device_config!.fn_layer[i]
+      kb.showkeys[i] = device.device_config!.fn_layer[i].c
     }
   }
 }
 
-function most(arr) {
-  let obj = arr.reduce((p, n) => (
-    p[n]++ || (p[n] = 1),
-    (p.max = p.max >= p[n] ? p.max : p[n]),
-    (p.key = p.max > p[n] ? p.key : n), p), {})
-  return obj.key
-}
+
 
 let select_indexs = ref<number[]>([])
 
@@ -361,6 +360,84 @@ function formatPercentTooltip(percentage: number) {
 }
 
 
+emitter.on('get-default-config', async () => {
+  emitter.emit('loading')
+  if (device.is_pure()) {
+    try {
+      device.device_config = await apib.get_default_key_config()
+      device.extract_key_config_pure64()
+
+      onLayerUpdate()
+      kb.selectAllKey(false)
+      keyconfig.value = null
+
+      emitter.emit('header-msg-update', { status: "success", str: t('reset_success') })
+      emitter.emit('sync-btn-highlight', { status: true })
+    } catch (e) {
+      emitter.emit('connection-broke', {e: e as IError})
+    }
+  }
+  emitter.emit('loaded')
+})
+
+emitter.on('save-config', async () => {
+  emitter.emit('loading')
+  if (device.is_pure()) {
+    try {
+      await apib.save_key_config()
+      emitter.emit('header-msg-update', { status: "success", str: t('sync_success') })
+    } catch (e) {
+      emitter.emit('connection-broke', {e: e as IError})
+    }
+  }
+  emitter.emit('loaded')
+})
+
+
+emitter.on('sync-config', async () => {
+  emitter.emit('header-loading', { str: t('syncing_config') })
+  if (device.is_pure()) {
+    const { device_config } = storeToRefs(device)
+    const cfg = device_config;
+
+    try {
+      for (let i = 0; i < cfg.value!.keys.length; i++) {
+        if (cfg.value!.keys[i].dead_zone < 3) {
+          store.need_check = true
+        }
+        if (cfg.value!.keys[i].press_percentage < 2) {
+          store.need_check = true
+        }
+        if (cfg.value!.keys[i].release_percentage < 2) {
+          store.need_check = true
+        }
+      }
+
+      device.store_key_config_pure64()
+      await apib.set_key_config(device.device_config!)
+      device.extract_key_config_pure64()
+
+      if (store.need_check) {
+        emitter.emit('header-msg-update', { status: "warning", str: t('applied_config') })
+        message.warning(t('check_config_msg'))
+      } else {
+        emitter.emit('save-config')
+      }
+
+      onLayerUpdate()
+      kb.selectAllKey(false)
+      keyconfig.value = null
+    } catch (e) {
+      emitter.emit('connection-broke', {e: e as IError})
+      emitter.emit('header-msg-update', { status: "error", str: t('sync_error', { e: getErrorMsg(t, e as IError) }) })
+    }
+  }
+  emitter.emit('sync-btn-highlight', { status: false })
+  emitter.emit('loaded')
+})
+
+
+
 </script>
 
 <template>
@@ -372,117 +449,113 @@ function formatPercentTooltip(percentage: number) {
     </div>
   </Teleport>
 
-  <div class="main-keyboard">
+  <div class="main-pure-config">
     <!-- 拖拽的键 -->
+    <div class="top-bar">
+      <n-tabs type="line" v-model:value="kb.mode" :on-update:value="onModeChange">
+        <n-tab :name="0">
+          霍尔
+        </n-tab>
+        <n-tab :name="1">
+          按键
+        </n-tab>
+        <n-tab :name="2">
+          校准
+        </n-tab>
+        <n-tab :name="3">
+          调试
+        </n-tab>
+        <template #suffix>
+          <n-button-group v-if="kb.isSelectAble()">
+            <n-button @click="() => kb.selectAllKey(true)">
+              全选
+            </n-button>
+            <n-button @click="() => kb.selectAllKey(false)">
+              取消全选
+            </n-button>
+            <n-button @click="() => kb.selectReverse()">
+              反选
+            </n-button>
+          </n-button-group>
+          <n-input-number v-if="kb.mode === 3 && keyShowMode === 1" style="width: 100px;" v-model:value="totalDistance"
+            :precision="2" :show-button="false">
+            <template #suffix>mm</template>
+          </n-input-number>
+  
+          <div style="padding-left: 5px;">
+  
+            <n-radio-group v-if="kb.mode === 3" v-model:value="keyShowMode">
+              <n-radio-button v-for="s in DebugSel" :key="s.value" :value="s.value" :label="s.label" />
+            </n-radio-group>
+  
+            <n-button v-if="kb.mode === 2" @click="() => selectKeyCalibrate()">
+              校准选中的键
+            </n-button>
+            <n-button v-if="kb.mode === 1" @click="onLayerChange">
+              切换Fn层
+            </n-button>
+          </div>
+        </template>
+      </n-tabs>
+    </div>
 
-    <n-tabs type="line" v-model:value="kb.mode" :on-update:value="onModeChange">
-      <n-tab :name="0">
-        霍尔
-      </n-tab>
-      <n-tab :name="1">
-        按键
-      </n-tab>
-      <n-tab :name="2">
-        校准
-      </n-tab>
-      <n-tab :name="3">
-        调试
-      </n-tab>
-      <template #suffix>
-        <n-button-group v-if="kb.isSelectAble()">
-          <n-button @click="() => kb.selectAllKey(true)">
-            全选
-          </n-button>
-          <n-button @click="() => kb.selectAllKey(false)">
-            取消全选
-          </n-button>
-          <n-button @click="() => kb.selectReverse()">
-            反选
-          </n-button>
-        </n-button-group>
-        <n-input-number v-if="kb.mode === 3 && keyShowMode === 1" style="width: 100px;" v-model:value="totalDistance"
-          :precision="2" :show-button="false">
-          <template #suffix>mm</template>
-        </n-input-number>
-
-        <div style="padding-left: 5px;">
-
-          <n-radio-group v-if="kb.mode === 3" v-model:value="keyShowMode">
-            <n-radio-button v-for="s in DebugSel" :key="s.value" :value="s.value" :label="s.label" />
-          </n-radio-group>
-
-          <n-button v-if="kb.mode === 2" @click="() => selectKeyCalibrate()">
-            校准选中的键
-          </n-button>
-          <n-button v-if="kb.mode === 1" @click="onLayerChange">
-            切换Fn层
-          </n-button>
-        </div>
-      </template>
-    </n-tabs>
-
-    <div class="keyboard-frame" v-if="device.device_config != null">
-      <div class="keyboard">
-        <div v-for="(keyIndex, lineIndex) in keyIndexes" :key="lineIndex" class="keyLine">
-          <div v-for="i in keyIndex" :key="i" class="keyIndividual">
-            <KeyFrame :width="(keyWidth[i] * 64).toString() + 'px'">
-
-              <KeyHall v-if="kb.mode === 0" :keyStr="kb.getKeyStr(i)" v-model:isSelected="kb.keyVarsRefs[i].isSelected"
-                v-model:press_percentage="device.device_config.keys[i].press_percentage"
-                v-model:release_percentage="device.device_config.keys[i].release_percentage"
-                v-model:dead_zone="device.device_config.keys[i].dead_zone"
-                v-model:release_dead_zone="device.device_config.keys[i].release_dead_zone"
-                v-model:rt_enabled="device.device_config.keys[i].rt_enabled" />
-
-              <KeyModify v-if="kb.mode === 1" :keyStr="kb.getKeyStr(i)" :keyStrIndex="i"
-                v-model:keyDragged="keyModifyDraggedKey" />
-
-              <KeyCalibrate v-if="kb.mode === 2" :keyStr="kb.getKeyStr(i)"
-                v-model:isSelected="kb.keyVarsRefs[i].isSelected"
-                v-model:isCalibrated="kb.keyCalibrateRefs[i].isCalibrated"
-                v-model:isCalibrating="kb.keyCalibrateRefs[i].isCalibrating" />
-
-              <KeyDebug v-if="kb.mode === 3" :keyStr="kb.getKeyStr(i)" v-model:hallValue="kb.keyDebugRefs[i].hallValue"
-                v-model:hallValuePercentage="kb.keyDebugRefs[i].hallValuePercentage"
-                v-model:isPressed="kb.keyDebugRefs[i].isPressed" v-model:keyShowMode="keyShowMode"
-                v-model:totalDistance="totalDistance" />
-            </KeyFrame>
+    <div class="main-keyboard">
+      <div class="keyboard-frame" v-if="device.device_config != null">
+        <div class="keyboard" :style="keymapStyle">
+          <div v-for="(keyIndex, lineIndex) in keyIndexes" :key="lineIndex" class="keyLine">
+            <div v-for="i in keyIndex" :key="i">
+              <KeyFrame :unit-width="keyWidth[i]">
+                <KeyHall v-if="kb.mode === 0" :keyStr="kb.getKeyStr(i)" v-model:isSelected="kb.keyVarsRefs[i].isSelected"
+                  v-model:press_percentage="device.device_config.keys[i].press_percentage"
+                  v-model:release_percentage="device.device_config.keys[i].release_percentage"
+                  v-model:dead_zone="device.device_config.keys[i].dead_zone"
+                  v-model:release_dead_zone="device.device_config.keys[i].release_dead_zone"
+                  v-model:rt_enabled="device.device_config.keys[i].rt_enabled" />
+  
+                <KeyModify v-if="kb.mode === 1" :keyStr="kb.getKeyStr(i)" :keyStrIndex="i"
+                  v-model:keyDragged="keyModifyDraggedKey" />
+  
+                <KeyCalibrate v-if="kb.mode === 2" :keyStr="kb.getKeyStr(i)"
+                  v-model:isSelected="kb.keyVarsRefs[i].isSelected"
+                  v-model:isCalibrated="kb.keyCalibrateRefs[i].isCalibrated"
+                  v-model:isCalibrating="kb.keyCalibrateRefs[i].isCalibrating" />
+  
+                <KeyDebug v-if="kb.mode === 3" :keyStr="kb.getKeyStr(i)" v-model:hallValue="kb.keyDebugRefs[i].hallValue"
+                  v-model:hallValuePercentage="kb.keyDebugRefs[i].hallValuePercentage"
+                  v-model:isPressed="kb.keyDebugRefs[i].isPressed" v-model:keyShowMode="keyShowMode"
+                  v-model:totalDistance="totalDistance" />
+              </KeyFrame>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="keyboard-config">
-
-
+    <div class="bottom-config">
       <template v-if="kb.mode === 1">
-        <n-card :bordered="false" class="keyboard-config-card">
+        <n-card :bordered="false" class="key-modify-config-card">
           <template #action>
             将按键拖拽至上方
           </template>
           <n-scrollbar class="key-modify-config-scrollbar">
-            <div class="key-modify-config">
-              <div v-for="(v, i) in mapping" :key="i">
-                <KeyFrame class="key-modify-config-key" :width="(1 * 64).toString() + 'px'">
-                  <KeyModifyOption :keyStr="v" :KeyValue="parseInt(i as any)"
-                    v-model:keyDragged="keyModifyDraggedKey" />
-                </KeyFrame>
-              </div>
+            <div class="key-modify-config" :style="keymapStyle">
+              <KeyFrame class="key-modify-config-key" v-for="(v, i) in mapping" :key="i">
+                <KeyModifyOption :keyStr="v" :KeyValue="parseInt(i as any)"
+                  v-model:keyDragged="keyModifyDraggedKey" />
+              </KeyFrame>
             </div>
           </n-scrollbar>
         </n-card>
       </template>
 
       <div v-if="device.device_config != null && kb.mode === 0">
-        <n-card :bordered="false" class="keyboard-config-card">
-
-
-          <n-grid :cols="24" :x-gap="18" class="device-config">
+        <n-card :bordered="false" class="keyboard-config-card" content-class="keyboard-config-card-content">
+          <n-grid :cols="24" :x-gap="18">
             <n-gi :span="9">
-              <n-card :bordered="false" class="device-config-card">
+              <n-card :bordered="false" class="device-config-card" content-class="device-config-card-content">
                 <div v-if="keyconfig != null" class="device-config-key-config">
 
-                  <n-form-item label-placement="left" label="死区" path="dead_zone">
+                  <n-form-item label-placement="left" label="死区" path="dead_zone" :show-feedback="false">
                     <n-input-number v-model:value="keyconfig.dead_zone" :precision="0" :step="1" :min="0" :max="100" :on-update:value="v => onKeyDUpdate(v)">
                       <template #suffix>
                         %
@@ -491,7 +564,7 @@ function formatPercentTooltip(percentage: number) {
                     <!-- <n-slider v-model:value="keyconfig.dead_zone" :step="0.5" :min="0" :max="100"
                       :format-tooltip="formatPercentTooltip" :on-update:value="v => onKeyDUpdate(v)" /> -->
                   </n-form-item>
-                  <n-form-item label-placement="left" label="按下" path="press_percentage">
+                  <n-form-item label-placement="left" label="按下" path="press_percentage" :show-feedback="false">
                     <n-input-number v-model:value="keyconfig.press_percentage" :precision="0" :step="1" :min="1" :max="100" :on-update:value="v => onKeyPUpdate(v)">
                       <template #suffix>
                         %
@@ -500,7 +573,7 @@ function formatPercentTooltip(percentage: number) {
                     <!-- <n-slider v-model:value="keyconfig.press_percentage" :step="0.5" :min="0.5" :max="100"
                       :format-tooltip="formatPercentTooltip" :on-update:value="v => onKeyPUpdate(v)" /> -->
                   </n-form-item>
-                  <n-form-item label-placement="left" label="抬起" path="release_percentage">
+                  <n-form-item label-placement="left" label="抬起" path="release_percentage" :show-feedback="false">
                     <n-input-number v-model:value="keyconfig.release_percentage" :precision="0" :step="1" :min="1" :max="100" :on-update:value="v => onKeyRUpdate(v)">
                       <template #suffix>
                         %
@@ -518,7 +591,7 @@ function formatPercentTooltip(percentage: number) {
             </n-gi>
             <n-gi :span="15">
               <n-grid :cols="24" :x-gap="9">
-                <n-form-item-gi :span="12" path="jitters_elimination_time">
+                <n-form-item-gi :span="12" path="jitters_elimination_time" :show-feedback="false" class="single-key-config">
                   <n-input-number v-model:value="device.jitters_elimination_time" placeholder="Input" :min="0" :max="50"
                     :step="0.5">
                     <template #suffix>
@@ -538,7 +611,7 @@ function formatPercentTooltip(percentage: number) {
                     </n-tooltip>
                   </template>
                 </n-form-item-gi>
-                <n-form-item-gi :span="12" path="hall_filter">
+                <n-form-item-gi :span="12" path="hall_filter" :show-feedback="false">
                   <n-select v-model:value="device.hall_filter" :options="HallFilterSel" />
                   <template #label>
                     <n-tooltip trigger="hover" :delay="200">
@@ -553,7 +626,7 @@ function formatPercentTooltip(percentage: number) {
                     </n-tooltip>
                   </template>
                 </n-form-item-gi>
-                <n-form-item-gi :span="12" label="灯光亮度" path="max_brightness">
+                <n-form-item-gi :span="12" label="灯光亮度" path="max_brightness" :show-feedback="false">
                   <n-input-number v-model:value="device.max_brightness" placeholder="Input" :min="0" :max="100"
                     :step="1">
                     <template #suffix>
@@ -562,7 +635,7 @@ function formatPercentTooltip(percentage: number) {
                   </n-input-number>
                 </n-form-item-gi>
 
-                <n-form-item-gi :span="12" path="fangwuchu">
+                <n-form-item-gi :span="12" path="fangwuchu" :show-feedback="false">
                   <n-select v-model:value="device.fangwuchu" :options="ToggleSel" />
                   <template #label>
                     <n-tooltip trigger="hover" :delay="200">
@@ -590,15 +663,9 @@ function formatPercentTooltip(percentage: number) {
   </div>
 </template>
 
-<style lang="scss" scoped>
-.temp-test {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-}
 
+
+<style lang="scss" scoped>
 .dragging-key {
   position: absolute;
   pointer-events: none;
@@ -608,66 +675,47 @@ function formatPercentTooltip(percentage: number) {
   transform: rotate(15deg);
 }
 
-.key-modify-config-scrollbar {
-  max-height: 250px;
-  max-width: 905px;
-}
-
-.device-config {
-  max-width: 905px;
-}
-
 .keyboard-config-card {
-  background-color: #242424;
+  --item-padding: 16px;
+
+  background-color: var(--color-background-soft);
   border-radius: 8px;
   width: fit-content;
 
-  .n-card__content {
-    padding-bottom: 0px !important;
+  .single-key-config {
+    padding-bottom: var(--item-padding);
+  }
+  
+  .device-config-card {
+    background-color: var(--color-background-soft);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    height: 100%;
+  
+    .device-config-key-config {
+      width: 90%;
+    }
   }
 }
 
-.device-config-card .n-form-item .n-form-item-feedback-wrapper {
-  min-height: 3px !important;
-}
-
-.device-config-card {
-  background-color: #242424;
+.key-modify-config-card {
+  background-color: var(--color-background-soft);
   border-radius: 8px;
-  border: 1px solid #363636;
-  height: 85%;
+  width: fit-content;
 
-
-
-  .n-card__content {
-    padding: 0px !important;
+  .key-modify-config {
     display: flex;
-    align-items: center;
-    justify-content: center;
-
-  }
-
-  .device-config-key-config {
-    width: 90%;
+    flex-wrap: wrap;
+    overflow-wrap: break-word;
   }
 }
 
-.keyboard-config {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.key-modify-config {
-  display: flex;
-  flex-wrap: wrap;
-  overflow-wrap: break-word;
-}
 
 .keyboard-frame {
-  background-color: #242424;
-  padding: 8px 8px 24px;
-  border: 8px solid #363636;
+  background-color: var(--color-background-soft);
+  padding: 8px 8px;
+  border: 8px solid var(--color-border);
   border-radius: 16px;
   width: fit-content;
   height: fit-content;
@@ -675,29 +723,54 @@ function formatPercentTooltip(percentage: number) {
   .keyboard {
     display: flex;
     flex-direction: column;
-    gap: 16px;
 
     .keyLine {
       display: flex;
       flex-direction: row;
-
-      .keyIndividual {
-        height: 48px;
-        //width: var(--key-width);
-      }
     }
   }
 }
+</style>
 
-$header-height: 56px;
-
-
-.main-keyboard {
-  position: fixed;
+<style lang="scss" scoped>
+// layout
+.main-pure-config {
   width: -webkit-fill-available;
   height: -webkit-fill-available;
   display: grid;
   justify-content: center;
-  margin: 20px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-keyboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-config {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+
+<style lang="scss">
+// 这个不能scoped
+.key-modify-config-scrollbar {
+  max-height: 150px;
+  max-width: 905px;
+}
+
+.device-config-card-content {
+  padding: 0px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

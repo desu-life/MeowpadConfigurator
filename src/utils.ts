@@ -7,6 +7,14 @@ function pad2(c) {
   return c.length == 1 ? "0" + c : "" + c;
 }
 
+export function most(arr) {
+  let obj = arr.reduce((p, n) => (
+    p[n]++ || (p[n] = 1),
+    (p.max = p.max >= p[n] ? p.max : p[n]),
+    (p.key = p.max > p[n] ? p.key : n), p), {})
+  return obj.key
+}
+
 export function getErrorMsg(t, e: IError): string {
   if (e.data) {
     return t(e.data);

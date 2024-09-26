@@ -1,4 +1,4 @@
-import { IDeviceInfo, IDeviceStatus } from "../apis";
+import { IDeviceInfo, IDeviceStatus, IHidDeviceInfo } from "../apis";
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { IKeyboard as IKB4K, ILighting as ILT4K } from "../apis/meowpad4k/config";
 import { IKeyboard as IKB3K, ILighting as ILT3K, LightingMode as LM3K } from "../apis/meowpad3k/config";
@@ -14,6 +14,7 @@ export const useDeviceStore = defineStore("device", () => {
   const connected = ref(false);
   const device_info = ref<IDeviceInfo | undefined>(undefined);
   const device_status = ref<IDeviceStatus | undefined>(undefined);
+  const device_hid_info = ref<IHidDeviceInfo | undefined>(undefined);
 
   const raw_config = ref<string | undefined>(undefined);
 
@@ -37,15 +38,15 @@ export const useDeviceStore = defineStore("device", () => {
   const hall_filter = ref<number>(0);
 
   function is_4k() {
-    return device_info.value?.name == 'Meowpad'
+    return device_hid_info.value?.device_name == 'Meowpad'
   }
 
   function is_3k() {
-    return device_info.value?.name == 'Meowpad SE v2'
+    return device_hid_info.value?.device_name == 'Meowpad SE v2'
   }
 
   function is_pure() {
-    return device_info.value?.name == 'Pure64'
+    return device_hid_info.value?.device_name == 'Pure64'
   }
 
   async function try_connect() {
@@ -117,7 +118,7 @@ export const useDeviceStore = defineStore("device", () => {
   function store_key_config_pure64() {
     let config = device_config as Ref<IKBB>;
     config.value!.jitters_elimination_time = Math.round(jitters_elimination_time.value * 8)
-    config.value!.continuous_report = continuous_report.value == Toggle.On ? true : false
+    config.value!.high_reportrate = enable_hs.value == Toggle.On ? true : false
     config.value!.hall_filter = hall_filter.value
     config.value!.max_brightness = Math.floor(max_brightness.value / 2)
 
@@ -133,7 +134,7 @@ export const useDeviceStore = defineStore("device", () => {
   function extract_key_config_pure64() {
     let config = device_config as Ref<IKBB>;
     jitters_elimination_time.value = config.value!.jitters_elimination_time / 8
-    continuous_report.value = config.value!.continuous_report == true ? Toggle.On : Toggle.Off
+    enable_hs.value = config.value!.high_reportrate == true ? Toggle.On : Toggle.Off
     hall_filter.value = config.value!.hall_filter
     max_brightness.value = Math.floor(config.value!.max_brightness * 2)
 
@@ -268,6 +269,7 @@ export const useDeviceStore = defineStore("device", () => {
 
 
   return {
+    device_hid_info,
     key_config,
     light_config,
     raw_config,

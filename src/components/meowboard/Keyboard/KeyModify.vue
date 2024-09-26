@@ -80,6 +80,8 @@ function onClick(event: MouseEvent) {
 
   background-color: transparent;
 
+  font-size: 14px;
+
   &:hover {
     background-color: rgba(249, 47, 47, 0.107);
   }

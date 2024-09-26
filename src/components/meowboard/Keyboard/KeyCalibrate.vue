@@ -33,9 +33,6 @@ function handleClick() {
         {{ keyStr }}
       </div>
     </div>
-    <!--    <div v-if="isActive()" class="percentage-frame">-->
-    <!--      <div class="percentage" :style="{height: hallValuePercentage.toString() + '%'}"></div>-->
-    <!--    </div>-->
     <n-icon-wrapper
         v-if=" isSelected "
         class="selected-icon"
@@ -66,6 +63,8 @@ function handleClick() {
 
   border-radius: inherit;
   cursor: pointer;
+
+  font-size: 14px;
 
   transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
 
@@ -104,7 +103,7 @@ function handleClick() {
     width: 5px;
     height: 40px;
 
-    border: 1px solid rgba(78, 78, 78, 0.2);
+    border: 1px solid var(--color-border);
 
     display: flex;
     flex-direction: column;
@@ -112,7 +111,7 @@ function handleClick() {
 
     .percentage {
       width: 5px;
-      background-color: rgba(255, 0, 0, 0.4);
+      background-color: var(--vt-c-red-darker);
     }
   }
 }

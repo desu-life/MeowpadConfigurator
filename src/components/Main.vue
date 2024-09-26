@@ -2,6 +2,7 @@
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
 import Settings4K from '@/components/meowpad4k/Settings.vue'
 import Settings3K from '@/components/meowpad3k/Settings.vue'
+import DeviceList from '@/components/DeviceList.vue'
 import Pure64 from '@/components/meowboard/Keyboard.vue'
 import DeveloperSettings from '@/components/DeveloperSetting/DeveloperSettings.vue'
 import { useI18n } from "vue-i18n";
@@ -13,44 +14,93 @@ import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
 import * as apib from '@/apis/meowboard/api'
 import { useDialog } from 'naive-ui'
-import { IError } from '@/apis';
-import { getErrorMsg } from '@/utils';
+import { IError, IHidDeviceInfo } from '@/apis';
+import { compareArray, getErrorMsg } from '@/utils';
+import { appWindow, LogicalSize } from '@tauri-apps/api/window';
 
 const { t } = useI18n();
 const dialog = useDialog()
 const store = useStore()
 const device = useDeviceStore()
 
-emitter.on('connection-broke', async (event: {e: IError}) => {
-  emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: getErrorMsg(t, event.e) }) })
-  console.error(event.e)
+emitter.on('refresh-device-list', async (event: { e: IError }) => {
+  if (store.refreshing_device_list) { return }
+  
+  store.refreshing_device_list = true
+
+  try {
+    store.device_list = await api.device_list();
+    console.table(store.device_list)
+
+    if (device.device_hid_info != undefined) {
+      let has_device = false
+
+      for (let i = 0; i < store.device_list.length; i++) {
+        if (store.device_list[i].product_id == device.device_hid_info.product_id && store.device_list[i].vendor_id == device.device_hid_info.vendor_id) {
+          if (compareArray(store.device_list[i].path, device.device_hid_info.path)) {
+            has_device = true
+          }
+        }
+      }
+
+      if (!has_device) {
+        emitter.emit('connection-broke', {
+          e: {
+            type: 'device_disconnected',
+            data: undefined
+          }
+        })
+      }
+    }
+  } finally {
+    store.refreshing_device_list = false
+  }
+})
+
+emitter.on('connection-broke', async (event: { e: IError | null }) => {
+  if (event.e != null) { 
+    emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: getErrorMsg(t, event.e) }) })
+    console.error(event.e)
+  }
   device.connected = false
+  device.device_hid_info = undefined;
   device.device_info = undefined
   device.raw_config = undefined
   device.key_config = undefined
   device.light_config = undefined
   store.iap_connected = false
+  store.developer_mode = false
+  appWindow.setSize(new LogicalSize(800, 600))
 })
 
 
-emitter.on('connect', async () => {
+emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
   emitter.emit('header-loading', { str: t('connecting') })
   try {
-    if (!await device.try_connect()) {
+    let device_hid_info = event.device;
+
+    if (!await api.connect_device(device_hid_info)) {
       emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: t('device_not_found') }) })
       return
     }
-    console.table(device.device_info)
 
-    let firmware_version = "";
-    if (device.is_4k()) firmware_version = await api4k.get_firmware_version()
-    else if (device.is_3k()) firmware_version = await api3k.get_firmware_version()
-    else if (device.is_pure()) firmware_version = await apib.get_firmware_version()
+    device.device_hid_info = device_hid_info;
 
-    if (firmware_version === "") {
+    let firmware_version = store.firmware_versions.get(device_hid_info.device_name);
+    if (firmware_version == undefined) {
       emitter.emit('header-msg-update', { status: "error", str: t('unknown_device') })
       return
     }
+
+    if (device.is_4k()) {
+      device.device_info = await api4k.get_device_info()
+    } else if (device.is_3k()) {
+      device.device_info = await api3k.get_device_info()
+    } else if (device.is_pure()) {
+      device.device_info = await apib.get_device_info()
+    }
+
+    console.table(device.device_info)
 
     if (device.device_info!.version != firmware_version) {
       store.need_update_firmware = true // 需要更新固件
@@ -91,7 +141,7 @@ emitter.on('connect', async () => {
         }
       }
     }
-    
+
     if (store.developer_mode) {
       if (device.is_4k()) {
         device.raw_config = await api4k.get_raw_config()
@@ -129,6 +179,10 @@ emitter.on('connect', async () => {
 
     device.connected = true
 
+    if (device.is_pure() && !store.developer_mode) {
+      appWindow.setSize(new LogicalSize(1200, 750))
+    }
+
     if (device.device_status!.hall == false) {
       dialog.warning({
         title: t('warning'),
@@ -141,9 +195,9 @@ emitter.on('connect', async () => {
         },
       })
     }
-    
+
   } catch (e) {
-    emitter.emit('connection-broke', {e: e as IError})
+    emitter.emit('connection-broke', { e: e as IError })
     console.error(e)
     return;
   }
@@ -154,28 +208,35 @@ emitter.on('connect', async () => {
 <template>
   <n-spin :show="store.loading" id="spin-cover">
     <div id="main">
-      <div v-if="store.developer_mode" class="debug">
+      <template v-if="store.developer_mode">
         <DeveloperSettings></DeveloperSettings>
-      </div>
-      
-      <div v-else-if="device.connected">
-        <div v-if="device.is_4k()">
+      </template>
+
+      <template v-else-if="device.connected">
+        <template v-if="device.is_4k()">
           <Settings4K></Settings4K>
-        </div>
-        <div v-else-if="device.is_3k()">
+        </template>
+        <template v-else-if="device.is_3k()">
           <Settings3K></Settings3K>
-        </div>
-        <div v-else-if="device.is_pure()">
+        </template>
+        <template v-else-if="device.is_pure()">
           <Pure64></Pure64>
-        </div>
-      </div>
-      
-      <div v-else-if="store.need_update_firmware">
+        </template>
+      </template>
+
+      <template v-else-if="store.need_update_firmware">
         <FirmwareUpdate></FirmwareUpdate>
-      </div>
-      
-      <n-empty :description="t('no_device')" size="huge" v-else>
-      </n-empty>
+      </template>
+
+      <template v-else>
+        <div v-if="store.device_list.length > 0">
+          <DeviceList></DeviceList>
+        </div>
+        <div v-else>
+          <n-empty :description="t('no_device')" size="huge"></n-empty>
+        </div>
+      </template>
+
     </div>
   </n-spin>
 

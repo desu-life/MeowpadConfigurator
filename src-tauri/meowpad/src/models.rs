@@ -1,6 +1,8 @@
 use num_derive::{FromPrimitive, ToPrimitive};
+use serde_repr::*;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Copy, Clone, Default, FromPrimitive, ToPrimitive)]
+#[derive(Serialize_repr, Deserialize_repr, Debug, Copy, Clone, Default, FromPrimitive, ToPrimitive)]
+#[repr(u8)]
 pub enum KeyState {
     #[default]
     Pressed,

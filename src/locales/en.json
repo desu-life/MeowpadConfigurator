@@ -1,5 +1,5 @@
 {
-  "connect": "Connect Device",
+  "connect": "Connect",
   "developer_mode": "Developer Mode",
   "no_device": "Please connect a device first",
   "device_disconnected": "Device Disconnected",
@@ -25,10 +25,10 @@
   "unconfirm": "Cancel",
   "enter_debug_mode": "Entered debug mode, disconnect the device to exit",
   "erase_firmware": "Erase Firmware",
-  "debug_mode": "Debug Mode",
-  "sync_config": "Sync Configuration",
-  "cali_device": "Calibrate Device",
-  "default_config": "Default",
+  "debug_mode": "Debug",
+  "sync_config": "Sync",
+  "cali_device": "Calibrate Keys",
+  "default_config": "Get Default Config",
   "recommend_config_help": "Automatically detect and apply recommended configuration?",
   "yes": "Yes",
   "no": "No",
@@ -123,5 +123,14 @@
   "adc_value": "ADC Value",
   "unknown_device": "This device is not supported",
   "update_warning": "An update to the configurator has been detected. Do you want to download it?",
-  "firmware-file-error": "Firmware files do not match, please check"
+  "firmware-file-error": "Firmware files do not match, please check",
+  "Meowpad": "Meowpad V2",
+  "Meowpad SE v2": "Meowpad SE v2",
+  "Pure64": "Pure64",
+  "device_update_warn": "Device connected, clear existing firmware and prepare to update?",
+  "device_continue_upgrade": "Continue to upgrade",
+  "device_update": "Device upgrade",
+  "select-device": "Please select a device to connect to",
+  "lighting_mode_sleep": "Lighting Mode Sleep",
+  "enable_hs": "High-speed USB (8000Hz)"
 }

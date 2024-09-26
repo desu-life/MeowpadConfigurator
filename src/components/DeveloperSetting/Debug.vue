@@ -16,6 +16,17 @@ const { t } = useI18n();
 const debug_data = ref<IKeyRTStatus[]>()
 const btn_state = ref<KeyState>()
 
+function key_state_to_str(state: KeyState) {
+  switch (state) {
+    case KeyState.Pressed:
+      return t('pressed')
+    case KeyState.Released:
+      return t('released')
+    case KeyState.Calibrating:
+      return t('calibrating')
+  }
+}
+
 
 const columns: DataTableColumns<IKeyRTStatus> = [
   {
@@ -33,6 +44,9 @@ const columns: DataTableColumns<IKeyRTStatus> = [
   {
     title: t('key_state'),
     key: 'key_state',
+    render(h) {
+      return key_state_to_str(h.key_state)
+    },
   }
 ]
 
@@ -54,7 +68,7 @@ onMounted(() => {
       emitter.emit('connection-broke', {e: e as IError})
       store.debug_mode = false
     }
-  }, 100)
+  }, 50)
 
   onUnmounted(() => {
     clearInterval(interval)
@@ -72,7 +86,7 @@ onMounted(() => {
     />
   </div>
   <div v-if="btn_state" class="side-btn">
-    侧键状态：{{ btn_state }}
+    侧键状态：{{ key_state_to_str(btn_state) }}
   </div>
 </template>
 

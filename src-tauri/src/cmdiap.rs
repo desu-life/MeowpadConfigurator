@@ -1,25 +1,54 @@
 use std::{sync::Mutex, thread, time::Duration};
 
-use crate::error::{self, Error, Result};
+use crate::{device::DeviceInfoExtened, error::{self, Error, Result}, MEOWPAD_DEVICE_NAME};
 use hid_iap::iap::{IAPState, IAP};
 use hidapi::HidApi;
 use log::*;
 use tauri::{Manager, State};
 
-#[tauri::command]
-pub fn connect_iap(iap_device: State<'_, Mutex<Option<IAP>>>) -> Result<()> {
+
+pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
+    // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
     const PID: u16 = 0xFE08;
+
+    // 迭代设备列表，查找符合条件的设备
+    let devices = api.device_list();
+    devices.filter_map(|d| {
+        // 过滤设备
+        if !(d.vendor_id() == VID && d.product_id() == PID) {
+            return None;
+        }
+
+        // 连接设备
+        Some(DeviceInfoExtened {
+            device_name: MEOWPAD_DEVICE_NAME.to_owned(),
+            firmware_version: "IAP".to_owned(),
+            serial_number: None,
+            inner: d,
+        })
+    }).collect()
+}
+
+
+
+#[tauri::command]
+pub fn connect_iap(iap_device: State<'_, Mutex<Option<IAP>>>) -> Result<()> {
     let api = HidApi::new().unwrap();
 
-    match api.open(VID, PID) {
-        Ok(device) => {
-            info!("固件更新");
+    match find_devices(&api)
+        .first()
+        .and_then(|d| match d.inner.open_device(&api) {
+            Ok(d) => Some(IAP::new(d)),
+            Err(_) => None,
+        }) {
+        Some(device) => {
             let mut _d = iap_device.lock().unwrap();
-            *_d = Some(IAP::new(device));
+            info!("固件更新");
+            _d.replace(device);
             Ok(())
         }
-        Err(_) => {
+        None => {
             warn!("连接失败，无法找到设备");
             Err(error::Error::DeviceNotFound)
         }

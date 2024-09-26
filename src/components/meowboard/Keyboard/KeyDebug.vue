@@ -43,7 +43,7 @@ function format_precentage(value: number) {
           {{ format_precentage(hallValuePercentage) }}
         </div>
         <div class="key-hall">
-          {{hallValue}}
+          {{ hallValue }}
         </div>
       </div>
       <div v-if="keyShowMode === 1" class="percentage-frame">
@@ -57,17 +57,15 @@ function format_precentage(value: number) {
 .key-debug {
   display: flex;
   flex-direction: row;
-  align-items: flex-end;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
 
   position: relative;
 
-  padding: 8px;
+  // margin: 6px;
 
-  //height: inherit;
+  height: 100%;
   width: 100%;
-
-  //background-color: #33a06f;
 
   border-radius: inherit;
 
@@ -76,26 +74,27 @@ function format_precentage(value: number) {
   }
 
   .label-frame {
+    margin: 6px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: flex-start;
-    flex: 1;
+    justify-content: center;
+    gap: 3px;
 
     .key-debug-text {
       color: rgba(255, 255, 255, 0.555);
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .key-hall {
-      font-size: 12px;
+      font-size: 11px;
     }
   }
 
   .percentage-frame {
+    margin: 8px;
     width: 5px;
-    height: 40px;
-    //background-color: #33a06f;
+    height: 38px;
 
     border: 1px solid rgba(78, 78, 78, 0.2);
 

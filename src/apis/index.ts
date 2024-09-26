@@ -53,6 +53,15 @@ export interface IKeyHallConfig {
     hall_middle: number
 }
 
+export interface IHidDeviceInfo {
+    path: number[]
+    vendor_id: number
+    product_id: number
+    interface_number: number
+    device_name: DeviceName
+    firmware_version: string
+    serial_number?: string
+}
 
 export enum KeyState {
     Pressed = 0,

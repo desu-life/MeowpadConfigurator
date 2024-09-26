@@ -1,10 +1,11 @@
 import { defineStore, acceptHMRUpdate } from "pinia";
-import { IVersion } from "@/apis";
+import { DeviceName, IHidDeviceInfo, IVersion } from "@/apis";
 import { Type } from "naive-ui/es/button/src/interface";
 
 export const useStore = defineStore("main", () => {
   const status = ref<Type | undefined>(undefined);
   const status_str = ref("");
+  const refreshing_device_list = ref(false);
   const loading = ref(false);
   const iap_connected = ref(false);
   const version_info = ref<IVersion | undefined>(undefined);
@@ -14,6 +15,8 @@ export const useStore = defineStore("main", () => {
   const debug_mode = ref<boolean>(false);
   const can_sync = ref<boolean>(false);
   const need_check = ref(false)
+  const device_list = ref<IHidDeviceInfo[]>([]);
+  const firmware_versions = ref<Map<DeviceName, string>>(new Map());
 
 
   return {
@@ -27,7 +30,10 @@ export const useStore = defineStore("main", () => {
     can_sync,
     latest_firmware_download_url,
     loading,
-    need_check
+    need_check,
+    device_list,
+    firmware_versions,
+    refreshing_device_list
   };
 });
 

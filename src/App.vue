@@ -4,13 +4,17 @@
 import Main from '@/components/Main.vue'
 import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
-import { appWindow, Theme } from "@tauri-apps/api/window";
+import { appWindow, LogicalSize, Theme } from "@tauri-apps/api/window";
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { IVersion } from './apis';
-import { check_update, get_latest_version, get_theme, open_update_url } from './apis/api';
+import { check_update, device_list, get_latest_version, get_theme, open_update_url, refresh_devices } from './apis/api';
 import { useI18n } from 'vue-i18n';
+import emitter from '@/mitt';
+import * as api4k from '@/apis/meowpad4k/api'
+import * as api3k from '@/apis/meowpad3k/api'
+import * as apib from '@/apis/meowboard/api'
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
@@ -26,6 +30,11 @@ const theme = ref<string>()
 // 禁用webkit右键菜单
 document.body.onselectstart = document.body.oncontextmenu = () => false
 
+async function get_firmware_versions() {
+  store.firmware_versions.set("Meowpad", await api4k.get_firmware_version())
+  store.firmware_versions.set("Meowpad SE v2", await api3k.get_firmware_version())
+  store.firmware_versions.set("Pure64", await apib.get_firmware_version())
+}
 
 onMounted(async () => {
   get_latest_version().then(async (version: IVersion) => {
@@ -42,7 +51,19 @@ onMounted(async () => {
     theme.value = t as string
   })
   
+  appWindow.setSize(new LogicalSize(800, 600))
   await appWindow.show()
+
+  await get_firmware_versions()
+
+  emitter.emit('refresh-device-list')
+
+  const interval = setInterval(async () => {
+    let changes = await refresh_devices();
+    if (changes) {
+      emitter.emit('refresh-device-list')
+    }
+  }, 1000)
 })
 </script>
 

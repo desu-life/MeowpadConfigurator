@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { IDeviceInfo, IDeviceStatus, IVersion } from ".";
+import { IHidDeviceInfo, IVersion } from ".";
 
 export async function connect_iap() {
   return (await invoke("connect_iap")) as void;
@@ -22,4 +22,13 @@ export async function get_latest_version() {
 }
 export async function get_theme() {
   return (await invoke("get_theme")) as string;
+}
+export async function device_list() {
+  return (await invoke("device_list")) as IHidDeviceInfo[];
+}
+export async function refresh_devices() {
+  return (await invoke("refresh_devices")) as boolean;
+}
+export async function connect_device(deviceInfo: IHidDeviceInfo) {
+  return (await invoke("connect_device", { deviceInfo })) as boolean;
 }

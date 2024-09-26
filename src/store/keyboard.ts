@@ -70,7 +70,7 @@ export const useKeyboard = defineStore("keyboard", () => {
       }
     } else if (mode.value == 3) {
       let value = await apib.get_debug_value()
-  
+
       for (let i = 0; i < 64; i++) {
         keyDebugRefs.value[i].hallValue = value[i].adc_value
         keyDebugRefs.value[i].hallValuePercentage = value[i].press_percentage

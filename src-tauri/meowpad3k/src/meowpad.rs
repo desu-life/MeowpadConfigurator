@@ -284,7 +284,7 @@ impl<D: Device> Meowpad<D> {
         for v in packet.build_packets_large() {
             debug!("raw：{:?}", v.hex_dump());
             self.device.write(&v)?;
-            thread::sleep(Duration::from_millis(50));
+            thread::sleep(Duration::from_millis(5));
         }
         Ok(())
     }
@@ -295,7 +295,7 @@ impl<D: Device> Meowpad<D> {
         for v in packet.build_packets() {
             debug!("raw：{:?}", v.hex_dump());
             self.device.write(&v)?;
-            thread::sleep(Duration::from_millis(50));
+            thread::sleep(Duration::from_millis(5));
         }
         Ok(())
     }

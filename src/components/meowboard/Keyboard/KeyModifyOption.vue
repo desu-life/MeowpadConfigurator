@@ -67,6 +67,8 @@ function onKeyStartDrag(event: MouseEvent) {
 
   background-color: transparent;
 
+  font-size: 14px;
+
   &:hover {
     background-color: rgba(121, 121, 121, 0.107);
   }

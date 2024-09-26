@@ -68,8 +68,6 @@ const { t } = useI18n();
   font-size: var(--default-key-font-size);
   line-height: 1.0;
   cursor: pointer;
-
-  
 }
 
 .key:hover {

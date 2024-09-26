@@ -32,18 +32,16 @@ function handleClick() {
       }"
       @click="handleClick"
   >
-    <div class="label-frame">
-        <div v-if="rt_enabled" class="rt-label">
-          <div id="dz">
-            {{ dead_zone }}
-          </div>
-          <div id="pr">
-            {{ press_percentage }} ↓ {{ release_percentage }} ↑
-          </div>
-        </div>
-        <div v-else class="normal-label">
-          {{ press_percentage }} ↓
-        </div>
+    <div v-if="rt_enabled" class="rt-label flex-label">
+      <div id="dz">
+        {{ dead_zone }}
+      </div>
+      <div id="pr">
+        {{ press_percentage }} ↓ {{ release_percentage }} ↑
+      </div>
+    </div>
+    <div v-else class="normal-label flex-label">
+      {{ press_percentage }} ↓
     </div>
     <n-icon-wrapper
         v-if=" isSelected "
@@ -67,7 +65,7 @@ function handleClick() {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   position: relative;
 
   height: 100%;
@@ -97,50 +95,33 @@ function handleClick() {
   .selected-icon {
     position: absolute;
 
-    border-radius: 999px;
-
     right: 4px;
     bottom: 4px;
 
     background-color: rgba(51, 160, 111, 0.3);
-
   }
 
-  .label-frame {
-    flex: 1;
-    margin-left: 8px;
-
-    .rt-label {
-      font-size: 12px;
-
-      #dz {
-        font-size: 12px;
-      }
-
-      #pr {
-        font-size: 11px;
-      }
-    }
-
-    .normal-label {
-      font-size: 15px;
-    }
-  }
-
-  .percentage-frame {
-    width: 5px;
-    height: 40px;
-
-    border: 1px solid rgba(78, 78, 78, 0.2);
-
+  .flex-label {
+    margin-left: 6px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    gap: 3px;
+  }
+  
+  .rt-label {
+    font-size: 12px;
 
-    .percentage {
-      width: 5px;
-      background-color: rgba(255, 0, 0, 0.4);
+    #dz {
+      font-size: 12px;
     }
+
+    #pr {
+      font-size: 10.5px;
+    }
+  }
+
+  .normal-label {
+    font-size: 14px;
   }
 }
 </style>

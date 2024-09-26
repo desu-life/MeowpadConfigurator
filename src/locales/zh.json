@@ -125,7 +125,7 @@
   "save_config": "保存配置",
   "applied_config": "配置已应用，请确认无误后保存",
   "check_config_msg": "如设备异常，请直接拔掉设备重连",
-  "device_update_warn": "找到设备，是否清除现有固件并更新？",
+  "device_update_warn": "设备已连接，是否清除现有固件并准备更新？",
   "device_cali_warn": "设备未校准，是否校准",
   "key_state": "按键状态",
   "adc_value": "原始模拟值",
@@ -138,5 +138,13 @@
   "enable_light": "灯光状态",
   "clear_config": "重置设备",
   "device_not_support": "该设备不支持此功能",
-  "update_warning": "检测到配置器有更新，是否前往下载？"
+  "update_warning": "检测到配置器有更新，是否前往下载？",
+  "Meowpad": "Meowpad V2",
+  "Meowpad SE v2": "Meowpad SE v2",
+  "Pure64": "Pure64",
+  "device_continue_upgrade": "继续更新",
+  "select-device": "请选择要连接的设备",
+  "pressed": "按下",
+  "released": "松开",
+  "calibrating": "校准中"
 }

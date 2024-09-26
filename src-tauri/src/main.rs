@@ -4,34 +4,38 @@
 // )]
 
 use anyhow::Result as AnyResult;
+use device::{DeviceInfoExtened, DeviceInfoSerdi};
 use hid_iap::iap::IAP;
+use hidapi::HidApi;
 use log::*;
 use meowboard::Meowboard;
-use meowpad4k::Meowpad as Meowpad4k;
 use meowpad3k::Meowpad as Meowpad3k;
+use meowpad4k::Meowpad as Meowpad4k;
 use reqwest::Client;
-use tauri::api::dialog::MessageDialogBuilder;
+use serde::Serialize;
+use std::borrow::BorrowMut;
 use std::env;
 use std::io::Write;
 use std::ops::Deref;
 use std::panic;
 use std::sync::{mpsc, Mutex};
 use std::time::Duration;
+use tauri::api::dialog::MessageDialogBuilder;
 use tauri::Manager;
 use tauri::State;
 
+mod cmd3k;
+mod cmd4k;
+mod cmdiap;
+mod cmdkbd;
 mod consts;
 mod device;
 mod error;
 mod utils;
-mod cmdiap;
-mod cmd4k;
-mod cmd3k;
-mod cmdkbd;
 use cmd3k::*;
 use cmd4k::*;
-use cmdkbd::*;
 use cmdiap::*;
+use cmdkbd::*;
 use consts::*;
 use error::Result;
 
@@ -89,7 +93,6 @@ macro_rules! message_dialog_f_yn {
     }};
 }
 
-
 #[tauri::command]
 async fn get_theme(_window: tauri::Window) -> &'static str {
     cfg_if::cfg_if! {
@@ -109,7 +112,7 @@ async fn get_theme(_window: tauri::Window) -> &'static str {
             let Ok(color_scheme) = _window.theme() else {
                 return "dark";
             };
-        
+
             match color_scheme {
                 tauri::Theme::Light => "light",
                 tauri::Theme::Dark => "dark",
@@ -119,12 +122,10 @@ async fn get_theme(_window: tauri::Window) -> &'static str {
     }
 }
 
-
 #[tauri::command]
 async fn get_latest_version(client: State<'_, Client>) -> Result<Version> {
     Ok(Version::get(client.deref()).await?)
 }
-
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Version {
@@ -152,7 +153,7 @@ use tauri::api::shell;
 use crate::device::HidDevice;
 
 #[tauri::command]
-async fn check_update(window: tauri::Window, version: Version) -> bool {
+async fn check_update(_window: tauri::Window, version: Version) -> bool {
     if compare_version(VERSION, &version.configurator_version) == std::cmp::Ordering::Less {
         warn!("最新版本信息：\n{:#?}", version);
         // window.hide().unwrap();
@@ -171,16 +172,114 @@ async fn check_update(window: tauri::Window, version: Version) -> bool {
 
 #[tauri::command]
 async fn open_update_url(window: tauri::Window, version: Version, str: String) {
-    message_dialog_f_yn!(
-        "Meowpad Configurator",
-        &str,
-        move |r| {
-            if r {
-                shell::open(&window.shell_scope(), version.download_url, None).unwrap();
-            }
-            // window.close().unwrap();
+    message_dialog_f_yn!("Meowpad Configurator", &str, move |r| {
+        if r {
+            shell::open(&window.shell_scope(), version.download_url, None).unwrap();
         }
-    );
+        // window.close().unwrap();
+    });
+}
+
+#[tauri::command]
+fn device_list(api_handle: State<'_, Mutex<HidApi>>) -> Vec<DeviceInfoSerdi> {
+    let api = api_handle.lock().unwrap();
+    let mut devices = vec![];
+
+    devices.append(&mut cmd4k::find_devices(&api));
+    devices.append(&mut cmd3k::find_devices(&api));
+    devices.append(&mut cmdkbd::find_devices(&api));
+    devices.append(&mut cmdiap::find_devices(&api));
+
+    devices.into_iter().map(|x| x.into()).collect()
+}
+
+#[tauri::command]
+fn refresh_devices(api_handle: State<'_, Mutex<HidApi>>) -> bool {
+    let mut api = api_handle.lock().unwrap();
+
+    let devices_old: Vec<hidapi::DeviceInfo> = api.device_list().cloned().collect();
+
+    let _ = api.refresh_devices();
+
+    let device_list = api.device_list();
+
+    let (len, _) = device_list.size_hint();
+
+    if len != devices_old.len() {
+        return true;
+    }
+
+    for d in device_list {
+        if !d.path().is_empty() && devices_old.iter().any(|x| x.path() == d.path()) {
+            continue;
+        } else if let Some(sn) = d.serial_number() {
+            if devices_old.iter().any(|x| x.serial_number() == Some(sn)) {
+                continue;
+            }
+        } else if devices_old
+            .iter()
+            .any(|x| x.vendor_id() == d.vendor_id() && x.product_id() == d.product_id())
+        {
+            continue;
+        }
+        return true;
+    }
+
+    false
+}
+
+#[tauri::command]
+fn connect_device(
+    api_handle: State<'_, Mutex<HidApi>>,
+    device_handle_iap: State<'_, Mutex<Option<IAP>>>,
+    device_handle_4k: State<'_, Mutex<Option<Meowpad4k<HidDevice>>>>,
+    device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
+    device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+    device_info: DeviceInfoSerdi,
+) -> bool {
+    let api = api_handle.lock().unwrap();
+
+    let d = if !device_info.path.as_bytes().is_empty() {
+        api.open_path(device_info.path.as_c_str()).ok()
+    } else if let Some(sn) = device_info.serial_number {
+        api.open_serial(device_info.vendor_id, device_info.product_id, &sn)
+            .ok()
+    } else {
+        api.device_list()
+            .find(|x| {
+                x.vendor_id() == device_info.vendor_id
+                    && x.product_id() == device_info.product_id
+                    && x.interface_number() == device_info.interface_number
+            })
+            .and_then(|d| d.open_device(&api).ok())
+    };
+
+    if let Some(d) = d {
+        info!("连接到设备");
+        if device_info.device_name == MEOWPAD_DEVICE_NAME {
+            if device_info.firmware_version == "IAP" {
+                *device_handle_iap.lock().unwrap() =
+                    Some(IAP::new(d));
+            } else {
+                *device_handle_4k.lock().unwrap() =
+                    Some(Meowpad4k::new(device::HidDevice { device: d }));
+            }
+        } else if device_info.device_name == MEOWPAD_SE_DEVICE_NAME {
+            *device_handle_3k.lock().unwrap() =
+                Some(Meowpad3k::new(device::HidDevice { device: d }));
+        } else if device_info.device_name == PURE64_DEVICE_NAME {
+            *device_handle_pure64.lock().unwrap() =
+                Some(Meowboard::new(device::HidDevice { device: d }));
+        } else {
+            warn!("连接失败，无法找到设备");
+            return false;
+        }
+    } else {
+        warn!("连接失败，无法找到设备");
+        return false;
+    }
+
+    true
 }
 
 fn main() -> AnyResult<()> {
@@ -279,7 +378,10 @@ fn main() -> AnyResult<()> {
             get_key_calibrate_status_kb,
             get_debug_value_part_kb,
             get_hall_config_kb,
-            open_update_url
+            open_update_url,
+            device_list,
+            refresh_devices,
+            connect_device
         ])
         .manage(
             Client::builder()
@@ -291,7 +393,7 @@ fn main() -> AnyResult<()> {
         .manage::<Mutex<Option<Meowpad4k<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<Meowboard<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<IAP>>>(Mutex::new(None))
-        .manage::<Mutex<Option<Vec<u8>>>>(Mutex::new(None))
+        .manage::<Mutex<HidApi>>(Mutex::new(HidApi::new().unwrap()))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
     Ok(())

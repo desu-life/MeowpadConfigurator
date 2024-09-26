@@ -1,10 +1,10 @@
 
 use std::sync::Mutex;
-use hidapi::HidApi;
+use hidapi::{DeviceInfo, HidApi};
 use meowpad::models::{DeviceStatus, KeyHallConfig, KeyRTStatus, KeyState};
 use meowboard::Meowboard;
 use tauri::State;
-use crate::{device::HidDevice, error::{Error, Result}, FIRMWARE_VERSION_KB};
+use crate::{device::{DeviceInfoExtened, HidDevice}, error::{Error, Result}, FIRMWARE_VERSION_KB};
 use log::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
@@ -199,24 +199,34 @@ pub fn connect_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>)
     }
 }
 
+
 fn find_device() -> Option<Meowboard<HidDevice>> {
     // 获取设备列表
     let api = HidApi::new().unwrap();
 
+    find_devices(&api).first().and_then(|d| {
+        match d.inner.open_device(&api) {
+            Ok(d) => Some(Meowboard::new(HidDevice { device: d })),
+            Err(_) => None,
+        }
+    })
+}
+
+pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
     // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
     const PID: u16 = 0xFB01;
 
     // 迭代设备列表，查找符合条件的设备
-    let mut devices = api.device_list();
-    devices.find_map(|d| {
+    let devices = api.device_list();
+    devices.filter_map(|d| {
         // 过滤设备
         if !(d.vendor_id() == VID && d.product_id() == PID) {
             return None;
         }
 
         // 连接设备
-        let device_handle = match d.open_device(&api) {
+        let mut device_handle = match d.open_device(api) {
             Ok(d) => {
 
                 let mut buf = [0u8; 64];
@@ -243,8 +253,19 @@ fn find_device() -> Option<Meowboard<HidDevice>> {
                 );
                 debug!("Addr: {}", d.path().to_string_lossy());
                 debug!("{:?}", d);
-                Some(device_handle)
+
+                let _ = device_handle.get_device_name();
+                let _ = device_handle.get_firmware_version();
+
+                Some(DeviceInfoExtened {
+                    device_name: device_handle.device_name.take().unwrap_or_default(),
+                    firmware_version: device_handle.firmware_version.take().unwrap_or_default(),
+                    serial_number: d.serial_number().map(|s| s.to_string()),
+                    inner: d,
+                })
             }
         }
-    })
+    }).collect()
 }
+
+

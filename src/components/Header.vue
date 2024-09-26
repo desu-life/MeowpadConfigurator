@@ -80,9 +80,7 @@ emitter.on('sync-btn-highlight', (event: {status: boolean}) => {
 
 
 
-async function connect() {
-  emitter.emit('connect')
-}
+
 
 async function calibration_key() {
   emitter.emit('calibration-key')
@@ -124,7 +122,7 @@ async function sync_config_raw() {
 
 function exit_developer_mode() {
   store.developer_mode = false
-  device.connected = false
+  emitter.emit('connection-broke', { e: null })
   emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
 }
 
@@ -132,24 +130,6 @@ function exit_iap_mode() {
   store.iap_connected = false
   emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
 }
-
-/**
- * Enters developer mode. A warning dialog will be shown, and the user must click
- * "confirm" to enter developer mode.
- */
-function developer_mode() {
-  dialog.warning({
-    title: t('warning'),
-    content: t('developer_warning'),
-    positiveText: t('confirm'),
-    negativeText: t('unconfirm'),
-    maskClosable: false,
-    onPositiveClick: () => {
-      store.developer_mode = true
-    },
-  })
-}
-
 
 async function device_update() {
   emitter.emit('header-loading', { str: t('connecting') })
@@ -213,6 +193,7 @@ async function debug() {
 async function erase_firmware() {
   try {
     await api4k.erase_firmware()
+    emitter.emit('connection-broke', { e: null })
     emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
   } catch (e) {
     emitter.emit('connection-broke', {e: e as IError})
@@ -223,6 +204,7 @@ async function clear_config() {
   try {
     await api3k.clear_config()
     await api3k.reset_device()
+    emitter.emit('connection-broke', { e: null })
     emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
   } catch (e) {
     emitter.emit('connection-broke', {e: e as IError})
@@ -239,8 +221,6 @@ async function clear_config() {
     </n-card>
   </n-modal>
   <div class="left">
-    <n-select v-if="!device.connected" class="ml" @update:value="handleChange" v-model:value="state.currentLang"
-      placeholder="Language" :options="state.options"></n-select>
     <n-button class="ml" id="msgbox" :loading="store.loading" :type="store.status" strong secondary>{{ store.status_str
       }}</n-button>
   </div>
@@ -248,21 +228,19 @@ async function clear_config() {
     <template v-if="store.developer_mode">
       <template v-if="!device.connected">
         <template v-if="store.iap_connected">
-          <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_iap_mode">{{
-    $t('exit') }}</n-button>
+          <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_iap_mode">{{ $t('exit') }}</n-button>
         </template>
         <template v-else>
           <n-button class="mr" :disabled="store.loading" @click="device_update">{{ $t('device_update') }}</n-button>
-          <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
           <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
         </template>
       </template>
       <template v-else>
-        <n-button class="mr" :disabled="store.loading" @click="debug">
+        <n-button v-if="device.is_4k() || device.is_3k()" class="mr" :disabled="store.loading" @click="debug">
           {{ store.debug_mode ? $t('exit') : t('debug_mode') }}
         </n-button>
         <template v-if="!store.debug_mode">
-          <n-button  v-if="device.is_4k()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
+          <n-button  v-if="device.is_4k() || device.is_pure()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
           <n-button  v-if="device.is_3k()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
           <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
           <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
@@ -271,8 +249,10 @@ async function clear_config() {
     </template>
     <template v-else>
       <template v-if="!device.connected">
-        <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button>
-        <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button>
+        <!-- <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button> -->
+        <!-- <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button> -->
+        <n-select v-if="!device.connected" class="mr" @update:value="handleChange" v-model:value="state.currentLang"
+        placeholder="Language" :options="state.options"></n-select>
       </template>
       <template v-else>
         <n-button class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device') }}</n-button>

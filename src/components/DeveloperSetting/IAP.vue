@@ -73,7 +73,7 @@ const uploadFirmware = async ({
       onFinish()
       file_list.value = []
       message.info(t('upload_firmware_success'))
-      store.iap_connected = false
+      emitter.emit('connection-broke', { e: null })
       emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
     } else {
       onError()
