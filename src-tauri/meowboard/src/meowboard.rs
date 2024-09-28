@@ -13,7 +13,7 @@ pub struct Meowboard<D: Device> {
     pub key_config: Option<cbor::Device>,
     pub device_name: Option<String>,
     pub firmware_version: Option<String>,
-    device: D,
+    pub device: D,
 }
 
 
@@ -118,13 +118,14 @@ impl<D: Device> Meowboard<D> {
         self.write(Packet::new(PacketID::DebugKeyState, [0]))?;
         let data = self.read()?.data;
         for i in 0..32 {
-            keys[index] = KeyState::from_u8(data[i]).ok_or(Error::InvalidPacket)?;
+            
+            keys[index] = KeyState::from_u8(*data.get(i).ok_or(Error::InvalidPacket)?).ok_or(Error::InvalidPacket)?;
             index += 1;
         }
         self.write(Packet::new(PacketID::DebugKeyState, [1]))?;
         let data = self.read()?.data;
         for i in 0..32 {
-            keys[index] = KeyState::from_u8(data[i]).ok_or(Error::InvalidPacket)?;
+            keys[index] = KeyState::from_u8(*data.get(i).ok_or(Error::InvalidPacket)?).ok_or(Error::InvalidPacket)?;
             index += 1;
         }
         Ok(keys)
@@ -136,13 +137,13 @@ impl<D: Device> Meowboard<D> {
         self.write(Packet::new(PacketID::CalibrateKeyStatus, [0]))?;
         let data = self.read()?.data;
         for i in 0..32 {
-            keys[index] = data[i] != 0;
+            keys[index] = *data.get(i).ok_or(Error::InvalidPacket)? != 0;
             index += 1;
         }
         self.write(Packet::new(PacketID::CalibrateKeyStatus, [1]))?;
         let data = self.read()?.data;
         for i in 0..32 {
-            keys[index] = data[i] != 0;
+            keys[index] = *data.get(i).ok_or(Error::InvalidPacket)? != 0;
             index += 1;
         }
         Ok(keys)

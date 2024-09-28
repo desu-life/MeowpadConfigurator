@@ -1,7 +1,7 @@
 
 use std::sync::Mutex;
 use hidapi::{DeviceInfo, HidApi};
-use meowpad::models::{DeviceStatus, KeyHallConfig, KeyRTStatus, KeyState};
+use meowpad::{models::{DeviceStatus, KeyHallConfig, KeyRTStatus, KeyState}, Device};
 use meowboard::Meowboard;
 use tauri::State;
 use crate::{device::{DeviceInfoExtened, HidDevice}, error::{Error, Result}, FIRMWARE_VERSION_KB};
@@ -228,15 +228,9 @@ pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
         // 连接设备
         let mut device_handle = match d.open_device(api) {
             Ok(d) => {
-
-                let mut buf = [0u8; 64];
-                while let Ok(s) = d.read_timeout(&mut buf, 5) {
-                    if s == 0 {
-                        break;
-                    }
-                }
-
-                Meowboard::new(HidDevice { device: d })
+                let d = HidDevice { device: d };
+                let _ = d.clear_buffer();
+                Meowboard::new(d)
             },
             Err(_) => return None,
         };

@@ -1,7 +1,7 @@
-// #![cfg_attr(
-//     all(not(debug_assertions), target_os = "windows"),
-//     windows_subsystem = "windows"
-// )]
+#![cfg_attr(
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
+)]
 
 use anyhow::Result as AnyResult;
 use device::{DeviceInfoExtened, DeviceInfoSerdi};
@@ -9,6 +9,7 @@ use hid_iap::iap::IAP;
 use hidapi::HidApi;
 use log::*;
 use meowboard::Meowboard;
+use meowpad::Device;
 use meowpad3k::Meowpad as Meowpad3k;
 use meowpad4k::Meowpad as Meowpad4k;
 use reqwest::Client;
@@ -18,11 +19,14 @@ use std::env;
 use std::io::Write;
 use std::ops::Deref;
 use std::panic;
+use std::str::FromStr;
 use std::sync::{mpsc, Mutex};
 use std::time::Duration;
 use tauri::api::dialog::MessageDialogBuilder;
 use tauri::Manager;
 use tauri::State;
+use tauri_plugin_log::fern::colors::ColoredLevelConfig;
+use tauri_plugin_log::LogTarget;
 
 mod cmd3k;
 mod cmd4k;
@@ -40,23 +44,6 @@ use consts::*;
 use error::Result;
 
 use crate::utils::compare_version;
-
-fn init_logger(default_level: &str) {
-    use env_logger::{Builder, Env};
-    let log_level = Env::default().filter_or("LOG_LEVEL", default_level);
-    let mut builder = Builder::from_env(log_level);
-    builder
-        .format(|buf, record| {
-            let style = buf.default_level_style(record.level());
-            writeln!(
-                buf,
-                "[{style}{}{style:#}] {}",
-                record.level(),
-                record.args()
-            )
-        })
-        .init();
-}
 
 /// blocking_dialog
 macro_rules! message_dialog {
@@ -181,14 +168,36 @@ async fn open_update_url(window: tauri::Window, version: Version, str: String) {
 }
 
 #[tauri::command]
-fn device_list(api_handle: State<'_, Mutex<HidApi>>) -> Vec<DeviceInfoSerdi> {
+fn device_list(
+    api_handle: State<'_, Mutex<HidApi>>,
+    device_handle_4k: State<'_, Mutex<Option<Meowpad4k<HidDevice>>>>,
+    device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
+    device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Vec<DeviceInfoSerdi> {
     let api = api_handle.lock().unwrap();
+    // 在执行扫描前先锁住设备，不让其他线程访问
+    let mut device_handle_4k = device_handle_4k.lock().unwrap();
+    let mut device_handle_3k = device_handle_3k.lock().unwrap();
+    let mut device_handle_pure64 = device_handle_pure64.lock().unwrap();
+
+    // 扫描设备
     let mut devices = vec![];
 
     devices.append(&mut cmd4k::find_devices(&api));
     devices.append(&mut cmd3k::find_devices(&api));
     devices.append(&mut cmdkbd::find_devices(&api));
     devices.append(&mut cmdiap::find_devices(&api));
+
+    // 清空已连接设备的缓冲
+    if let Some(d) = device_handle_4k.as_mut() {
+        let _ = d.device.clear_buffer();
+    }
+    if let Some(d) = device_handle_3k.as_mut() {
+        let _ = d.device.clear_buffer();
+    }
+    if let Some(d) = device_handle_pure64.as_mut() {
+        let _ = d.device.clear_buffer();
+    }
 
     devices.into_iter().map(|x| x.into()).collect()
 }
@@ -258,8 +267,7 @@ fn connect_device(
         info!("连接到设备");
         if device_info.device_name == MEOWPAD_DEVICE_NAME {
             if device_info.firmware_version == "IAP" {
-                *device_handle_iap.lock().unwrap() =
-                    Some(IAP::new(d));
+                *device_handle_iap.lock().unwrap() = Some(IAP::new(d));
             } else {
                 *device_handle_4k.lock().unwrap() =
                     Some(Meowpad4k::new(device::HidDevice { device: d }));
@@ -296,9 +304,34 @@ fn main() -> AnyResult<()> {
         std::process::exit(1);
     }));
 
-    init_logger("INFO");
+    // init_logger("INFO");
+    let log_level = LevelFilter::from_str(&std::env::var("LOG_LEVEL").unwrap_or_default())
+        .unwrap_or(LevelFilter::Info);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            println!("{}, {argv:?}, {cwd}", app.package_info().name);
+        }))
+        .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .targets([LogTarget::LogDir, LogTarget::Stdout])
+                .level(log_level)
+                .level_for(
+                    "tao::platform_impl::platform::event_loop::runner",
+                    LevelFilter::Error,
+                )
+                .format(move |out, message, record| {
+                    let colors = ColoredLevelConfig::new();
+
+                    out.finish(format_args!(
+                        "[{}] {}",
+                        colors.color(record.level()),
+                        message
+                    ))
+                })
+                .build(),
+        )
         .setup(|_app| {
             #[cfg(debug_assertions)] // only include this code on debug builds
             {

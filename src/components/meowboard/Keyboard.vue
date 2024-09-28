@@ -16,7 +16,6 @@
 
 import KeyFrame from "@/components/meowboard/Keyboard/KeyFrame.vue";
 import KeyDebug from "@/components/meowboard/Keyboard/KeyDebug.vue";
-import KeySelect from "@/components/meowboard/Keyboard/KeySelect.vue";
 import KeyCalibrate from "@/components/meowboard/Keyboard/KeyCalibrate.vue";
 import KeyHall from "@/components/meowboard/Keyboard/KeyHall.vue";
 import KeyModify from "@/components/meowboard/Keyboard/KeyModify.vue";
@@ -28,9 +27,9 @@ import { IError, KeyState } from "@/apis";
 import { useDeviceStore } from '@/store/device';
 import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
-import { IKeyboard, IKeyConfigBoard } from "@/apis/meowboard/config";
+import { IKeyboard, IKeyConfigBoard, IMixedKey } from "@/apis/meowboard/config";
 import emitter from "@/mitt";
-import { getErrorMsg, most } from "@/utils";
+import { formatKey, getErrorMsg, most, splitArray } from "@/utils";
 import { useI18n } from "vue-i18n";
 import { appWindow, LogicalSize } from "@tauri-apps/api/window";
 import { useKeyboard } from "@/store/keyboard";
@@ -101,22 +100,7 @@ const DebugSel = [
 
 const keyShowMode = ref(0)
 const totalDistance = ref(4.0)
-
-function splitArray<T>(array: T[], sizes: number[]): T[][] {
-  let result: T[][] = [];
-  let index = 0;
-
-  for (let size of sizes) {
-    let subArray = array.slice(index, index + size);
-    result.push(subArray);
-    index += size;
-  }
-
-  return result;
-}
-
 const KeysOfEachLine = [14, 14, 13, 14, 9];
-
 const keyIndexesRaw = computed(() => splitArray(
   Array.from({ length: 64 }, (v, i) => i),
   KeysOfEachLine
@@ -204,7 +188,8 @@ onMounted(async () => {
 })
 
 
-const keyModifyDraggedKey = ref(-1);
+const keyModifyDraggedKey = ref<IMixedKey | null>(null);
+
 const keyDraggingStyle = ref({
   left: "0px",
   top: "0px",
@@ -212,50 +197,33 @@ const keyDraggingStyle = ref({
 
 const keyLayer = ref(0);
 
-emitter.on('global-mouse-move', onMouseMove)
-emitter.on('global-mouse-up', onMouseUp)
+function startDragKey(key: IMixedKey) {
+  keyModifyDraggedKey.value = key;
+  document.onmousemove = (event: MouseEvent) => {
+    keyDraggingStyle.value.left = `${event.pageX - 32}px`;
+    keyDraggingStyle.value.top = `${event.pageY - 32}px`;
+  }
 
-
-function onMouseMove(event: MouseEvent) {
-  keyDraggingStyle.value.left = `${event.pageX - 32}px`;
-  keyDraggingStyle.value.top = `${event.pageY - 32}px`;
+  document.onmouseup = () => {
+    document.onmousemove = null;
+    document.onmouseup = null;
+    keyModifyDraggedKey.value = null;
+  }
 }
 
-function onMouseUp(event: MouseEvent) {
-  keyModifyDraggedKey.value = -1;
-}
 
-function onMouseEnter(event: MouseEvent) {
-  keyModifyDraggedKey.value = -1;
-}
 
-emitter.on('key-str-modify', onKeyStrModify)
-function onKeyStrModify(event: { rawIndex: number; newValue: number }) {
-  if (event.newValue == -1) return
+emitter.on('key-str-modify', (event: { rawIndex: number; newValue: IMixedKey }) => {
   if (kb.mode != 1) return
-  if (event.rawIndex == 60) {
-    message.warning("Fn键无法修改")
-    return
-  }
-
-  if (event.newValue > 0) {
-    for (let i = 0; i < 64; i++) {
-      if (kb.showkeys[i] == event.newValue) {
-        message.warning("有重复的按键，请检查")
-        return
-      }
-    }
-  }
 
   kb.showkeys[event.rawIndex] = event.newValue
-  kb.showkeys[60] = 0
 
   if (keyLayer.value == 0) {
-    device.device_config!.normal_layer[event.rawIndex].c = event.newValue
+    device.device_config!.normal_layer[event.rawIndex] = event.newValue
   } else if (keyLayer.value == 1) {
-    device.device_config!.fn_layer[event.rawIndex].c = event.newValue
+    device.device_config!.fn_layer[event.rawIndex] = event.newValue
   }
-}
+})
 
 function onLayerUpdate() {
   if (kb.mode == 1) {
@@ -282,11 +250,11 @@ function onLayerChange() {
 function setLayer(layer) {
   if (layer == 0) {
     for (let i = 0; i < 64; i++) {
-      kb.showkeys[i] = device.device_config!.normal_layer[i].c
+      kb.showkeys[i] = device.device_config!.normal_layer[i]
     }
   } else {
     for (let i = 0; i < 64; i++) {
-      kb.showkeys[i] = device.device_config!.fn_layer[i].c
+      kb.showkeys[i] = device.device_config!.fn_layer[i]
     }
   }
 }
@@ -295,8 +263,7 @@ function setLayer(layer) {
 
 let select_indexs = ref<number[]>([])
 
-emitter.on('key-select', onKeySelect)
-function onKeySelect() {
+emitter.on('key-select', () => {
   select_indexs.value = []
   for (let i = 0; i < 64; i++) {
     if (kb.keyVarsRefs[i].isSelected) {
@@ -324,7 +291,8 @@ function onKeySelect() {
       rt_enabled: true
     }
   }
-}
+})
+
 
 function onKeyPUpdate(v) {
   if (keyconfig.value == null) return
@@ -353,10 +321,6 @@ function onKeyConfigUpdate() {
   }
 
   emitter.emit('need-save')
-}
-
-function formatPercentTooltip(percentage: number) {
-  return `${percentage}%`
 }
 
 
@@ -436,15 +400,20 @@ emitter.on('sync-config', async () => {
   emitter.emit('loaded')
 })
 
-
+function temp_convert(key: number): IMixedKey  {
+  return {
+    t: "Keyboard",
+    c: key
+  }
+}
 
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="dragging-key" v-if="keyModifyDraggedKey != -1" :style="keyDraggingStyle">
-      <KeyFrame :width="(1 * 64).toString() + 'px'">
-        {{ mapping[keyModifyDraggedKey] ?? '' }}
+    <div class="dragging-key" v-if="keyModifyDraggedKey != null" :style="keyDraggingStyle">
+      <KeyFrame :style="keymapStyle">
+        {{ formatKey(keyModifyDraggedKey) }}
       </KeyFrame>
     </div>
   </Teleport>
@@ -533,15 +502,15 @@ emitter.on('sync-config', async () => {
 
     <div class="bottom-config">
       <template v-if="kb.mode === 1">
-        <n-card :bordered="false" class="key-modify-config-card">
+        <n-card :bordered="false" class="key-modify-config-card" size="small">
           <template #action>
             将按键拖拽至上方
           </template>
-          <n-scrollbar class="key-modify-config-scrollbar">
-            <div class="key-modify-config" :style="keymapStyle">
+          <n-scrollbar class="key-modify-config-scrollbar" :style="keymapStyle">
+            <div class="key-modify-config">
               <KeyFrame class="key-modify-config-key" v-for="(v, i) in mapping" :key="i">
-                <KeyModifyOption :keyStr="v" :KeyValue="parseInt(i as any)"
-                  v-model:keyDragged="keyModifyDraggedKey" />
+                <KeyModifyOption :keyStr="v" :KeyValue="temp_convert(parseInt(i as any))"
+                  @dragkey="startDragKey" />
               </KeyFrame>
             </div>
           </n-scrollbar>
@@ -763,8 +732,8 @@ emitter.on('sync-config', async () => {
 <style lang="scss">
 // 这个不能scoped
 .key-modify-config-scrollbar {
-  max-height: 150px;
-  max-width: 905px;
+  max-height: calc(var(--default-key-height) * 3);
+  max-width: calc((var(--default-key-width) * 16) + var(--n-scrollbar-width) + var(--default-key-margin));
 }
 
 .device-config-card-content {

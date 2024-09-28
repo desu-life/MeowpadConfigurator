@@ -42,7 +42,7 @@ emitter.on('refresh-device-list', async (event: { e: IError }) => {
           }
         }
       }
-
+      
       if (!has_device) {
         emitter.emit('connection-broke', {
           e: {

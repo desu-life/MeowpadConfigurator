@@ -1,22 +1,19 @@
 <script setup lang="ts">
+import { IMixedKey } from '@/apis/meowboard/config';
 import Checkmark16Filled from '@vicons/fluent/Checkmark16Filled'
 
-const props = defineProps({
-  keyStr: {
-    type: String,
-    required: true
-  },
-  KeyValue: {
-    type: Number,
-    required: true
-  }
-})
+const props = defineProps<{
+  keyStr?: string
+  KeyValue: IMixedKey
+}>()
 
-const keyDragged = defineModel("keyDragged", { type: Number, default: -1 });
+const emit = defineEmits<{
+  (e: 'dragkey', id: IMixedKey): void
+}>()
 
-function onKeyStartDrag(event: MouseEvent) {
-  keyDragged.value = props.KeyValue
-  console.log("StartDrag", keyDragged.value)
+function onKeyStartDrag(event: DragEvent) {
+  console.log("StartDrag", props.KeyValue)
+  emit('dragkey', props.KeyValue)
   event.preventDefault()
 }
 
@@ -70,7 +67,7 @@ function onKeyStartDrag(event: MouseEvent) {
   font-size: 14px;
 
   &:hover {
-    background-color: rgba(121, 121, 121, 0.107);
+    background-color: var(--color-background-mute);
   }
   // .label-frame {
   //   flex: 1;

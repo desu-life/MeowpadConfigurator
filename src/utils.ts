@@ -1,10 +1,64 @@
 import { useI18n } from "vue-i18n";
 import { IError } from "./apis";
-import { KeyCode } from "./keycode";
+import { KeyCode, mapping } from "./keycode";
 import { IRgb } from "./interface";
+import { IMixedKey } from "./apis/meowboard/config";
 
 function pad2(c) {
   return c.length == 1 ? "0" + c : "" + c;
+}
+
+export function formatKey(key: IMixedKey) {
+  if (key.t == "Keyboard") {
+    return mapping[key.c] ?? ''
+  } else if (key.t == "Mouse") {
+    switch (key.c) {
+      case 1:
+        return "Left";
+      case 2:
+        return "Right";
+      case 3:
+        return "Middle";
+    }
+  } else if (key.t == "Custom") {
+    switch (key.c) {
+      case 1:
+        return "Fn";
+      case 2:
+        return "Lock Win";
+    }
+  } else if (key.t == "Media") {
+    switch (key.c) {
+      case 0xb5:
+        return "Next Track";
+      case 0xb6:
+        return "Previous Track";
+      case 0xb7:
+        return "Stop";
+      case 0xcd:
+        return "Play/Pause";
+      case 0xe2:
+        return "Mute";
+      case 0xe9:
+        return "Volume Up";
+      case 0xea:
+        return "Volume Down";
+    }
+  }
+  return ''
+}
+
+export function splitArray<T>(array: T[], sizes: number[]): T[][] {
+  let result: T[][] = [];
+  let index = 0;
+
+  for (let size of sizes) {
+    let subArray = array.slice(index, index + size);
+    result.push(subArray);
+    index += size;
+  }
+
+  return result;
 }
 
 export function most(arr) {

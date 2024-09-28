@@ -30,6 +30,18 @@ impl meowpad::Device for HidDevice {
             .read_timeout(buf, timeout)
             .map_err(|_| meowpad::error::Error::Disconnect)
     }
+
+    fn clear_buffer(&self) -> meowpad::Result<()> {
+        self.device.set_blocking_mode(false).map_err(|_| meowpad::error::Error::Disconnect)?;
+        let mut buf = [0u8; 64];
+        while let Ok(s) = self.device.read(&mut buf) {
+            if s == 0 {
+                break;
+            }
+        }
+        self.device.set_blocking_mode(true).map_err(|_| meowpad::error::Error::Disconnect)?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]

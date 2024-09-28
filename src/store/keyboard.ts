@@ -4,6 +4,9 @@ import { Type } from "naive-ui/es/button/src/interface";
 import * as apib from '@/apis/meowboard/api'
 import { mapping } from "@/keycode";
 import emitter from "@/mitt";
+import { IMixedKey } from "@/apis/meowboard/config";
+import { format } from "path";
+import { formatKey } from "@/utils";
 
 interface DebugVars {
   hallValue: number;
@@ -26,7 +29,7 @@ export const useKeyboard = defineStore("keyboard", () => {
   const keyCalibrateRefs = ref<CalibrateVars[]>(new Array(64));
   const keyDebugRefs = ref<DebugVars[]>(new Array(64));
   const keyVarsRefs = ref<KeyVars[]>(new Array(64));
-  const showkeys = ref<number[]>(new Array(64));
+  const showkeys = ref<IMixedKey[]>(new Array(64));
   
   
   for (let i = 0; i < 64; i++) {
@@ -42,7 +45,10 @@ export const useKeyboard = defineStore("keyboard", () => {
     keyVarsRefs.value[i] = {
       isSelected: false,
     }
-    showkeys.value[i] = 0
+    showkeys.value[i] = {
+      t: "None",
+      c: 0
+    }
   }
 
   function selectAllKey(on: boolean) {
@@ -87,8 +93,8 @@ export const useKeyboard = defineStore("keyboard", () => {
   }
 
   function getKeyStr(index) {
-    if (index == 60) return 'Fn'
-    return mapping[showkeys.value[index]] ?? ''
+    let key = showkeys.value[index];
+    return formatKey(key);
   }
   
   

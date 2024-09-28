@@ -74,7 +74,7 @@ function format_precentage(value: number) {
   }
 
   .label-frame {
-    margin: 6px;
+    margin-left: 5px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -82,7 +82,7 @@ function format_precentage(value: number) {
     gap: 3px;
 
     .key-debug-text {
-      color: rgba(255, 255, 255, 0.555);
+      color: var(--color-text);
       font-size: 12px;
     }
 
@@ -92,7 +92,7 @@ function format_precentage(value: number) {
   }
 
   .percentage-frame {
-    margin: 8px;
+    margin-right: 5px;
     width: 5px;
     height: 38px;
 

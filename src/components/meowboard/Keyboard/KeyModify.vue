@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { IMixedKey } from "@/apis/meowboard/config";
 import emitter from "@/mitt";
-import { useMessage } from 'naive-ui'
+import { c, useMessage } from 'naive-ui'
 
 const props = defineProps({
   keyStr: {
@@ -15,17 +16,17 @@ const props = defineProps({
 
 const message = useMessage()
 
-const keyDragged = defineModel("keyDragged", { type: Number, default: -1 });
+const keyDragged = defineModel<IMixedKey | null>("keyDragged", { default: null });
 
 function onMouseUp(event: MouseEvent) {
-  if (keyDragged.value != -1) {
+  if (keyDragged.value != null) {
     console.log("Up", keyDragged.value)
-    emitter.emit('key-str-modify', { rawIndex: props.keyStrIndex, newValue: keyDragged.value})
+    emitter.emit('key-str-modify', { rawIndex: props.keyStrIndex, newValue: keyDragged.value })
   }
 }
 
 function onClick(event: MouseEvent) {
-  emitter.emit('key-str-modify', { rawIndex: props.keyStrIndex, newValue: 0})
+  emitter.emit('key-str-modify', { rawIndex: props.keyStrIndex, newValue: { t: "None", c: 0 }})
 }
 
 </script>

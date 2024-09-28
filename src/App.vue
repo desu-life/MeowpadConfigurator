@@ -46,9 +46,8 @@ onMounted(async () => {
   });
 
   theme.value = await get_theme();
-  console.log(theme.value)
-  await appWindow.onThemeChanged(({ payload: t }) => {
-    theme.value = t as string
+  await appWindow.onThemeChanged(async ({ payload: t }) => {
+    theme.value = await get_theme();
   })
   
   appWindow.setSize(new LogicalSize(800, 600))

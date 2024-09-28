@@ -58,7 +58,7 @@
     "windows": [
       {
         "fullscreen": false,
-        "resizable": false,
+        "resizable": true,
         "title": "Meowpad Configurator for v2",
         "width": 800,
         "height": 600,

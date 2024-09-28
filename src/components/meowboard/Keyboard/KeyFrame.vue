@@ -70,6 +70,7 @@ const props = withDefaults(defineProps<{
   user-select: none;
   border-radius: 8px;
   flex-wrap: nowrap;
+  color: var(--color-text);
 }
 
 

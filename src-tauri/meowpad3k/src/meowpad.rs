@@ -14,7 +14,7 @@ pub struct Meowpad<D: Device> {
     pub light_config: Option<cbor::Light>,
     pub device_name: Option<String>,
     pub firmware_version: Option<String>,
-    device: D,
+    pub device: D,
 }
 
 
