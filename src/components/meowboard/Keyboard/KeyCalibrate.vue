@@ -1,12 +1,11 @@
 <script setup lang="ts">
+import { IMixedKey } from '@/apis/meowboard/config';
 import Checkmark16Filled from '@vicons/fluent/Checkmark16Filled'
+import { formatKey } from "@/keymap";
 
-defineProps({
-  keyStr: {
-    type: String,
-    required: true
-  }
-})
+const props = defineProps<{
+  keyShow: IMixedKey
+}>()
 
 const isSelected = defineModel("isSelected", { type: Boolean, default: false });
 const isCalibrated = defineModel("isCalibrated", { type: Boolean, default: false });
@@ -30,7 +29,7 @@ function handleClick() {
   >
     <div class="label-frame">
       <div class="key-calibrate-text">
-        {{ keyStr }}
+        <component :is="formatKey(keyShow)" :key="keyShow" />
       </div>
     </div>
     <n-icon-wrapper
@@ -95,24 +94,8 @@ function handleClick() {
   }
 
   .label-frame {
-    flex: 1;
-    margin-left: 8px;
+    text-align: center;
   }
 
-  .percentage-frame {
-    width: 5px;
-    height: 40px;
-
-    border: 1px solid var(--color-border);
-
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-
-    .percentage {
-      width: 5px;
-      background-color: var(--vt-c-red-darker);
-    }
-  }
 }
 </style>

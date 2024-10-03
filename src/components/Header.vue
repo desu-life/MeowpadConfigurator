@@ -220,51 +220,67 @@ async function clear_config() {
       role="dialog" aria-modal="true">
     </n-card>
   </n-modal>
-  <div class="left">
-    <n-button class="ml" id="msgbox" :loading="store.loading" :type="store.status" strong secondary>{{ store.status_str
-      }}</n-button>
-  </div>
-  <div class="right">
-    <template v-if="store.developer_mode">
-      <template v-if="!device.connected">
-        <template v-if="store.iap_connected">
-          <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_iap_mode">{{ $t('exit') }}</n-button>
+  <div class="header">
+    <div class="left">
+      <n-button class="ml" id="msgbox" :loading="store.loading" :type="store.status" strong secondary>{{ store.status_str
+        }}</n-button>
+    </div>
+    <div class="right">
+      <template v-if="store.developer_mode">
+        <template v-if="!device.connected">
+          <template v-if="store.iap_connected">
+            <n-button class="mr" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_iap_mode">{{ $t('exit') }}</n-button>
+          </template>
+          <template v-else>
+            <n-button class="mr" :disabled="store.loading" @click="device_update">{{ $t('device_update') }}</n-button>
+            <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
+          </template>
         </template>
         <template v-else>
-          <n-button class="mr" :disabled="store.loading" @click="device_update">{{ $t('device_update') }}</n-button>
-          <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
+          <n-button v-if="device.is_4k() || device.is_3k()" class="mr" :disabled="store.loading" @click="debug">
+            {{ store.debug_mode ? $t('exit') : t('debug_mode') }}
+          </n-button>
+          <template v-if="!store.debug_mode">
+            <n-button  v-if="device.is_4k() || device.is_pure()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
+            <n-button  v-if="device.is_3k()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
+            <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
+            <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
+          </template>
         </template>
       </template>
       <template v-else>
-        <n-button v-if="device.is_4k() || device.is_3k()" class="mr" :disabled="store.loading" @click="debug">
-          {{ store.debug_mode ? $t('exit') : t('debug_mode') }}
-        </n-button>
-        <template v-if="!store.debug_mode">
-          <n-button  v-if="device.is_4k() || device.is_pure()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
-          <n-button  v-if="device.is_3k()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
-          <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
-          <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
+        <template v-if="!device.connected">
+          <!-- <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button> -->
+          <!-- <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button> -->
+          <n-select v-if="!device.connected" class="mr" @update:value="handleChange" v-model:value="state.currentLang"
+          placeholder="Language" :options="state.options"></n-select>
+        </template>
+        <template v-else>
+          <n-button v-if="device.is_4k() || device.is_3k()" class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device') }}</n-button>
+          <n-button class="mr" :disabled="store.loading" @click="get_default_config">{{ $t('default_config') }}</n-button>
+          <n-button class="mr" :disabled="store.loading" v-if="!store.need_check" @click="sync_config" :type="sync_btn_type">{{ $t('sync_config') }}</n-button>
+          <n-button class="mr" :disabled="store.loading" v-if="store.need_check" @click="save_config" type="warning">{{ $t('save_config') }}</n-button>
         </template>
       </template>
-    </template>
-    <template v-else>
-      <template v-if="!device.connected">
-        <!-- <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button> -->
-        <!-- <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button> -->
-        <n-select v-if="!device.connected" class="mr" @update:value="handleChange" v-model:value="state.currentLang"
-        placeholder="Language" :options="state.options"></n-select>
-      </template>
-      <template v-else>
-        <n-button class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device') }}</n-button>
-        <n-button class="mr" :disabled="store.loading" @click="get_default_config">{{ $t('default_config') }}</n-button>
-        <n-button class="mr" :disabled="store.loading" v-if="!store.need_check" @click="sync_config" :type="sync_btn_type">{{ $t('sync_config') }}</n-button>
-        <n-button class="mr" :disabled="store.loading" v-if="store.need_check" @click="save_config" type="warning">{{ $t('save_config') }}</n-button>
-      </template>
-    </template>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
+.header {
+  position: relative;
+  z-index: 1000;
+  top: 15px;
+  height: 100%;
+  width: 95%;
+  background-color: var(--n-color);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
 .left {
   display: flex;
   align-items: center;

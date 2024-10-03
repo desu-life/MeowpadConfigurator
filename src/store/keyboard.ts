@@ -6,7 +6,7 @@ import { mapping } from "@/keycode";
 import emitter from "@/mitt";
 import { IMixedKey } from "@/apis/meowboard/config";
 import { format } from "path";
-import { formatKey } from "@/utils";
+import { formatKey } from "@/keymap";
 
 interface DebugVars {
   hallValue: number;
@@ -92,7 +92,7 @@ export const useKeyboard = defineStore("keyboard", () => {
     return false
   }
 
-  function getKeyStr(index) {
+  function getKeyShow(index: number) {
     let key = showkeys.value[index];
     return formatKey(key);
   }
@@ -110,7 +110,7 @@ export const useKeyboard = defineStore("keyboard", () => {
     updateKey,
     isSelectAble,
     showkeys,
-    getKeyStr
+    getKeyShow
   };
 });
 

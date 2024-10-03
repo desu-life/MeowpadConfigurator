@@ -2,31 +2,21 @@
 import { IMixedKey } from "@/apis/meowboard/config";
 import emitter from "@/mitt";
 import { c, useMessage } from 'naive-ui'
+import { formatKey } from "@/keymap";
 
-const props = defineProps({
-  keyStr: {
-    type: String,
-    required: true
-  },
-  keyStrIndex: {
-    type: Number,
-    required: true
-  }
-})
+const props = defineProps<{
+  keyShow: IMixedKey
+  keyStrIndex: number
+}>()
+
+
 
 const message = useMessage()
 
-const keyDragged = defineModel<IMixedKey | null>("keyDragged", { default: null });
-
-function onMouseUp(event: MouseEvent) {
-  if (keyDragged.value != null) {
-    console.log("Up", keyDragged.value)
-    emitter.emit('key-str-modify', { rawIndex: props.keyStrIndex, newValue: keyDragged.value })
-  }
-}
+const keyCurrentIndex = defineModel<number>("keyCurrentIndex", { default: 0 });
 
 function onClick(event: MouseEvent) {
-  emitter.emit('key-str-modify', { rawIndex: props.keyStrIndex, newValue: { t: "None", c: 0 }})
+  emitter.emit('key-str-modify', { index: props.keyStrIndex, currentKey: null })
 }
 
 </script>
@@ -44,11 +34,12 @@ function onClick(event: MouseEvent) {
       :class="{
       }"
       :draggable="true"
-      @mouseup="onMouseUp($event)"
+      @mouseenter="() => keyCurrentIndex = props.keyStrIndex"
+      @mouseleave="() => keyCurrentIndex = -1"
   >
     <div class="label-frame">
       <div class="key-modify-option-text">
-        {{ keyStr }}
+        <component :is="formatKey(keyShow)" :key="keyShow" />
       </div>
     </div>
   </div>
@@ -86,10 +77,10 @@ function onClick(event: MouseEvent) {
   &:hover {
     background-color: rgba(249, 47, 47, 0.107);
   }
-  // .label-frame {
-  //   flex: 1;
-  //   margin-left: 8px;
-  // }
+
+  .label-frame {
+    text-align: center;
+  }
 
 }
 </style>

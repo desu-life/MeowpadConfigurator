@@ -1,11 +1,4 @@
 <script setup lang="ts">
-defineProps({
-  keyStr: {
-    type: String,
-    required: true
-  }
-})
-
 const hallValue = defineModel("hallValue", { type: Number, default: 0 });
 // const isSelected = ref(false);
 const hallValuePercentage = defineModel("hallValuePercentage", { type: Number, default: 0 });

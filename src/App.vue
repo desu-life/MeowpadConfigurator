@@ -88,10 +88,10 @@ onMounted(async () => {
 
 .header {
   height: var(--header-height);
+  background-color: var(--color-background) !important;
   display: flex;
   align-items: center;
-  flex-direction: row;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .main {

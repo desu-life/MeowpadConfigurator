@@ -29,12 +29,16 @@ import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
 import { IKeyboard, IKeyConfigBoard, IMixedKey } from "@/apis/meowboard/config";
 import emitter from "@/mitt";
-import { formatKey, getErrorMsg, most, splitArray } from "@/utils";
+import { getErrorMsg, most, splitArray } from "@/utils";
 import { useI18n } from "vue-i18n";
 import { appWindow, LogicalSize } from "@tauri-apps/api/window";
 import { useKeyboard } from "@/store/keyboard";
 import { Toggle } from "@/interface";
 import { storeToRefs } from "pinia";
+import ModifyKeys from "./ModifyKeys.vue";
+import ConfigKeys from "./ConfigKeys.vue";
+import { MenuGroupOption, MenuOption, NIcon } from "naive-ui";
+import { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 
 const message = useMessage()
 const dialog = useDialog()
@@ -57,36 +61,6 @@ let keymapStyle = ref({
   "--default-key-font-size": default_font_size.value + "px",
 })
 
-const HallFilterSel = [
-  {
-    value: 0,
-    label: "关闭"
-  },
-  {
-    value: 1,
-    label: "低"
-  },
-  {
-    value: 2,
-    label: "高"
-  },
-  {
-    value: 3,
-    label: "延迟享受者"
-  },
-]
-
-const ToggleSel = [
-  {
-    value: Toggle.On,
-    label: t('on')
-  },
-  {
-    value: Toggle.Off,
-    label: t('off')
-  },
-]
-
 const DebugSel = [
   {
     value: 0,
@@ -98,6 +72,7 @@ const DebugSel = [
   },
 ]
 
+const keyLayer = ref(0);
 const keyShowMode = ref(0)
 const totalDistance = ref(4.0)
 const KeysOfEachLine = [14, 14, 13, 14, 9];
@@ -114,6 +89,36 @@ const keyWidth = ref([  // 每个键的ui里的宽度
   1.25, 1.25, 1.25, 6.25, 1, 1, 1, 1, 1
 ])
 
+function renderIcon(icon: Component) {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
+
+const menuOptions: MenuMixedOption[] = [
+  {
+    type: 'group',
+    key: 'keyboard',
+    label: '键盘',
+    children: [
+      {
+        label: '键盘设置',
+        key: 0,
+      },
+      {
+        label: '按键绑定',
+        key: 1,
+      },
+      {
+        label: '按键校准',
+        key: 2,
+      },
+      {
+        label: '设备调试',
+        key: 3,
+      },
+    ]
+  }
+]
+
 // 0-校准 1-调试
 function selectKeyCalibrate() {
   let indexs: number[] = []
@@ -124,7 +129,12 @@ function selectKeyCalibrate() {
   }
   console.log(indexs)
   if (indexs.length == 0) return
-  apib.calibration_key(indexs)
+
+  try {
+    apib.calibration_key(indexs)
+  } catch (e) {
+    emitter.emit('connection-broke', {e: e as IError})
+  }
 
   for (let i = 0; i < indexs.length; i++) {
     kb.keyVarsRefs[indexs[i]].isSelected = false;
@@ -153,11 +163,8 @@ function selectKeyCalibrate() {
         clearInterval(interval)
       }
     } catch (e) {
-      device.connected = false
-      store.status = "error"
-      store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
-      store.loading = false
-      console.error(e)
+      clearInterval(interval)
+      emitter.emit('connection-broke', {e: e as IError})
     }
   }, 100)
 }
@@ -174,11 +181,7 @@ onMounted(async () => {
 
       await kb.updateKey()
     } catch (e) {
-      device.connected = false
-      store.status = "error"
-      store.status_str = t('connection_broke', { e: getErrorMsg(t, e as IError) })
-      store.loading = false
-      console.error(e)
+      emitter.emit('connection-broke', {e: e as IError})
     }
   }, 100)
 
@@ -188,42 +191,35 @@ onMounted(async () => {
 })
 
 
-const keyModifyDraggedKey = ref<IMixedKey | null>(null);
 
-const keyDraggingStyle = ref({
-  left: "0px",
-  top: "0px",
-});
+const currentDraggedKey = ref<IMixedKey | null>(null);
+const currentOnKey = ref<number>(-1);
 
-const keyLayer = ref(0);
 
 function startDragKey(key: IMixedKey) {
-  keyModifyDraggedKey.value = key;
-  document.onmousemove = (event: MouseEvent) => {
-    keyDraggingStyle.value.left = `${event.pageX - 32}px`;
-    keyDraggingStyle.value.top = `${event.pageY - 32}px`;
-  }
-
-  document.onmouseup = () => {
-    document.onmousemove = null;
-    document.onmouseup = null;
-    keyModifyDraggedKey.value = null;
-  }
+  currentDraggedKey.value = key
 }
 
+function endDragKey(key: IMixedKey) {
+  if (currentOnKey.value !== -1 && currentDraggedKey.value !== null) {
+    KeyStrModify({index: currentOnKey.value, currentkey: currentDraggedKey.value})
+  }
+  currentDraggedKey.value = null
+}
 
-
-emitter.on('key-str-modify', (event: { rawIndex: number; newValue: IMixedKey }) => {
+emitter.on('key-str-modify', KeyStrModify)
+function KeyStrModify({index, currentkey}: {index: number, currentkey: IMixedKey | null}) {
   if (kb.mode != 1) return
-
-  kb.showkeys[event.rawIndex] = event.newValue
+  
+  let key: IMixedKey = currentkey ?? { t: "None", c: 0 }
+  kb.showkeys[index] = key
 
   if (keyLayer.value == 0) {
-    device.device_config!.normal_layer[event.rawIndex] = event.newValue
+    device.device_config!.normal_layer[index] = key
   } else if (keyLayer.value == 1) {
-    device.device_config!.fn_layer[event.rawIndex] = event.newValue
+    device.device_config!.fn_layer[index] = key
   }
-})
+}
 
 function onLayerUpdate() {
   if (kb.mode == 1) {
@@ -262,7 +258,6 @@ function setLayer(layer) {
 
 
 let select_indexs = ref<number[]>([])
-
 emitter.on('key-select', () => {
   select_indexs.value = []
   for (let i = 0; i < 64; i++) {
@@ -276,10 +271,12 @@ emitter.on('key-select', () => {
     let press_percentages: number[] = []
     let release_percentages: number[] = []
     let dead_zones: number[] = []
+    let r_dead_zones: number[] = []
     for (let i = 0; i < select_indexs.value.length; i++) {
       press_percentages.push(device.device_config!.keys[select_indexs.value[i]].press_percentage)
       release_percentages.push(device.device_config!.keys[select_indexs.value[i]].release_percentage)
       dead_zones.push(device.device_config!.keys[select_indexs.value[i]].dead_zone)
+      r_dead_zones.push(device.device_config!.keys[select_indexs.value[i]].release_dead_zone)
     }
 
     // todo: 另外两个属性
@@ -287,40 +284,20 @@ emitter.on('key-select', () => {
       press_percentage: most(press_percentages),
       release_percentage: most(release_percentages),
       dead_zone: most(dead_zones),
-      release_dead_zone: 5,
+      release_dead_zone: most(r_dead_zones),
       rt_enabled: true
     }
   }
 })
 
-
-function onKeyPUpdate(v) {
-  if (keyconfig.value == null) return
-  keyconfig.value.press_percentage = v
-  onKeyConfigUpdate()
-}
-
-function onKeyRUpdate(v) {
-  if (keyconfig.value == null) return
-  keyconfig.value.release_percentage = v
-  onKeyConfigUpdate()
-}
-
-function onKeyDUpdate(v) {
-  if (keyconfig.value == null) return
-  keyconfig.value.dead_zone = v
-  onKeyConfigUpdate()
-}
-
-function onKeyConfigUpdate() {
+function updateKeyConfig() {
   if (keyconfig.value == null) return
   for (let i = 0; i < select_indexs.value.length; i++) {
     device.device_config!.keys[select_indexs.value[i]].press_percentage = keyconfig.value.press_percentage
     device.device_config!.keys[select_indexs.value[i]].release_percentage = keyconfig.value.release_percentage
     device.device_config!.keys[select_indexs.value[i]].dead_zone = keyconfig.value.dead_zone
+    device.device_config!.keys[select_indexs.value[i]].release_dead_zone = keyconfig.value.release_dead_zone
   }
-
-  emitter.emit('need-save')
 }
 
 
@@ -400,286 +377,100 @@ emitter.on('sync-config', async () => {
   emitter.emit('loaded')
 })
 
-function temp_convert(key: number): IMixedKey  {
-  return {
-    t: "Keyboard",
-    c: key
-  }
-}
+
 
 </script>
 
 <template>
-  <Teleport to="body">
-    <div class="dragging-key" v-if="keyModifyDraggedKey != null" :style="keyDraggingStyle">
-      <KeyFrame :style="keymapStyle">
-        {{ formatKey(keyModifyDraggedKey) }}
-      </KeyFrame>
-    </div>
-  </Teleport>
+  <n-layout has-sider class="pure-config">
+    <n-layout-sider content-class="side-pure-config" :width="200">
+      <n-menu class="pure-menu" :icon-size="0" :options="menuOptions" v-model:value="kb.mode" :on-update:value="onModeChange" />
+    </n-layout-sider>
 
-  <div class="main-pure-config">
-    <!-- 拖拽的键 -->
-    <div class="top-bar">
-      <n-tabs type="line" v-model:value="kb.mode" :on-update:value="onModeChange">
-        <n-tab :name="0">
-          霍尔
-        </n-tab>
-        <n-tab :name="1">
-          按键
-        </n-tab>
-        <n-tab :name="2">
-          校准
-        </n-tab>
-        <n-tab :name="3">
-          调试
-        </n-tab>
-        <template #suffix>
-          <n-button-group v-if="kb.isSelectAble()">
-            <n-button @click="() => kb.selectAllKey(true)">
-              全选
-            </n-button>
-            <n-button @click="() => kb.selectAllKey(false)">
-              取消全选
-            </n-button>
-            <n-button @click="() => kb.selectReverse()">
-              反选
-            </n-button>
-          </n-button-group>
-          <n-input-number v-if="kb.mode === 3 && keyShowMode === 1" style="width: 100px;" v-model:value="totalDistance"
-            :precision="2" :show-button="false">
-            <template #suffix>mm</template>
-          </n-input-number>
-  
-          <div style="padding-left: 5px;">
-  
-            <n-radio-group v-if="kb.mode === 3" v-model:value="keyShowMode">
-              <n-radio-button v-for="s in DebugSel" :key="s.value" :value="s.value" :label="s.label" />
-            </n-radio-group>
-  
-            <n-button v-if="kb.mode === 2" @click="() => selectKeyCalibrate()">
-              校准选中的键
-            </n-button>
-            <n-button v-if="kb.mode === 1" @click="onLayerChange">
-              切换Fn层
-            </n-button>
+    <n-layout content-class="main-pure-config">
+      <div class="content">
+        <div class="main-keyboard">
+          <div class="keyboard-frame" v-if="device.device_config != null">
+            <div class="keyboard" :style="keymapStyle">
+              <div v-for="(keyIndex, lineIndex) in keyIndexes" :key="lineIndex" class="keyLine">
+                <div v-for="i in keyIndex" :key="i">
+                  <KeyFrame :unit-width="keyWidth[i]">
+                    <KeyHall v-if="kb.mode === 0" :key-show="kb.showkeys[i]" v-model:isSelected="kb.keyVarsRefs[i].isSelected"
+                      v-model:press_percentage="device.device_config.keys[i].press_percentage"
+                      v-model:release_percentage="device.device_config.keys[i].release_percentage"
+                      v-model:dead_zone="device.device_config.keys[i].dead_zone"
+                      v-model:release_dead_zone="device.device_config.keys[i].release_dead_zone"
+                      v-model:rt_enabled="device.device_config.keys[i].rt_enabled" />
+      
+                    <KeyModify v-if="kb.mode === 1" :key-show="kb.showkeys[i]" :key-str-index="i" v-model:key-current-index="currentOnKey"/>
+      
+                    <KeyCalibrate v-if="kb.mode === 2" :key-show="kb.showkeys[i]"
+                      v-model:isSelected="kb.keyVarsRefs[i].isSelected"
+                      v-model:isCalibrated="kb.keyCalibrateRefs[i].isCalibrated"
+                      v-model:isCalibrating="kb.keyCalibrateRefs[i].isCalibrating" />
+      
+                    <KeyDebug v-if="kb.mode === 3" v-model:hallValue="kb.keyDebugRefs[i].hallValue"
+                      v-model:hallValuePercentage="kb.keyDebugRefs[i].hallValuePercentage"
+                      v-model:isPressed="kb.keyDebugRefs[i].isPressed" v-model:keyShowMode="keyShowMode"
+                      v-model:totalDistance="totalDistance" />
+                  </KeyFrame>
+                </div>
+              </div>
+            </div>
           </div>
-        </template>
-      </n-tabs>
-    </div>
-
-    <div class="main-keyboard">
-      <div class="keyboard-frame" v-if="device.device_config != null">
-        <div class="keyboard" :style="keymapStyle">
-          <div v-for="(keyIndex, lineIndex) in keyIndexes" :key="lineIndex" class="keyLine">
-            <div v-for="i in keyIndex" :key="i">
-              <KeyFrame :unit-width="keyWidth[i]">
-                <KeyHall v-if="kb.mode === 0" :keyStr="kb.getKeyStr(i)" v-model:isSelected="kb.keyVarsRefs[i].isSelected"
-                  v-model:press_percentage="device.device_config.keys[i].press_percentage"
-                  v-model:release_percentage="device.device_config.keys[i].release_percentage"
-                  v-model:dead_zone="device.device_config.keys[i].dead_zone"
-                  v-model:release_dead_zone="device.device_config.keys[i].release_dead_zone"
-                  v-model:rt_enabled="device.device_config.keys[i].rt_enabled" />
+          <div class="keyboard-footer">
+            <n-button-group v-if="kb.isSelectAble()">
+                <n-button @click="() => kb.selectAllKey(true)">
+                  全选
+                </n-button>
+                <n-button @click="() => kb.selectAllKey(false)">
+                  取消全选
+                </n-button>
+                <n-button @click="() => kb.selectReverse()">
+                  反选
+                </n-button>
+              </n-button-group>
   
-                <KeyModify v-if="kb.mode === 1" :keyStr="kb.getKeyStr(i)" :keyStrIndex="i"
-                  v-model:keyDragged="keyModifyDraggedKey" />
-  
-                <KeyCalibrate v-if="kb.mode === 2" :keyStr="kb.getKeyStr(i)"
-                  v-model:isSelected="kb.keyVarsRefs[i].isSelected"
-                  v-model:isCalibrated="kb.keyCalibrateRefs[i].isCalibrated"
-                  v-model:isCalibrating="kb.keyCalibrateRefs[i].isCalibrating" />
-  
-                <KeyDebug v-if="kb.mode === 3" :keyStr="kb.getKeyStr(i)" v-model:hallValue="kb.keyDebugRefs[i].hallValue"
-                  v-model:hallValuePercentage="kb.keyDebugRefs[i].hallValuePercentage"
-                  v-model:isPressed="kb.keyDebugRefs[i].isPressed" v-model:keyShowMode="keyShowMode"
-                  v-model:totalDistance="totalDistance" />
-              </KeyFrame>
+              <n-input-number v-if="kb.mode === 3 && keyShowMode === 1" style="width: 100px;" v-model:value="totalDistance"
+              :precision="2" :show-button="false">
+              <template #suffix>mm</template>
+            </n-input-number>
+            <div style="padding-left: 5px;">
+              <n-radio-group v-if="kb.mode === 3" v-model:value="keyShowMode">
+                <n-radio-button v-for="s in DebugSel" :key="s.value" :value="s.value" :label="s.label" />
+              </n-radio-group>
+    
+              <n-button v-if="kb.mode === 2" @click="() => selectKeyCalibrate()">
+                校准选中的键
+              </n-button>
+              <n-button v-if="kb.mode === 1" @click="onLayerChange">
+                切换Fn层
+              </n-button>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="bottom-config">
-      <template v-if="kb.mode === 1">
-        <n-card :bordered="false" class="key-modify-config-card" size="small">
-          <template #action>
-            将按键拖拽至上方
-          </template>
-          <n-scrollbar class="key-modify-config-scrollbar" :style="keymapStyle">
-            <div class="key-modify-config">
-              <KeyFrame class="key-modify-config-key" v-for="(v, i) in mapping" :key="i">
-                <KeyModifyOption :keyStr="v" :KeyValue="temp_convert(parseInt(i as any))"
-                  @dragkey="startDragKey" />
-              </KeyFrame>
-            </div>
-          </n-scrollbar>
-        </n-card>
-      </template>
+      <div class="bottom-config">
+        <template v-if="kb.mode === 1">
+          <ModifyKeys @dragkey="startDragKey" @dragkeyend="endDragKey"></ModifyKeys>
+        </template>
 
-      <div v-if="device.device_config != null && kb.mode === 0">
-        <n-card :bordered="false" class="keyboard-config-card" content-class="keyboard-config-card-content">
-          <n-grid :cols="24" :x-gap="18">
-            <n-gi :span="9">
-              <n-card :bordered="false" class="device-config-card" content-class="device-config-card-content">
-                <div v-if="keyconfig != null" class="device-config-key-config">
-
-                  <n-form-item label-placement="left" label="死区" path="dead_zone" :show-feedback="false">
-                    <n-input-number v-model:value="keyconfig.dead_zone" :precision="0" :step="1" :min="0" :max="100" :on-update:value="v => onKeyDUpdate(v)">
-                      <template #suffix>
-                        %
-                      </template>
-                    </n-input-number>
-                    <!-- <n-slider v-model:value="keyconfig.dead_zone" :step="0.5" :min="0" :max="100"
-                      :format-tooltip="formatPercentTooltip" :on-update:value="v => onKeyDUpdate(v)" /> -->
-                  </n-form-item>
-                  <n-form-item label-placement="left" label="按下" path="press_percentage" :show-feedback="false">
-                    <n-input-number v-model:value="keyconfig.press_percentage" :precision="0" :step="1" :min="1" :max="100" :on-update:value="v => onKeyPUpdate(v)">
-                      <template #suffix>
-                        %
-                      </template>
-                    </n-input-number>
-                    <!-- <n-slider v-model:value="keyconfig.press_percentage" :step="0.5" :min="0.5" :max="100"
-                      :format-tooltip="formatPercentTooltip" :on-update:value="v => onKeyPUpdate(v)" /> -->
-                  </n-form-item>
-                  <n-form-item label-placement="left" label="抬起" path="release_percentage" :show-feedback="false">
-                    <n-input-number v-model:value="keyconfig.release_percentage" :precision="0" :step="1" :min="1" :max="100" :on-update:value="v => onKeyRUpdate(v)">
-                      <template #suffix>
-                        %
-                      </template>
-                    </n-input-number>
-                    <!-- <n-slider v-model:value="keyconfig.release_percentage" :step="0.5" :min="0.5" :max="100"
-                      :format-tooltip="formatPercentTooltip" :on-update:value="v => onKeyRUpdate(v)" /> -->
-                  </n-form-item>
-                </div>
-                <template v-else>
-                  <n-empty description="请先选中按键">
-                  </n-empty>
-                </template>
-              </n-card>
-            </n-gi>
-            <n-gi :span="15">
-              <n-grid :cols="24" :x-gap="9">
-                <n-form-item-gi :span="12" path="jitters_elimination_time" :show-feedback="false" class="single-key-config">
-                  <n-input-number v-model:value="device.jitters_elimination_time" placeholder="Input" :min="0" :max="50"
-                    :step="0.5">
-                    <template #suffix>
-                      ms
-                    </template>
-                  </n-input-number>
-                  <template #label>
-                    <n-tooltip trigger="hover" :delay="200">
-                      <template #trigger>
-                        <n-text underline>
-                          消抖时长
-                        </n-text>
-                      </template>
-                      <template #default>
-                        按键的去抖，不会增加按下时的延迟，osu玩家推荐开启
-                      </template>
-                    </n-tooltip>
-                  </template>
-                </n-form-item-gi>
-                <n-form-item-gi :span="12" path="hall_filter" :show-feedback="false">
-                  <n-select v-model:value="device.hall_filter" :options="HallFilterSel" />
-                  <template #label>
-                    <n-tooltip trigger="hover" :delay="200">
-                      <template #trigger>
-                        <n-text underline>
-                          滤波等级
-                        </n-text>
-                      </template>
-                      <template #default>
-                        用于增加精度，但会有一点延迟，推荐开启
-                      </template>
-                    </n-tooltip>
-                  </template>
-                </n-form-item-gi>
-                <n-form-item-gi :span="12" label="灯光亮度" path="max_brightness" :show-feedback="false">
-                  <n-input-number v-model:value="device.max_brightness" placeholder="Input" :min="0" :max="100"
-                    :step="1">
-                    <template #suffix>
-                      %
-                    </template>
-                  </n-input-number>
-                </n-form-item-gi>
-
-                <n-form-item-gi :span="12" path="fangwuchu" :show-feedback="false">
-                  <n-select v-model:value="device.fangwuchu" :options="ToggleSel" />
-                  <template #label>
-                    <n-tooltip trigger="hover" :delay="200">
-                      <template #trigger>
-                        <n-text underline>
-                          触底防双击
-                        </n-text>
-                      </template>
-                      <template #default>
-                        防止轴体触底震动导致双击，影响底部死区，推荐开启
-                      </template>
-                    </n-tooltip>
-                  </template>
-                </n-form-item-gi>
-              </n-grid>
-            </n-gi>
-          </n-grid>
-        </n-card>
+        <div v-if="device.device_config != null && kb.mode === 0">
+          <ConfigKeys v-model:key-config="keyconfig" @update="updateKeyConfig" style="top: 20px;"></ConfigKeys>
+        </div>
       </div>
-
-    </div>
-
-
-
-  </div>
+    </n-layout>
+  </n-layout>
 </template>
 
 
 
 <style lang="scss" scoped>
-.dragging-key {
-  position: absolute;
-  pointer-events: none;
-  user-select: none;
-  opacity: 0.8;
-  z-index: 1000;
-  transform: rotate(15deg);
+
+.pure-menu {
+  height: 70%;
 }
-
-.keyboard-config-card {
-  --item-padding: 16px;
-
-  background-color: var(--color-background-soft);
-  border-radius: 8px;
-  width: fit-content;
-
-  .single-key-config {
-    padding-bottom: var(--item-padding);
-  }
-  
-  .device-config-card {
-    background-color: var(--color-background-soft);
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-    height: 100%;
-  
-    .device-config-key-config {
-      width: 90%;
-    }
-  }
-}
-
-.key-modify-config-card {
-  background-color: var(--color-background-soft);
-  border-radius: 8px;
-  width: fit-content;
-
-  .key-modify-config {
-    display: flex;
-    flex-wrap: wrap;
-    overflow-wrap: break-word;
-  }
-}
-
-
 
 .keyboard-frame {
   background-color: var(--color-background-soft);
@@ -692,6 +483,8 @@ function temp_convert(key: number): IMixedKey  {
   .keyboard {
     display: flex;
     flex-direction: column;
+    flex-wrap: wrap;
+    overflow-wrap: break-word;
 
     .keyLine {
       display: flex;
@@ -699,15 +492,21 @@ function temp_convert(key: number): IMixedKey  {
     }
   }
 }
+
+
 </style>
 
 <style lang="scss" scoped>
 // layout
-.main-pure-config {
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pure-config {
   width: -webkit-fill-available;
   height: -webkit-fill-available;
-  display: grid;
-  justify-content: center;
 }
 
 .top-bar {
@@ -717,29 +516,42 @@ function temp_convert(key: number): IMixedKey  {
 }
 
 .main-keyboard {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: fit-content;
 }
+
+.keyboard-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 15px;
+  margin-top: 10px;
+}
+
 
 .bottom-config {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+
 }
 </style>
 
 <style lang="scss">
-// 这个不能scoped
-.key-modify-config-scrollbar {
-  max-height: calc(var(--default-key-height) * 3);
-  max-width: calc((var(--default-key-width) * 16) + var(--n-scrollbar-width) + var(--default-key-margin));
-}
+// layout
 
-.device-config-card-content {
-  padding: 0px !important;
+
+.side-pure-config {
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: var(--color-background);
 }
+
+.main-pure-config {
+  width: -webkit-fill-available;
+  height: -webkit-fill-available;
+  display: grid;
+  justify-content: center;
+}
+
+
 </style>

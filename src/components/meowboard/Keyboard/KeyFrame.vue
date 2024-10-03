@@ -69,7 +69,8 @@ const props = withDefaults(defineProps<{
   justify-content: center;
   user-select: none;
   border-radius: 8px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  overflow-wrap: break-word;
   color: var(--color-text);
 }
 

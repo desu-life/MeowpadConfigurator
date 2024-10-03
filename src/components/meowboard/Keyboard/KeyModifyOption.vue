@@ -1,10 +1,9 @@
-<script setup lang="ts">
+<script setup lang="tsx">
 import { IMixedKey } from '@/apis/meowboard/config';
 import Checkmark16Filled from '@vicons/fluent/Checkmark16Filled'
-
+import { IKeyMap } from "@/keymap";
 const props = defineProps<{
-  keyStr?: string
-  KeyValue: IMixedKey
+  KeyValue: IKeyMap
 }>()
 
 const emit = defineEmits<{
@@ -13,9 +12,11 @@ const emit = defineEmits<{
 
 function onKeyStartDrag(event: DragEvent) {
   console.log("StartDrag", props.KeyValue)
-  emit('dragkey', props.KeyValue)
+  emit('dragkey', props.KeyValue.code)
   event.preventDefault()
 }
+
+import { h } from 'vue'
 
 </script>
 
@@ -30,7 +31,7 @@ function onKeyStartDrag(event: DragEvent) {
   >
     <div class="label-frame">
       <div class="key-modify-option-text">
-        {{ keyStr }}
+        <component :is="KeyValue.key"/>
       </div>
     </div>
   </div>

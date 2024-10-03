@@ -1,14 +1,12 @@
-<script setup lang="ts">
+<script setup lang="tsx">
 import Checkmark16Filled from '@vicons/fluent/Checkmark16Filled'
-import { IKeyConfigBoard } from "@/apis/meowboard/config";
+import { IKeyConfigBoard, IMixedKey } from "@/apis/meowboard/config";
 import emitter from "@/mitt";
+import { formatKey } from "@/keymap";
 
-defineProps({
-  keyStr: {
-    type: String,
-    required: true
-  }
-})
+const props = defineProps<{
+  keyShow: IMixedKey
+}>()
 
 const isSelected = defineModel("isSelected", { type: Boolean, default: false });
 const press_percentage = defineModel("press_percentage", { type: Number, default: 0 });

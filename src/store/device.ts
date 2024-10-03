@@ -123,7 +123,17 @@ export const useDeviceStore = defineStore("device", () => {
     config.value!.max_brightness = Math.floor(max_brightness.value / 2)
 
     for (let i = 0; i < 64; i++) {
-      config.value!.keys[i].release_dead_zone = fangwuchu.value == Toggle.On ? 10 : 0
+      if (fangwuchu.value == Toggle.On) {
+        if (config.value!.keys[i].release_dead_zone == 0) {
+          config.value!.keys[i].release_dead_zone = 5
+        }
+      } else {
+        if (config.value!.keys[i].release_dead_zone == 5) {
+          config.value!.keys[i].release_dead_zone = 0
+        }
+      }
+
+      config.value!.keys[i].release_dead_zone = Math.floor(config.value!.keys[i].release_dead_zone * 2)
       config.value!.keys[i].press_percentage = Math.floor(config.value!.keys[i].press_percentage * 2)
       config.value!.keys[i].release_percentage = Math.floor(config.value!.keys[i].release_percentage * 2)
       config.value!.keys[i].dead_zone = Math.floor(config.value!.keys[i].dead_zone * 2)
@@ -139,13 +149,14 @@ export const useDeviceStore = defineStore("device", () => {
     max_brightness.value = Math.floor(config.value!.max_brightness * 2)
 
     for (let i = 0; i < 64; i++) {
-      if (config.value!.keys[i].release_dead_zone == 10) {
-        fangwuchu.value = Toggle.On
-      }
-
       config.value!.keys[i].press_percentage = config.value!.keys[i].press_percentage / 2
       config.value!.keys[i].release_percentage = config.value!.keys[i].release_percentage / 2
       config.value!.keys[i].dead_zone = config.value!.keys[i].dead_zone / 2
+      config.value!.keys[i].release_dead_zone = config.value!.keys[i].release_dead_zone / 2
+
+      if (config.value!.keys[i].release_dead_zone == 5) {
+        fangwuchu.value = Toggle.On
+      }
     }
   }
   

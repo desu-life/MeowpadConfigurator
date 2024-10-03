@@ -146,5 +146,10 @@
   "select-device": "请选择要连接的设备",
   "pressed": "按下",
   "released": "松开",
-  "calibrating": "校准中"
+  "calibrating": "校准中",
+  "BasicKeys": "基本字符",
+  "ExtendedKeys": "扩展字符",
+  "FunctionKeys": "自定义功能",
+  "MediaKeys": "媒体控制",
+  "MouseKeys": "鼠标按键"
 }
