@@ -187,7 +187,9 @@ onMounted(async () => {
         return
       }
 
-      await kb.updateKey()
+      if (kb.mode == 3) {
+        await kb.updateKey()
+      }
     } catch (e) {
       emitter.emit('connection-broke', {e: e as IError})
     }
@@ -237,8 +239,9 @@ function onLayerUpdate() {
   }
 }
 
-function onModeChange(mode) {
+async function onModeChange(mode) {
   kb.mode = mode
+  await kb.updateKey()
   onLayerUpdate()
 }
 function onLayerChange() {
