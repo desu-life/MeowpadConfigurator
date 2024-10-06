@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IMixedKey } from "@/apis/meowboard/config";
+import { IMixedKey } from "@/apis";
 import emitter from "@/mitt";
 import { c, useMessage } from 'naive-ui'
 import { formatKey } from "@/keymap";

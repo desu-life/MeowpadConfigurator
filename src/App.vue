@@ -37,6 +37,10 @@ async function get_firmware_versions() {
 }
 
 onMounted(async () => {
+  await store.load()
+  await store.save()
+  store.status_str = t("device_disconnected")
+
   get_latest_version().then(async (version: IVersion) => {
     store.version_info = version
     let need_update = await check_update(version)

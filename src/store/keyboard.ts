@@ -4,7 +4,7 @@ import { Type } from "naive-ui/es/button/src/interface";
 import * as apib from '@/apis/meowboard/api'
 import { mapping } from "@/keycode";
 import emitter from "@/mitt";
-import { IMixedKey } from "@/apis/meowboard/config";
+import { IMixedKey } from "@/apis";
 import { format } from "path";
 import { formatKey } from "@/keymap";
 

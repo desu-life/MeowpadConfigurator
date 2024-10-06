@@ -45,7 +45,18 @@ pub struct Light {
     pub lighting_mode: LightingMode,
     pub max_brightness: u8,
     pub sleep_time: u16,
+}
 
+impl Default for Key {
+    fn default() -> Self {
+        cbor::Keyboard::default().try_into().unwrap()
+    }
+}
+
+impl Default for Light {
+    fn default() -> Self {
+        cbor::Light::default().try_into().unwrap()
+    }
 }
 
 impl TryFrom<cbor::Keyboard> for Key {

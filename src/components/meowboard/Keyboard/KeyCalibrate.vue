@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IMixedKey } from '@/apis/meowboard/config';
+import { IMixedKey } from "@/apis";
 import Checkmark16Filled from '@vicons/fluent/Checkmark16Filled'
 import { formatKey } from "@/keymap";
 

@@ -1,7 +1,32 @@
 use num_derive::{FromPrimitive, ToPrimitive};
+use serde::{Serialize, Deserialize};
 use serde_repr::*;
 use strum_macros::EnumIter;
 use crate::KbReport;
+
+#[derive(
+    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Default
+)]
+#[serde(tag = "t", content = "c")]
+pub enum KeyValue {
+    #[default]
+    None,
+    Keyboard(KeyCode),
+    Custom(u8),
+    Mouse(u8),
+    Media(u8),
+}
+
+impl From<KeyCode> for KeyValue {
+    fn from(value: KeyCode) -> Self {
+        if value != KeyCode::None {
+            KeyValue::Keyboard(value)
+        } else {
+            KeyValue::None
+        }
+    }
+}
+
 
 #[allow(non_camel_case_types)]
 #[derive(
@@ -310,5 +335,14 @@ impl KeyCode {
         let mut r = KbReport::default();
         r.pressed(self);
         r
+    }
+}
+
+impl From<KeyValue> for KeyCode {
+    fn from(value: KeyValue) -> Self {
+        match value {
+            KeyValue::Keyboard(k) => k,
+            _ => KeyCode::None,
+        }
     }
 }

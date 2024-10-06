@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import Checkmark16Filled from '@vicons/fluent/Checkmark16Filled'
-import { IKeyConfigBoard, IMixedKey } from "@/apis/meowboard/config";
+import { IMixedKey } from "@/apis";
 import emitter from "@/mitt";
 import { formatKey } from "@/keymap";
 

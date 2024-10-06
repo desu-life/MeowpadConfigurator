@@ -6,6 +6,7 @@ import * as api from '@/apis/api'
 
 export declare type Error = 'DeviceDisconnected' | 'DeviceNotFound' | 'Network' | 'Meowpad' | 'Iap';
 export declare type DeviceName = 'Meowpad' | 'Meowpad SE v2' | 'Pure64';
+export declare type KeyType = 'None' | 'Keyboard' | 'Custom' | 'Mouse' | 'Media';
 
 export interface IError {
     type: Error
@@ -69,3 +70,41 @@ export enum KeyState {
     Calibrating = 2
 }
 
+export interface IMixedKey {
+    t: KeyType,
+    c: KeyCode | number
+}
+
+
+
+export interface IDevicePreset {
+    id: string
+    name: string
+    device: IDevicePresetInfo
+    config: IPresetConfig
+}
+
+
+export interface IDevicePresetInfo {
+    device_name: DeviceName
+    serial_number?: string
+}
+
+
+export interface IPresetConfig {
+    key_layers?: IKeyPresetLayer[]
+    key_configs?: IKeyPresetConfig[]
+}
+
+export interface IKeyPresetLayer {
+    keys: IMixedKey[]
+}
+
+
+export interface IKeyPresetConfig {
+    press_percentage: number
+    release_percentage: number
+    dead_zone: number
+    release_dead_zone: number
+    rt_enabled?: boolean
+}

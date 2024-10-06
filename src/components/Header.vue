@@ -4,12 +4,13 @@ import { Type } from "naive-ui/es/button/src/interface"
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { useI18n } from "vue-i18n";
-import { setI18nLanguage, i18n } from '@/locales/index'
+import { setI18nLanguage, i18n, LOCALES } from '@/locales/index'
 import { Rgb2Hex, Hex2Rgb, getErrorMsg } from '@/utils';
 import { useDialog } from 'naive-ui'
 import * as api from '@/apis/api'
 import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
+import * as apib from '@/apis/meowboard/api'
 import { IError } from '@/apis';
 import { Toggle } from '@/interface';
 import { KeyCode } from '@/keycode';
@@ -42,11 +43,11 @@ const state = ref({
       label: 'English',
     },
   ],
-  currentLang: i18n.global.locale.value
 })
 
 function handleChange(e: string) {
-  setI18nLanguage(i18n, e)
+  store.setLang(e)
+  store.save()
   store.status_str = t("device_disconnected")
 }
 
@@ -100,7 +101,7 @@ async function get_default_config() {
 
 
 async function save_config() {
-  emitter.emit('get-default-config')
+  emitter.emit('save-config')
   store.need_check = false
 }
 
@@ -192,7 +193,11 @@ async function debug() {
 
 async function erase_firmware() {
   try {
-    await api4k.erase_firmware()
+    if (device.is_4k()) {
+      await api4k.erase_firmware()
+    } else if (device.is_pure()) {
+      await apib.erase_firmware()
+    }
     emitter.emit('connection-broke', { e: null })
     emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
   } catch (e) {
@@ -202,8 +207,12 @@ async function erase_firmware() {
 
 async function clear_config() {
   try {
-    await api3k.clear_config()
-    await api3k.reset_device()
+    if (device.is_3k()) {
+      await api3k.clear_config()
+      await api3k.reset_device()
+    } else if (device.is_pure()) {
+      await apib.clear_config()
+    }
     emitter.emit('connection-broke', { e: null })
     emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
   } catch (e) {
@@ -242,7 +251,7 @@ async function clear_config() {
           </n-button>
           <template v-if="!store.debug_mode">
             <n-button  v-if="device.is_4k() || device.is_pure()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
-            <n-button  v-if="device.is_3k()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
+            <n-button  v-if="device.is_3k() || device.is_pure()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
             <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
             <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
           </template>
@@ -252,7 +261,7 @@ async function clear_config() {
         <template v-if="!device.connected">
           <!-- <n-button class="mr" :disabled="store.loading" @click="developer_mode">{{ t("developer_mode") }}</n-button> -->
           <!-- <n-button class="mr" :disabled="store.loading" @click="connect">{{ t("connect") }}</n-button> -->
-          <n-select v-if="!device.connected" class="mr" @update:value="handleChange" v-model:value="state.currentLang"
+          <n-select v-if="!device.connected" class="mr" @update:value="handleChange" :value="store.lang"
           placeholder="Language" :options="state.options"></n-select>
         </template>
         <template v-else>

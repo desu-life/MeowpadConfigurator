@@ -43,10 +43,16 @@ pub struct Device {
     pub JittersEliminationTime: u16,
     #[serde(rename = "hr")]
     pub HighReportRate: bool,
+    #[serde(rename = "kp")]
+    pub KeyProof: bool,
+    #[serde(rename = "ac")]
+    pub AutoCalibration: bool,
     #[serde(rename = "hf")]
     pub HallFilter: u8,
     #[serde(rename = "mb")]
     pub MaxBrightness: u8,
+    #[serde(rename = "c")]
+    pub led_color: u32,
 }
 
 pub trait CborConvertor
@@ -91,9 +97,12 @@ impl From<config::Device> for Device {
             KeyConfigs: key_configs,
             KeyMap: map,
             HighReportRate: cfg.high_reportrate,
+            KeyProof: cfg.key_proof,
+            AutoCalibration: cfg.auto_calibration,
             JittersEliminationTime: cfg.jitters_elimination_time,
             HallFilter: cfg.hall_filter,
             MaxBrightness: cfg.max_brightness,
+            led_color: cfg.led_color.into_u32::<Argb>(),
         }
     }
 }
@@ -106,9 +115,12 @@ impl Default for Device {
             KeyConfigs: key_configs,
             KeyMap: key_maps.into(),
             HighReportRate: true,
+            KeyProof: true,
+            AutoCalibration: true,
             JittersEliminationTime: 15 * 8,
             HallFilter: 1,
             MaxBrightness: 50,
+            led_color: Srgb::new(255, 255, 255).into_u32::<Argb>(),
         }
     }
 }
@@ -119,7 +131,7 @@ impl Default for KeyRTConfig {
             PressPercentage: 16,
             ReleasePercentage: 16,
             DeadZone: 30,
-            ReleaseDeadZone: 10,
+            ReleaseDeadZone: 0,
             RtEnabled: true,
         }
     }

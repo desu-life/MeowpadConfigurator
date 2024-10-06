@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { IHidDeviceInfo, IVersion } from ".";
+import { IDevicePreset, IHidDeviceInfo, IVersion } from ".";
+import { IKeyboard as PureConfig } from "./meowboard/config";
 
 export async function connect_iap() {
   return (await invoke("connect_iap")) as void;
@@ -31,4 +32,16 @@ export async function refresh_devices() {
 }
 export async function connect_device(deviceInfo: IHidDeviceInfo) {
   return (await invoke("connect_device", { deviceInfo })) as boolean;
+}
+export async function load_preset_kb(config: PureConfig, preset: IDevicePreset) {
+  return (await invoke("load_preset_kb", { config, preset })) as PureConfig;
+}
+export async function gen_preset_kb(name: string, config: PureConfig) {
+  return (await invoke("gen_preset_kb", { name, config })) as IDevicePreset;
+}
+export async function load_preset_from_file() {
+  return (await invoke("load_preset_from_file")) as IDevicePreset | null;
+}
+export async function save_preset_to_file(preset: IDevicePreset) {
+  return (await invoke("save_preset_to_file", { preset }));
 }

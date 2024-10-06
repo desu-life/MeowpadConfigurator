@@ -1,8 +1,7 @@
 import { IRgb } from "@/interface"
-import { IKeyConfig } from ".."
+import { IKeyConfig, IMixedKey } from ".."
 import { KeyCode } from "@/keycode"
 
-export declare type KeyType = 'None' | 'Keyboard' | 'Custom' | 'Mouse' | 'Media';
 
 export interface IKeyConfigBoard {
     press_percentage: number
@@ -12,11 +11,6 @@ export interface IKeyConfigBoard {
     rt_enabled: boolean
 }
 
-export interface IMixedKey {
-    t: KeyType,
-    c: KeyCode | number
-}
-
 
 export interface IKeyboard {
     keys: IKeyConfigBoard[]
@@ -24,6 +18,9 @@ export interface IKeyboard {
     fn_layer: IMixedKey[]
     jitters_elimination_time: number
     high_reportrate: boolean
+    key_proof: boolean
+    auto_calibration: boolean
     hall_filter: number
     max_brightness: number
+    led_color: IRgb
 }

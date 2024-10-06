@@ -34,7 +34,8 @@ export const useDeviceStore = defineStore("device", () => {
   const continuous_report = ref<Toggle>(Toggle.Off);
   const kalman_filter = ref<Toggle>(Toggle.Off);
   const enable_light = ref<Toggle>(Toggle.Off);
-  const fangwuchu = ref<Toggle>(Toggle.Off)
+  const key_proof = ref<Toggle>(Toggle.Off);
+  const auto_calibration = ref<Toggle>(Toggle.Off);
   const hall_filter = ref<number>(0);
 
   function is_4k() {
@@ -119,20 +120,14 @@ export const useDeviceStore = defineStore("device", () => {
     let config = device_config as Ref<IKBB>;
     config.value!.jitters_elimination_time = Math.round(jitters_elimination_time.value * 8)
     config.value!.high_reportrate = enable_hs.value == Toggle.On ? true : false
+    config.value!.key_proof = key_proof.value == Toggle.On ? true : false
+    config.value!.auto_calibration = auto_calibration.value == Toggle.On ? true : false
     config.value!.hall_filter = hall_filter.value
     config.value!.max_brightness = Math.floor(max_brightness.value / 2)
 
-    for (let i = 0; i < 64; i++) {
-      if (fangwuchu.value == Toggle.On) {
-        if (config.value!.keys[i].release_dead_zone == 0) {
-          config.value!.keys[i].release_dead_zone = 5
-        }
-      } else {
-        if (config.value!.keys[i].release_dead_zone == 5) {
-          config.value!.keys[i].release_dead_zone = 0
-        }
-      }
+    config.value!.led_color = Hex2Rgb(led_colors.value![0])
 
+    for (let i = 0; i < 64; i++) {
       config.value!.keys[i].release_dead_zone = Math.floor(config.value!.keys[i].release_dead_zone * 2)
       config.value!.keys[i].press_percentage = Math.floor(config.value!.keys[i].press_percentage * 2)
       config.value!.keys[i].release_percentage = Math.floor(config.value!.keys[i].release_percentage * 2)
@@ -145,18 +140,19 @@ export const useDeviceStore = defineStore("device", () => {
     let config = device_config as Ref<IKBB>;
     jitters_elimination_time.value = config.value!.jitters_elimination_time / 8
     enable_hs.value = config.value!.high_reportrate == true ? Toggle.On : Toggle.Off
+    key_proof.value = config.value!.key_proof == true ? Toggle.On : Toggle.Off
+    auto_calibration.value = config.value!.auto_calibration == true ? Toggle.On : Toggle.Off
     hall_filter.value = config.value!.hall_filter
     max_brightness.value = Math.floor(config.value!.max_brightness * 2)
+
+    led_colors.value = []
+    led_colors.value.push(Rgb2Hex(config.value!.led_color))
 
     for (let i = 0; i < 64; i++) {
       config.value!.keys[i].press_percentage = config.value!.keys[i].press_percentage / 2
       config.value!.keys[i].release_percentage = config.value!.keys[i].release_percentage / 2
       config.value!.keys[i].dead_zone = config.value!.keys[i].dead_zone / 2
       config.value!.keys[i].release_dead_zone = config.value!.keys[i].release_dead_zone / 2
-
-      if (config.value!.keys[i].release_dead_zone == 5) {
-        fangwuchu.value = Toggle.On
-      }
     }
   }
   
@@ -300,7 +296,8 @@ export const useDeviceStore = defineStore("device", () => {
     is_flow_delay,
     enable_light,
     hall_filter,
-    fangwuchu,
+    key_proof,
+    auto_calibration,
     device_config,
     is_4k,
     is_3k,

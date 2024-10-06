@@ -1,4 +1,4 @@
-import { IMixedKey } from "@/apis/meowboard/config";
+import { IMixedKey } from "@/apis";
 
 export declare type KeyMapType =
   | "BasicKeys"

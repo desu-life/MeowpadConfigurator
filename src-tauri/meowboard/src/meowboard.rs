@@ -84,7 +84,7 @@ impl<D: Device> Meowboard<D> {
 
     pub fn get_debug_value_part(&mut self, index: u8) -> Result<[KeyRTStatus; 8]> {
         let p = Packet::new(PacketID::Debug, [index]);
-        self.write(p)?;
+        self.write_no_delay(p)?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
             let mut keys = [KeyRTStatus::default(); 8];
@@ -308,13 +308,23 @@ impl<D: Device> Meowboard<D> {
         }
     }
 
+    fn write_no_delay(&self, packet: Packet) -> Result<()> {
+        debug!("发送：{:?}", packet);
+        debug!("总数据大小：{}", packet.data.len());
+        for v in packet.build_packets() {
+            // debug!("raw：{:?}", v.hex_dump());
+            self.device.write(&v)?;
+        }
+        Ok(())
+    }
+
     fn write(&self, packet: Packet) -> Result<()> {
         debug!("发送：{:?}", packet);
         debug!("总数据大小：{}", packet.data.len());
         for v in packet.build_packets() {
             // debug!("raw：{:?}", v.hex_dump());
             self.device.write(&v)?;
-            thread::sleep(Duration::from_millis(2));
+            thread::sleep(Duration::from_millis(5));
         }
         Ok(())
     }

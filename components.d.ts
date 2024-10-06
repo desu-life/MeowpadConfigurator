@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     Application: typeof import('./src/components/Application.vue')['default']
     ColorSetting: typeof import('./src/components/meowpad4k/ColorSetting.vue')['default']
+    ConfigKb: typeof import('./src/components/meowboard/ConfigKb.vue')['default']
     ConfigKey: typeof import('./src/components/meowboard/ConfigKey.vue')['default']
     ConfigKeys: typeof import('./src/components/meowboard/ConfigKeys.vue')['default']
     copy: typeof import('./src/components/meowboard/temp copy.vue')['default']

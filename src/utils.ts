@@ -2,7 +2,7 @@ import { useI18n } from "vue-i18n";
 import { IError } from "./apis";
 import { KeyCode, mapping } from "./keycode";
 import { IRgb } from "./interface";
-import { IMixedKey } from "./apis/meowboard/config";
+import { IMixedKey } from "@/apis";
 import { mapping as keymap } from "@/keymap";
 
 function pad2(c) {
@@ -98,4 +98,16 @@ export function formatms(value: number | null) {
 export function parsems(value: string) {
   if (value === "") return null;
   return parseInt(value);
+}
+
+export function time_2_str() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+
+  const dateString = `${year}-${month}-${day}-${hours}-${minutes}`
+  return dateString
 }

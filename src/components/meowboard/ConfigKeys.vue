@@ -2,10 +2,12 @@
 import { IKeyConfigBoard } from '@/apis/meowboard/config';
 import { Toggle } from '@/interface';
 import { useDeviceStore } from '@/store/device';
+import { useStore } from '@/store/main';
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
 const device = useDeviceStore()
+const store = useStore()
 const keyconfig = defineModel<IKeyConfigBoard | null>("keyConfig", { default: null });
 
 const emit = defineEmits<{
@@ -42,8 +44,6 @@ const ToggleSel = [
     label: t('off')
   },
 ]
-
-
 
 function onKeyPUpdate(v) {
   if (keyconfig.value == null) return
@@ -87,7 +87,9 @@ function onKeyRDUpdate(v) {
                 </template>
               </n-input-number>
               <n-input-number v-model:value="keyconfig.release_dead_zone" :precision="0" :step="1" :min="0" :max="100"
-                :on-update:value="v => onKeyRDUpdate(v)">
+                :on-update:value="v => onKeyRDUpdate(v)"
+                v-if="store.bottom_dz_available == Toggle.On"
+                >
                 <template #suffix>
                   %
                 </template>
@@ -138,6 +140,7 @@ function onKeyRDUpdate(v) {
               </n-tooltip>
             </template>
           </n-form-item-gi>
+          
           <n-form-item-gi :span="12" path="hall_filter" :show-feedback="false">
             <n-select v-model:value="device.hall_filter" :options="HallFilterSel" />
             <template #label>
@@ -153,21 +156,14 @@ function onKeyRDUpdate(v) {
               </n-tooltip>
             </template>
           </n-form-item-gi>
-          <n-form-item-gi :span="12" label="灯光亮度" path="max_brightness" :show-feedback="false">
-            <n-input-number v-model:value="device.max_brightness" placeholder="Input" :min="0" :max="100" :step="1">
-              <template #suffix>
-                %
-              </template>
-            </n-input-number>
-          </n-form-item-gi>
 
-          <n-form-item-gi :span="12" path="fangwuchu" :show-feedback="false">
-            <n-select v-model:value="device.fangwuchu" :options="ToggleSel" />
+          <n-form-item-gi :span="12" path="key_proff" :show-feedback="false">
+            <n-select v-model:value="device.key_proof" :options="ToggleSel" />
             <template #label>
               <n-tooltip trigger="hover" :delay="200">
                 <template #trigger>
                   <n-text underline>
-                    触底防双击
+                    触底防误触
                   </n-text>
                 </template>
                 <template #default>

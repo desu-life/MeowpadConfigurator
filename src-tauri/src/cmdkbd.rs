@@ -126,7 +126,7 @@ pub fn get_default_key_config_kb() -> meowboard::config::Device {
 }
 
 #[tauri::command]
-pub fn get_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<meowboard::config::Device> {
+pub async fn get_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<meowboard::config::Device> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_key_config()?;

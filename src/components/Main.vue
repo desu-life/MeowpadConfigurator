@@ -143,15 +143,24 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
     }
 
     if (store.developer_mode) {
-      if (device.is_4k()) {
+      try {
+        if (device.is_4k()) {
         device.raw_config = await api4k.get_raw_config()
+        }
+        if (device.is_3k()) {
+          device.raw_config = await api3k.get_raw_config()
+        }
+        if (device.is_pure()) {
+          device.raw_config = await apib.get_raw_config()
+        }
+      } catch (e: IError | any) {
+        if (e.type === 'meowpad' && e.data === 'config_cbor_parse_failed') {
+          device.raw_config = "配置不支持，可能是固件版本不匹配"
+        } else {
+          throw e
+        }
       }
-      if (device.is_3k()) {
-        device.raw_config = await api3k.get_raw_config()
-      }
-      if (device.is_pure()) {
-        device.raw_config = await apib.get_raw_config()
-      }
+      
     } else {
       if (device.is_4k()) {
         device.key_config = await api4k.get_key_config()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IMixedKey } from '@/apis/meowboard/config';
+import { IMixedKey } from "@/apis";
 import { KeyCode } from "@/keycode";
 import { mapping, IKeyMap, formatKey } from "@/keymap";
 import { getErrorMsg, most, splitArray } from "@/utils";

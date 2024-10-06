@@ -36,10 +36,13 @@ mod consts;
 mod device;
 mod error;
 mod utils;
+mod device_preset;
+mod cmdpreset;
 use cmd3k::*;
 use cmd4k::*;
 use cmdiap::*;
 use cmdkbd::*;
+use cmdpreset::*;
 use consts::*;
 use error::Result;
 
@@ -414,7 +417,11 @@ fn main() -> AnyResult<()> {
             open_update_url,
             device_list,
             refresh_devices,
-            connect_device
+            connect_device,
+            load_preset_kb,
+            gen_preset_kb,
+            load_preset_from_file,
+            save_preset_to_file
         ])
         .manage(
             Client::builder()

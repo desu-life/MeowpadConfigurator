@@ -1,5 +1,5 @@
 use crate::{cbor, keymap};
-use meowpad::{KeyCode, error::Error, KbReport};
+use meowpad::{error::Error, keycode::KeyValue, KbReport, KeyCode};
 use num::FromPrimitive;
 use num_derive::{FromPrimitive, ToPrimitive};
 use palette::rgb::channels::Argb;
@@ -8,18 +8,6 @@ use serde::{Deserialize, Serialize};
 use serde_repr::*;
 use serde_with::*;
 
-#[derive(
-    Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Default
-)]
-#[serde(tag = "t", content = "c")]
-pub enum KeyValue {
-    #[default]
-    None,
-    Keyboard(KeyCode),
-    Custom(u8),
-    Mouse(u8),
-    Media(u8),
-}
 
 
 
@@ -43,8 +31,17 @@ pub struct Device {
     pub fn_layer: [KeyValue; 64],
     pub jitters_elimination_time: u16,
     pub high_reportrate: bool,
+    pub key_proof: bool,
+    pub auto_calibration: bool,
     pub hall_filter: u8,
     pub max_brightness: u8,
+    pub led_color: Srgb<u8>,
+}
+
+impl Default for Device {
+    fn default() -> Self {
+        cbor::Device::default().try_into().unwrap()
+    }
 }
 
 impl TryFrom<cbor::Device> for Device {
@@ -61,9 +58,12 @@ impl TryFrom<cbor::Device> for Device {
             normal_layer: map[0],
             fn_layer: map[1],
             high_reportrate: cfg.HighReportRate,
+            key_proof: cfg.KeyProof,
+            auto_calibration: cfg.AutoCalibration,
             hall_filter: cfg.HallFilter,
             jitters_elimination_time: cfg.JittersEliminationTime,
             max_brightness: cfg.MaxBrightness,
+            led_color: Srgb::from_u32::<Argb>(cfg.led_color),
         })
     }
 }

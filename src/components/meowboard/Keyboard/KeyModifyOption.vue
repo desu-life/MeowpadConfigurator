@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { IMixedKey } from '@/apis/meowboard/config';
+import { IMixedKey } from "@/apis";
 import Checkmark16Filled from '@vicons/fluent/Checkmark16Filled'
 import { IKeyMap } from "@/keymap";
 const props = defineProps<{
@@ -59,7 +59,7 @@ import { h } from 'vue'
   width: 100%;
 
   border-radius: inherit;
-  cursor: pointer;
+  cursor: grab;
 
   transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
 

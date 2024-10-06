@@ -1,6 +1,5 @@
-use meowpad::KeyCode;
+use meowpad::{keycode::KeyValue, KeyCode};
 
-use crate::config::KeyValue;
 
 pub struct KeyMap([u8; 256]);
 

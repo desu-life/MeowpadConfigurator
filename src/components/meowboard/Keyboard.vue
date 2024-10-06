@@ -23,13 +23,15 @@ import KeyModifyOption from "@/components/meowboard/Keyboard/KeyModifyOption.vue
 import { ComponentPublicInstance, createVNode } from "vue";
 
 import * as apib from '@/apis/meowboard/api'
+import * as api from '@/apis/api'
 import { IError, KeyState } from "@/apis";
 import { useDeviceStore } from '@/store/device';
 import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
-import { IKeyboard, IKeyConfigBoard, IMixedKey } from "@/apis/meowboard/config";
+import { IKeyboard, IKeyConfigBoard } from "@/apis/meowboard/config";
+import { IMixedKey } from "@/apis";
 import emitter from "@/mitt";
-import { getErrorMsg, most, splitArray } from "@/utils";
+import { getErrorMsg, most, splitArray, time_2_str } from "@/utils";
 import { useI18n } from "vue-i18n";
 import { appWindow, LogicalSize } from "@tauri-apps/api/window";
 import { useKeyboard } from "@/store/keyboard";
@@ -39,6 +41,8 @@ import ModifyKeys from "./ModifyKeys.vue";
 import ConfigKeys from "./ConfigKeys.vue";
 import { MenuGroupOption, MenuOption, NIcon } from "naive-ui";
 import { MenuMixedOption } from "naive-ui/es/menu/src/interface";
+import ConfigKb from "./ConfigKb.vue";
+import { Checkmark, Exit, Create, Trash } from '@vicons/ionicons5'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -100,7 +104,7 @@ const menuOptions: MenuMixedOption[] = [
     label: '键盘',
     children: [
       {
-        label: '键盘设置',
+        label: '按键设置',
         key: 0,
       },
       {
@@ -114,6 +118,10 @@ const menuOptions: MenuMixedOption[] = [
       {
         label: '设备调试',
         key: 3,
+      },
+      {
+        label: '更多设置',
+        key: 4,
       },
     ]
   }
@@ -377,19 +385,176 @@ emitter.on('sync-config', async () => {
   emitter.emit('loaded')
 })
 
+const rename_id = ref<string | null>(null);
+const rename_value = ref('');
+const showPresetSetting = ref(false);
 
+function onPresetClick() {
+  console.log("onPresetClick")
+  showPresetSetting.value = true
+}
+async function onPresetSelect(index: number) {
+  console.log("onPresetSelect")
+  
+  if (store.presets[index].id == rename_id.value) {
+    return
+  }
+
+  store.current_preset = store.presets[index]
+
+  device.store_key_config_pure64()
+  device.device_config = await api.load_preset_kb(device.device_config!, store.presets[index])
+  device.extract_key_config_pure64()
+
+  onLayerUpdate()
+  kb.selectAllKey(false)
+  keyconfig.value = null
+
+  showPresetSetting.value = false
+}
+
+async function onPresetDelete(index: number) {
+  console.log("onPresetDelete")
+  store.presets.splice(index, 1)
+  await store.save()
+}
+async function onPresetExport(index: number) {
+  console.log("onPresetExport")
+  await api.save_preset_to_file(store.presets[index])
+}
+function onPresetRename(index: number) {
+  console.log("onPresetRename")
+  rename_id.value = store.presets[index].id
+  rename_value.value = store.presets[index].name
+}
+async function onPresetRenameDone() {
+  console.log("onPresetRenameDone")
+  if (rename_value.value) {
+    for (let i = 0; i < store.presets.length; i++) {
+      if (store.presets[i].id === rename_id.value) {
+        store.presets[i].name = rename_value.value
+      }
+    }
+    await store.save()
+  }
+  
+  rename_id.value = null
+  rename_value.value = ''
+}
+async function onPresetGen() {
+  console.log("onPresetGen")
+  const name = "preset-" + time_2_str()
+  device.store_key_config_pure64()
+  const p = await api.gen_preset_kb(name, device.device_config!)
+  device.extract_key_config_pure64()
+  console.log(p)
+  store.presets.push(p)
+  await store.save()
+}
+async function onPresetImport() {
+  console.log("onPresetImport")
+  let preset = await api.load_preset_from_file()
+  if (preset) {
+    console.log(preset)
+    store.presets.push(preset)
+    await store.save()
+  }
+}
 
 </script>
 
 <template>
   <n-layout has-sider class="pure-config">
     <n-layout-sider content-class="side-pure-config" :width="200">
+      <n-modal v-model:show="showPresetSetting">
+        <n-card role="dialog" aria-modal="true" class="preset-setting-card">
+            <template #header>
+                预设管理
+            </template>
+            <template #header-extra>
+              <n-button-group>
+                <n-button strong secondary round :disabled="store.loading" @click="onPresetGen">
+                    保存当前预设
+                </n-button>
+                <n-button strong secondary round :disabled="store.loading" @click="onPresetImport">
+                    导入预设
+                </n-button>
+              </n-button-group>
+            </template>
+            <n-scrollbar style="height: 360px"  class="preset-list-scrollbar">
+                <div v-if="store.presets.length === 0" class="preset-list-none">
+                  无
+                </div>
+                <n-list hoverable :show-divider="false" class="preset-list" :clickable="rename_id === null" >
+                    <n-list-item v-for="(preset, index) in store.presets" :key="preset.id" class="preset-list-item" @click="onPresetSelect(index)">
+                      <div v-if="preset.id === rename_id">
+                        <n-input v-model:value="rename_value" round show-count :maxlength="30" type="text" placeholder="基本的 Input" />
+                      </div>
+                      <div v-else>
+                        <n-thing :title="preset.name">
+                            <template #description>
+                                <n-space size="small" style="margin-top: 4px;">
+                                    <n-tag :bordered="false" size="small">
+                                        {{  preset.device.device_name  }}
+                                    </n-tag>
+                                </n-space>
+                            </template>
+                        </n-thing>
+                      </div>
+                        <template #suffix>
+                          <n-button-group v-if="preset.id === rename_id">
+                            <n-button strong secondary round :disabled="store.loading" @click.stop="onPresetRenameDone">
+                              <template #icon>
+                                  <n-icon>
+                                      <Checkmark />
+                                  </n-icon>
+                              </template>
+                                确定
+                            </n-button>
+                            
+                          </n-button-group>
+                          <n-button-group v-else>
+                            <n-button strong secondary round :disabled="store.loading" @click.stop="onPresetExport(index)">
+                              <template #icon>
+                                  <n-icon>
+                                      <Exit />
+                                  </n-icon>
+                              </template>
+                                导出
+                            </n-button>
+                            <n-button strong secondary round :disabled="store.loading" @click.stop="onPresetRename(index)">
+                              <template #icon>
+                                  <n-icon>
+                                      <Create />
+                                  </n-icon>
+                              </template>
+                                重命名
+                            </n-button>
+                              <n-button strong secondary round type="error" :disabled="store.loading" @click.stop="onPresetDelete(index)">
+                                  <template #icon>
+                                      <n-icon>
+                                          <Trash />
+                                      </n-icon>
+                                  </template>
+                                  删除
+                              </n-button>
+                          </n-button-group>
+                        </template>
+                    </n-list-item>
+                </n-list>
+            </n-scrollbar>
+        </n-card>
+        
+      </n-modal>
+      <n-card hoverable class="preset-card" content-class="preset-card-content" @click="onPresetClick" >
+        <div style="font-size: 14px;">加载预设</div>
+      </n-card>
       <n-menu class="pure-menu" :icon-size="0" :options="menuOptions" v-model:value="kb.mode" :on-update:value="onModeChange" />
     </n-layout-sider>
 
     <n-layout content-class="main-pure-config">
       <div class="content">
-        <div class="main-keyboard">
+        <div class="main-keyboard" v-if="kb.mode != 4">
           <div class="keyboard-frame" v-if="device.device_config != null">
             <div class="keyboard" :style="keymapStyle">
               <div v-for="(keyIndex, lineIndex) in keyIndexes" :key="lineIndex" class="keyLine">
@@ -459,6 +624,10 @@ emitter.on('sync-config', async () => {
         <div v-if="device.device_config != null && kb.mode === 0">
           <ConfigKeys v-model:key-config="keyconfig" @update="updateKeyConfig" style="top: 20px;"></ConfigKeys>
         </div>
+
+        <div v-if="device.device_config != null && kb.mode === 4">
+          <ConfigKb></ConfigKb>
+        </div>
       </div>
     </n-layout>
   </n-layout>
@@ -467,6 +636,45 @@ emitter.on('sync-config', async () => {
 
 
 <style lang="scss" scoped>
+
+.preset-card {
+  width: 80%;
+  left: 20px;
+  margin-bottom: 20px;
+
+  border-radius: 10px;
+  border-color: var(--color-border);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--n-color-target);
+  }
+}
+
+.preset-list {
+    --n-border-radius: 10px !important;
+    
+    border-radius: var(--n-border-radius);
+    border-color: var(--color-border);
+    background-color: var(--color-background-soft)
+}
+
+.preset-list-item {
+  height: 75px;
+}
+
+.preset-list-none {
+  padding: 20px;
+  font-size: 15px;
+}
+
+.preset-setting-card {
+    border-radius: 10px;
+    border-color: var(--color-border);
+    width: 600px;
+}
+
+
 
 .pure-menu {
   height: 70%;
@@ -537,12 +745,19 @@ emitter.on('sync-config', async () => {
 
 <style lang="scss">
 // layout
-
+.preset-list-scrollbar {
+  --n-border-radius: 10px !important;
+    
+  border-radius: var(--n-border-radius);
+  border-color: var(--color-border);
+  background-color: var(--color-background-soft)
+}
 
 .side-pure-config {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
   background-color: var(--color-background);
 }
 
