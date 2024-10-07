@@ -140,7 +140,7 @@ let key_config_style = computed(() => {
                   </n-text>
                 </template>
                 <template #default>
-                  $t('jitters_elimination_time_desc')
+                  {{ $t('jitters_elimination_time_desc') }}
                 </template>
               </n-tooltip>
             </template>

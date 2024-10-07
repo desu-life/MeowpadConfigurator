@@ -188,5 +188,6 @@
   "key_bind": "按键绑定",
   "key_cali": "按键校准",
   "device_debug": "设备调试",
-  "more_settings": "更多设置"
+  "more_settings": "更多设置",
+  "unsupported_config": "配置不支持，可能是固件版本不匹配"
 }

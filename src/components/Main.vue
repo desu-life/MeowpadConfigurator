@@ -103,9 +103,11 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
     console.table(device.device_info)
 
     if (device.device_info!.version != firmware_version) {
-      store.need_update_firmware = true // 需要更新固件
-      emitter.emit('header-msg-update', { status: "error", str: t('bad_firmware_version', { version: device.device_info!.version }) })
-      return
+      if (!store.developer_mode) {
+        store.need_update_firmware = true // 需要更新固件
+        emitter.emit('header-msg-update', { status: "error", str: t('bad_firmware_version', { version: device.device_info!.version }) })
+        return
+      }
     }
 
     if (store.version_info) {
@@ -155,7 +157,7 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
         }
       } catch (e: IError | any) {
         if (e.type === 'meowpad' && e.data === 'config_cbor_parse_failed') {
-          device.raw_config = "配置不支持，可能是固件版本不匹配"
+          device.raw_config = t('unsupported_config')
         } else {
           throw e
         }

@@ -526,7 +526,8 @@ async function onPresetImport() {
           </template>
           <n-scrollbar style="height: 360px" class="preset-list-scrollbar">
             <div v-if="store.presets.length === 0" class="preset-list-none">
-              {{ $t("none") }}
+              <n-empty :description="t('none')">
+              </n-empty>
             </div>
             <n-list
               hoverable
@@ -902,5 +903,6 @@ async function onPresetImport() {
   height: -webkit-fill-available;
   display: grid;
   justify-content: center;
+  background-color: var(--color-background);
 }
 </style>

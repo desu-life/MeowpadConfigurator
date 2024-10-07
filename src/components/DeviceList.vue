@@ -177,10 +177,16 @@ async function device_update(d: IHidDeviceInfo) {
                                     {{ t("device_continue_upgrade") }}
                                 </n-button>
                             </template>
-                            <template v-else>
+                            <template v-else-if="device.device_name == 'Meowpad'">
                                 <n-button strong round secondary type="warning" :disabled="store.loading"
                                     @click="device_update(device)">
                                     {{ t("device_update") }}
+                                </n-button>
+                            </template>
+                            <template v-else>
+                                <n-button strong round secondary type="warning" :disabled="store.loading"
+                                    @click="developer_mode(device)">
+                                    {{ t("developer_mode") }}
                                 </n-button>
                             </template>
                         </div>
