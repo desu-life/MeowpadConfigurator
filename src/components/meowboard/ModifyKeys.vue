@@ -33,12 +33,6 @@ const keyDraggingStyle = ref({
 });
 
 
-function temp_convert(key: number): IMixedKey  {
-  return {
-    t: "Keyboard",
-    c: key
-  }
-}
 
 function startDragKey(key: IMixedKey) {
   emit('dragkey', key);
@@ -71,7 +65,7 @@ function startDragKey(key: IMixedKey) {
 
 <n-card :bordered="false" class="key-modify-config-card" size="small">
     <template #action>
-    将按键拖拽至上方
+    {{ $t('drag_the_key') }}
     </template>
     <n-scrollbar class="key-modify-config-scrollbar" :style="keymapStyle">
     <div class="key-modify-config">
@@ -122,6 +116,7 @@ function startDragKey(key: IMixedKey) {
   opacity: 0.8;
   z-index: 1000;
   transform: rotate(15deg);
+  text-align: center;
 }
 
 .key-modify-config-card {

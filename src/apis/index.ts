@@ -72,7 +72,7 @@ export enum KeyState {
 
 export interface IMixedKey {
     t: KeyType,
-    c: KeyCode | number
+    c?: KeyCode | number
 }
 
 

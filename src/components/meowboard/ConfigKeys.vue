@@ -18,19 +18,19 @@ const emit = defineEmits<{
 const HallFilterSel = [
   {
     value: 0,
-    label: "关闭"
+    label: t('off')
   },
   {
     value: 1,
-    label: "低"
+    label: t('low')
   },
   {
     value: 2,
-    label: "高"
+    label: t('high')
   },
   {
     value: 3,
-    label: "延迟享受者"
+    label: t('latency_enjoyer')
   },
 ]
 
@@ -70,6 +70,11 @@ function onKeyRDUpdate(v) {
 }
 
 
+let key_config_style = computed(() => {
+  let i = 0;
+  store.lang === "en" ? i = 0 : i = 9
+  return {"right": i + "px"}
+});
 
 </script>
 
@@ -78,8 +83,8 @@ function onKeyRDUpdate(v) {
     <n-grid :cols="24" :x-gap="18">
       <n-gi :span="9">
         <n-card :bordered="false" class="device-config-card" content-class="device-config-card-content">
-          <div v-if="keyconfig != null" class="device-config-key-config">
-            <n-form-item label-placement="left" label="死区" path="dead_zone" :show-feedback="false">
+          <div v-if="keyconfig != null" class="device-config-key-config" :style="key_config_style">
+            <n-form-item label-placement="left" :label="t('dead_zone')" path="dead_zone" :show-feedback="false">
               <n-input-number v-model:value="keyconfig.dead_zone" :precision="0" :step="1" :min="0" :max="100"
                 :on-update:value="v => onKeyDUpdate(v)">
                 <template #suffix>
@@ -95,7 +100,7 @@ function onKeyRDUpdate(v) {
                 </template>
               </n-input-number>
             </n-form-item>
-            <n-form-item label-placement="left" label="按下" path="press_percentage" :show-feedback="false">
+            <n-form-item label-placement="left" :label="t('key_trigger_degree')" path="press_percentage" :show-feedback="false">
               <n-input-number v-model:value="keyconfig.press_percentage" :precision="0" :step="1" :min="1" :max="100"
                 :on-update:value="v => onKeyPUpdate(v)">
                 <template #suffix>
@@ -103,7 +108,7 @@ function onKeyRDUpdate(v) {
                 </template>
               </n-input-number>
             </n-form-item>
-            <n-form-item label-placement="left" label="抬起" path="release_percentage" :show-feedback="false">
+            <n-form-item label-placement="left" :label="t('key_release_degree')" path="release_percentage" :show-feedback="false">
               <n-input-number v-model:value="keyconfig.release_percentage" :precision="0" :step="1" :min="1" :max="100"
                 :on-update:value="v => onKeyRUpdate(v)">
                 <template #suffix>
@@ -113,7 +118,7 @@ function onKeyRDUpdate(v) {
             </n-form-item>
           </div>
           <template v-else>
-            <n-empty description="请先选中按键">
+            <n-empty :description="t('select_key_please')">
             </n-empty>
           </template>
         </n-card>
@@ -121,7 +126,7 @@ function onKeyRDUpdate(v) {
       <n-gi :span="15">
         <n-grid :cols="24" :x-gap="9">
           <n-form-item-gi :span="12" path="jitters_elimination_time" :show-feedback="false" class="single-key-config">
-            <n-input-number v-model:value="device.jitters_elimination_time" placeholder="Input" :min="0" :max="50"
+            <n-input-number v-model:value="device.jitters_elimination_time" :min="0" :max="50"
               :step="0.5">
               <template #suffix>
                 ms
@@ -131,11 +136,11 @@ function onKeyRDUpdate(v) {
               <n-tooltip trigger="hover" :delay="200">
                 <template #trigger>
                   <n-text underline>
-                    消抖时长
+                    {{ $t('keyboard_jitters_elimination_time') }}
                   </n-text>
                 </template>
                 <template #default>
-                  按键的去抖，不会增加按下时的延迟，osu玩家推荐开启
+                  $t('jitters_elimination_time_desc')
                 </template>
               </n-tooltip>
             </template>
@@ -147,27 +152,27 @@ function onKeyRDUpdate(v) {
               <n-tooltip trigger="hover" :delay="200">
                 <template #trigger>
                   <n-text underline>
-                    滤波等级
+                    {{ $t('filter_level') }}
                   </n-text>
                 </template>
                 <template #default>
-                  用于增加精度，但会有一点延迟，推荐开启
+                  {{ $t('filter_level_desc') }}
                 </template>
               </n-tooltip>
             </template>
           </n-form-item-gi>
 
-          <n-form-item-gi :span="12" path="key_proff" :show-feedback="false">
+          <n-form-item-gi :span="12" path="key_proof" :show-feedback="false">
             <n-select v-model:value="device.key_proof" :options="ToggleSel" />
             <template #label>
               <n-tooltip trigger="hover" :delay="200">
                 <template #trigger>
                   <n-text underline>
-                    触底防误触
+                    {{ $t('key_proof') }}
                   </n-text>
                 </template>
                 <template #default>
-                  防止轴体触底震动导致双击，影响底部死区，推荐开启
+                  {{ $t('key_proof_desc') }}
                 </template>
               </n-tooltip>
             </template>
@@ -202,6 +207,7 @@ function onKeyRDUpdate(v) {
       display: flex;
       flex-direction: column;
       gap: 1px;
+      position: relative;
     }
   }
 }
@@ -210,7 +216,7 @@ function onKeyRDUpdate(v) {
 <style lang="scss">
 // 这个不能scoped
 .device-config-key-config .n-form-item-blank {
-  max-width: 250px;
+  width: 210px;
   gap: 1px;
 }
 
@@ -219,5 +225,11 @@ function onKeyRDUpdate(v) {
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: 350px;
+
+  .n-form-item-label {
+    font-size: 13px;
+    width: 56px;
+  }
 }
 </style>

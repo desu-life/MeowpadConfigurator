@@ -22,10 +22,10 @@ import KeyModify from "@/components/meowboard/Keyboard/KeyModify.vue";
 import KeyModifyOption from "@/components/meowboard/Keyboard/KeyModifyOption.vue";
 import { ComponentPublicInstance, createVNode } from "vue";
 
-import * as apib from '@/apis/meowboard/api'
-import * as api from '@/apis/api'
+import * as apib from "@/apis/meowboard/api";
+import * as api from "@/apis/api";
 import { IError, KeyState } from "@/apis";
-import { useDeviceStore } from '@/store/device';
+import { useDeviceStore } from "@/store/device";
 import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
 import { IKeyboard, IKeyConfigBoard } from "@/apis/meowboard/config";
@@ -42,106 +42,107 @@ import ConfigKeys from "./ConfigKeys.vue";
 import { MenuGroupOption, MenuOption, NIcon } from "naive-ui";
 import { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import ConfigKb from "./ConfigKb.vue";
-import { Checkmark, Exit, Create, Trash } from '@vicons/ionicons5'
+import { Checkmark, Exit, Create, Trash } from "@vicons/ionicons5";
 
-const message = useMessage()
-const dialog = useDialog()
+const message = useMessage();
+const dialog = useDialog();
 const { t } = useI18n();
-const store = useStore()
-const kb = useKeyboard()
-const device = useDeviceStore()
+const store = useStore();
+const kb = useKeyboard();
+const device = useDeviceStore();
 
-const keyconfig = ref<IKeyConfigBoard | null>(null)
+const keyconfig = ref<IKeyConfigBoard | null>(null);
 
-let default_height = ref(55)
-let default_width = ref(55)
-let default_margin = ref(2)
-let default_font_size = ref(15)
+let default_height = ref(55);
+let default_width = ref(55);
+let default_margin = ref(2);
+let default_font_size = ref(15);
 
 let keymapStyle = ref({
   "--default-key-height": default_height.value + "px",
   "--default-key-width": default_width.value + "px",
   "--default-key-margin": default_margin.value + "px",
   "--default-key-font-size": default_font_size.value + "px",
-})
+});
 
 const DebugSel = [
   {
     value: 0,
-    label: "百分比模式"
+    label: t('precentage_mode'),
   },
   {
     value: 1,
-    label: "行程模式"
+    label: t('key_travel'),
   },
-]
+];
 
 const keyLayer = ref(0);
-const keyShowMode = ref(0)
-const totalDistance = ref(4.0)
+const keyShowMode = ref(0);
+const totalDistance = ref(4.0);
 const KeysOfEachLine = [14, 14, 13, 14, 9];
-const keyIndexesRaw = computed(() => splitArray(
-  Array.from({ length: 64 }, (v, i) => i),
-  KeysOfEachLine
-))
-const keyIndexes = ref(keyIndexesRaw.value)
-const keyWidth = ref([  // 每个键的ui里的宽度
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
-  1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.5,
-  1.75, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2.25,
-  2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  1.25, 1.25, 1.25, 6.25, 1, 1, 1, 1, 1
-])
+const keyIndexesRaw = computed(() =>
+  splitArray(
+    Array.from({ length: 64 }, (v, i) => i),
+    KeysOfEachLine
+  )
+);
+const keyIndexes = ref(keyIndexesRaw.value);
+const keyWidth = ref([
+  // 每个键的ui里的宽度
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1.5, 1.75, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2.25, 2, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1.25, 1.25, 1.25, 6.25, 1, 1, 1, 1, 1,
+]);
 
 function renderIcon(icon: Component) {
-  return () => h(NIcon, null, { default: () => h(icon) })
+  return () => h(NIcon, null, { default: () => h(icon) });
 }
 
 const menuOptions: MenuMixedOption[] = [
   {
-    type: 'group',
-    key: 'keyboard',
-    label: '键盘',
+    type: "group",
+    key: "keyboard",
+    label: t("keyboard"),
     children: [
       {
-        label: '按键设置',
+        label: t('key_setting'),
         key: 0,
       },
       {
-        label: '按键绑定',
+        label: t('key_bind'),
         key: 1,
       },
       {
-        label: '按键校准',
+        label: t('key_cali'),
         key: 2,
       },
       {
-        label: '设备调试',
+        label: t('device_debug'),
         key: 3,
       },
       {
-        label: '更多设置',
+        label: t('more_settings'),
         key: 4,
       },
-    ]
-  }
-]
+    ],
+  },
+];
 
 // 0-校准 1-调试
 function selectKeyCalibrate() {
-  let indexs: number[] = []
+  let indexs: number[] = [];
   for (let i = 0; i < 64; i++) {
     if (kb.keyVarsRefs[i].isSelected) {
-      indexs.push(i)
+      indexs.push(i);
     }
   }
-  console.log(indexs)
-  if (indexs.length == 0) return
+  console.log(indexs);
+  if (indexs.length == 0) return;
 
   try {
-    apib.calibration_key(indexs)
+    apib.calibration_key(indexs);
   } catch (e) {
-    emitter.emit('connection-broke', {e: e as IError})
+    emitter.emit("connection-broke", { e: e as IError });
   }
 
   for (let i = 0; i < indexs.length; i++) {
@@ -153,141 +154,153 @@ function selectKeyCalibrate() {
   const interval = setInterval(async () => {
     try {
       if (device.connected == false) {
-        return
+        return;
       }
 
       let success_count = 0;
 
-      let cali_status = await apib.get_key_calibrate_status()
+      let cali_status = await apib.get_key_calibrate_status();
       for (let i = 0; i < indexs.length; i++) {
         if (cali_status[indexs[i]]) {
-          kb.keyCalibrateRefs[indexs[i]].isCalibrated = true
-          kb.keyCalibrateRefs[indexs[i]].isCalibrating = false
-          success_count += 1
+          kb.keyCalibrateRefs[indexs[i]].isCalibrated = true;
+          kb.keyCalibrateRefs[indexs[i]].isCalibrating = false;
+          success_count += 1;
         }
       }
 
       if (success_count == indexs.length) {
-        clearInterval(interval)
+        clearInterval(interval);
       }
     } catch (e) {
-      clearInterval(interval)
-      emitter.emit('connection-broke', {e: e as IError})
+      clearInterval(interval);
+      emitter.emit("connection-broke", { e: e as IError });
     }
-  }, 100)
+  }, 100);
 }
 
 onMounted(async () => {
   keyLayer.value = 0;
-  setLayer(keyLayer.value)
+  setLayer(keyLayer.value);
 
   const interval = setInterval(async () => {
     try {
       if (device.connected == false) {
-        return
+        return;
       }
 
       if (kb.mode == 3) {
-        await kb.updateKey()
+        await kb.updateKey();
       }
     } catch (e) {
-      emitter.emit('connection-broke', {e: e as IError})
+      emitter.emit("connection-broke", { e: e as IError });
     }
-  }, 100)
+  }, 100);
 
   onUnmounted(() => {
-    clearInterval(interval)
-  })
-})
-
-
+    clearInterval(interval);
+  });
+});
 
 const currentDraggedKey = ref<IMixedKey | null>(null);
 const currentOnKey = ref<number>(-1);
 
-
 function startDragKey(key: IMixedKey) {
-  currentDraggedKey.value = key
+  currentDraggedKey.value = key;
 }
 
 function endDragKey(key: IMixedKey) {
   if (currentOnKey.value !== -1 && currentDraggedKey.value !== null) {
-    KeyStrModify({index: currentOnKey.value, currentkey: currentDraggedKey.value})
+    KeyStrModify({
+      index: currentOnKey.value,
+      currentkey: currentDraggedKey.value,
+    });
   }
-  currentDraggedKey.value = null
+  currentDraggedKey.value = null;
 }
 
-emitter.on('key-str-modify', KeyStrModify)
-function KeyStrModify({index, currentkey}: {index: number, currentkey: IMixedKey | null}) {
-  if (kb.mode != 1) return
-  
-  let key: IMixedKey = currentkey ?? { t: "None", c: 0 }
-  kb.showkeys[index] = key
+emitter.on("key-str-modify", KeyStrModify);
+function KeyStrModify({
+  index,
+  currentkey,
+}: {
+  index: number;
+  currentkey: IMixedKey | null;
+}) {
+  if (kb.mode != 1) return;
+
+  let key: IMixedKey = currentkey ?? { t: "None" };
+  kb.showkeys[index] = key;
 
   if (keyLayer.value == 0) {
-    device.device_config!.normal_layer[index] = key
+    device.device_config!.normal_layer[index] = key;
   } else if (keyLayer.value == 1) {
-    device.device_config!.fn_layer[index] = key
+    device.device_config!.fn_layer[index] = key;
   }
 }
 
 function onLayerUpdate() {
   if (kb.mode == 1) {
-    setLayer(keyLayer.value)
+    setLayer(keyLayer.value);
   } else {
-    setLayer(0)
+    setLayer(0);
   }
 }
 
 async function onModeChange(mode) {
-  kb.mode = mode
-  await kb.updateKey()
-  onLayerUpdate()
+  kb.mode = mode;
+  await kb.updateKey();
+  onLayerUpdate();
 }
 function onLayerChange() {
   if (keyLayer.value == 0) {
-    keyLayer.value = 1
+    keyLayer.value = 1;
   } else {
-    keyLayer.value = 0
+    keyLayer.value = 0;
   }
 
-  onLayerUpdate()
+  onLayerUpdate();
 }
 
 function setLayer(layer) {
   if (layer == 0) {
     for (let i = 0; i < 64; i++) {
-      kb.showkeys[i] = device.device_config!.normal_layer[i]
+      kb.showkeys[i] = device.device_config!.normal_layer[i];
     }
   } else {
     for (let i = 0; i < 64; i++) {
-      kb.showkeys[i] = device.device_config!.fn_layer[i]
+      kb.showkeys[i] = device.device_config!.fn_layer[i];
     }
   }
 }
 
-
-
-let select_indexs = ref<number[]>([])
-emitter.on('key-select', () => {
-  select_indexs.value = []
+let select_indexs = ref<number[]>([]);
+emitter.on("key-select", () => {
+  select_indexs.value = [];
   for (let i = 0; i < 64; i++) {
     if (kb.keyVarsRefs[i].isSelected) {
-      select_indexs.value.push(i)
+      select_indexs.value.push(i);
     }
   }
   if (select_indexs.value.length == 0) {
-    keyconfig.value = null
+    keyconfig.value = null;
   } else {
-    let press_percentages: number[] = []
-    let release_percentages: number[] = []
-    let dead_zones: number[] = []
-    let r_dead_zones: number[] = []
+    let press_percentages: number[] = [];
+    let release_percentages: number[] = [];
+    let dead_zones: number[] = [];
+    let r_dead_zones: number[] = [];
     for (let i = 0; i < select_indexs.value.length; i++) {
-      press_percentages.push(device.device_config!.keys[select_indexs.value[i]].press_percentage)
-      release_percentages.push(device.device_config!.keys[select_indexs.value[i]].release_percentage)
-      dead_zones.push(device.device_config!.keys[select_indexs.value[i]].dead_zone)
-      r_dead_zones.push(device.device_config!.keys[select_indexs.value[i]].release_dead_zone)
+      press_percentages.push(
+        device.device_config!.keys[select_indexs.value[i]].press_percentage
+      );
+      release_percentages.push(
+        device.device_config!.keys[select_indexs.value[i]].release_percentage
+      );
+      dead_zones.push(
+        device.device_config!.keys[select_indexs.value[i]].dead_zone
+      );
+      r_dead_zones.push(
+        device.device_config!.keys[select_indexs.value[i]].release_dead_zone
+      );
     }
 
     // todo: 另外两个属性
@@ -296,174 +309,191 @@ emitter.on('key-select', () => {
       release_percentage: most(release_percentages),
       dead_zone: most(dead_zones),
       release_dead_zone: most(r_dead_zones),
-      rt_enabled: true
-    }
+      rt_enabled: true,
+    };
   }
-})
+});
 
 function updateKeyConfig() {
-  if (keyconfig.value == null) return
+  if (keyconfig.value == null) return;
   for (let i = 0; i < select_indexs.value.length; i++) {
-    device.device_config!.keys[select_indexs.value[i]].press_percentage = keyconfig.value.press_percentage
-    device.device_config!.keys[select_indexs.value[i]].release_percentage = keyconfig.value.release_percentage
-    device.device_config!.keys[select_indexs.value[i]].dead_zone = keyconfig.value.dead_zone
-    device.device_config!.keys[select_indexs.value[i]].release_dead_zone = keyconfig.value.release_dead_zone
+    device.device_config!.keys[select_indexs.value[i]].press_percentage =
+      keyconfig.value.press_percentage;
+    device.device_config!.keys[select_indexs.value[i]].release_percentage =
+      keyconfig.value.release_percentage;
+    device.device_config!.keys[select_indexs.value[i]].dead_zone =
+      keyconfig.value.dead_zone;
+    device.device_config!.keys[select_indexs.value[i]].release_dead_zone =
+      keyconfig.value.release_dead_zone;
   }
 }
 
-
-emitter.on('get-default-config', async () => {
-  emitter.emit('loading')
+emitter.on("get-default-config", async () => {
+  emitter.emit("loading");
   if (device.is_pure()) {
     try {
-      device.device_config = await apib.get_default_key_config()
-      device.extract_key_config_pure64()
+      device.device_config = await apib.get_default_key_config();
+      device.extract_key_config_pure64();
 
-      onLayerUpdate()
-      kb.selectAllKey(false)
-      keyconfig.value = null
+      onLayerUpdate();
+      kb.selectAllKey(false);
+      keyconfig.value = null;
 
-      emitter.emit('header-msg-update', { status: "success", str: t('reset_success') })
-      emitter.emit('sync-btn-highlight', { status: true })
+      emitter.emit("header-msg-update", {
+        status: "success",
+        str: t("reset_success"),
+      });
+      emitter.emit("sync-btn-highlight", { status: true });
     } catch (e) {
-      emitter.emit('connection-broke', {e: e as IError})
+      emitter.emit("connection-broke", { e: e as IError });
     }
   }
-  emitter.emit('loaded')
-})
+  emitter.emit("loaded");
+});
 
-emitter.on('save-config', async () => {
-  emitter.emit('loading')
+emitter.on("save-config", async () => {
+  emitter.emit("loading");
   if (device.is_pure()) {
     try {
-      await apib.save_key_config()
-      emitter.emit('header-msg-update', { status: "success", str: t('sync_success') })
+      await apib.save_key_config();
+      emitter.emit("header-msg-update", {
+        status: "success",
+        str: t("sync_success"),
+      });
     } catch (e) {
-      emitter.emit('connection-broke', {e: e as IError})
+      emitter.emit("connection-broke", { e: e as IError });
     }
   }
-  emitter.emit('loaded')
-})
+  emitter.emit("loaded");
+});
 
-
-emitter.on('sync-config', async () => {
-  emitter.emit('header-loading', { str: t('syncing_config') })
+emitter.on("sync-config", async () => {
+  emitter.emit("header-loading", { str: t("syncing_config") });
   if (device.is_pure()) {
-    const { device_config } = storeToRefs(device)
+    const { device_config } = storeToRefs(device);
     const cfg = device_config;
 
     try {
       for (let i = 0; i < cfg.value!.keys.length; i++) {
         if (cfg.value!.keys[i].dead_zone < 3) {
-          store.need_check = true
+          store.need_check = true;
         }
         if (cfg.value!.keys[i].press_percentage < 2) {
-          store.need_check = true
+          store.need_check = true;
         }
         if (cfg.value!.keys[i].release_percentage < 2) {
-          store.need_check = true
+          store.need_check = true;
         }
       }
 
-      device.store_key_config_pure64()
-      await apib.set_key_config(device.device_config!)
-      device.extract_key_config_pure64()
+      device.store_key_config_pure64();
+      console.log(device.device_config!);
+      await apib.set_key_config(device.device_config!);
+      device.extract_key_config_pure64();
 
       if (store.need_check) {
-        emitter.emit('header-msg-update', { status: "warning", str: t('applied_config') })
-        message.warning(t('check_config_msg'))
+        emitter.emit("header-msg-update", {
+          status: "warning",
+          str: t("applied_config"),
+        });
+        message.warning(t("check_config_msg"));
       } else {
-        emitter.emit('save-config')
+        emitter.emit("save-config");
       }
 
-      onLayerUpdate()
-      kb.selectAllKey(false)
-      keyconfig.value = null
+      onLayerUpdate();
+      kb.selectAllKey(false);
+      keyconfig.value = null;
     } catch (e) {
-      emitter.emit('connection-broke', {e: e as IError})
-      emitter.emit('header-msg-update', { status: "error", str: t('sync_error', { e: getErrorMsg(t, e as IError) }) })
+      emitter.emit("connection-broke", { e: e as IError });
+      emitter.emit("header-msg-update", {
+        status: "error",
+        str: t("sync_error", { e: getErrorMsg(t, e as IError) }),
+      });
     }
   }
-  emitter.emit('sync-btn-highlight', { status: false })
-  emitter.emit('loaded')
-})
+  emitter.emit("sync-btn-highlight", { status: false });
+  emitter.emit("loaded");
+});
 
 const rename_id = ref<string | null>(null);
-const rename_value = ref('');
+const rename_value = ref("");
 const showPresetSetting = ref(false);
 
 function onPresetClick() {
-  console.log("onPresetClick")
-  showPresetSetting.value = true
+  console.log("onPresetClick");
+  showPresetSetting.value = true;
 }
 async function onPresetSelect(index: number) {
-  console.log("onPresetSelect")
-  
+  console.log("onPresetSelect");
+
   if (store.presets[index].id == rename_id.value) {
-    return
+    return;
   }
 
-  store.current_preset = store.presets[index]
+  store.current_preset = store.presets[index];
 
-  device.store_key_config_pure64()
-  device.device_config = await api.load_preset_kb(device.device_config!, store.presets[index])
-  device.extract_key_config_pure64()
+  device.store_key_config_pure64();
+  device.device_config = await api.load_preset_kb(
+    device.device_config!,
+    store.presets[index]
+  );
+  device.extract_key_config_pure64();
 
-  onLayerUpdate()
-  kb.selectAllKey(false)
-  keyconfig.value = null
+  onLayerUpdate();
+  kb.selectAllKey(false);
+  keyconfig.value = null;
 
-  showPresetSetting.value = false
+  showPresetSetting.value = false;
 }
 
 async function onPresetDelete(index: number) {
-  console.log("onPresetDelete")
-  store.presets.splice(index, 1)
-  await store.save()
+  console.log("onPresetDelete");
+  store.presets.splice(index, 1);
+  await store.save();
 }
 async function onPresetExport(index: number) {
-  console.log("onPresetExport")
-  await api.save_preset_to_file(store.presets[index])
+  console.log("onPresetExport");
+  await api.save_preset_to_file(store.presets[index]);
 }
 function onPresetRename(index: number) {
-  console.log("onPresetRename")
-  rename_id.value = store.presets[index].id
-  rename_value.value = store.presets[index].name
+  console.log("onPresetRename");
+  rename_id.value = store.presets[index].id;
+  rename_value.value = store.presets[index].name;
 }
 async function onPresetRenameDone() {
-  console.log("onPresetRenameDone")
+  console.log("onPresetRenameDone");
   if (rename_value.value) {
     for (let i = 0; i < store.presets.length; i++) {
       if (store.presets[i].id === rename_id.value) {
-        store.presets[i].name = rename_value.value
+        store.presets[i].name = rename_value.value;
       }
     }
-    await store.save()
+    await store.save();
   }
-  
-  rename_id.value = null
-  rename_value.value = ''
+
+  rename_id.value = null;
+  rename_value.value = "";
 }
 async function onPresetGen() {
-  console.log("onPresetGen")
-  const name = "preset-" + time_2_str()
-  device.store_key_config_pure64()
-  const p = await api.gen_preset_kb(name, device.device_config!)
-  device.extract_key_config_pure64()
-  console.log(p)
-  store.presets.push(p)
-  await store.save()
+  console.log("onPresetGen");
+  const name = "preset-" + time_2_str();
+  device.store_key_config_pure64();
+  const p = await api.gen_preset_kb(name, device.device_config!);
+  device.extract_key_config_pure64();
+  console.log(p);
+  store.presets.push(p);
+  await store.save();
 }
 async function onPresetImport() {
-  console.log("onPresetImport")
-  let preset = await api.load_preset_from_file()
+  console.log("onPresetImport");
+  let preset = await api.load_preset_from_file();
   if (preset) {
-    console.log(preset)
-    store.presets.push(preset)
-    await store.save()
+    console.log(preset);
+    store.presets.push(preset);
+    await store.save();
   }
 }
-
 </script>
 
 <template>
@@ -471,88 +501,148 @@ async function onPresetImport() {
     <n-layout-sider content-class="side-pure-config" :width="200">
       <n-modal v-model:show="showPresetSetting">
         <n-card role="dialog" aria-modal="true" class="preset-setting-card">
-            <template #header>
-                预设管理
-            </template>
-            <template #header-extra>
-              <n-button-group>
-                <n-button strong secondary round :disabled="store.loading" @click="onPresetGen">
-                    保存当前预设
-                </n-button>
-                <n-button strong secondary round :disabled="store.loading" @click="onPresetImport">
-                    导入预设
-                </n-button>
-              </n-button-group>
-            </template>
-            <n-scrollbar style="height: 360px"  class="preset-list-scrollbar">
-                <div v-if="store.presets.length === 0" class="preset-list-none">
-                  无
+          <template #header> {{ $t("preset_manage") }} </template>
+          <template #header-extra>
+            <n-button-group>
+              <n-button
+                strong
+                secondary
+                round
+                :disabled="store.loading"
+                @click="onPresetGen"
+              >
+                {{ $t("gen_preset") }}
+              </n-button>
+              <n-button
+                strong
+                secondary
+                round
+                :disabled="store.loading"
+                @click="onPresetImport"
+              >
+                {{ $t("import_preset") }}
+              </n-button>
+            </n-button-group>
+          </template>
+          <n-scrollbar style="height: 360px" class="preset-list-scrollbar">
+            <div v-if="store.presets.length === 0" class="preset-list-none">
+              {{ $t("none") }}
+            </div>
+            <n-list
+              hoverable
+              :show-divider="false"
+              class="preset-list"
+              :clickable="rename_id === null"
+            >
+              <n-list-item
+                v-for="(preset, index) in store.presets"
+                :key="preset.id"
+                class="preset-list-item"
+                @click="onPresetSelect(index)"
+              >
+                <div v-if="preset.id === rename_id">
+                  <n-input
+                    v-model:value="rename_value"
+                    round
+                    show-count
+                    :maxlength="30"
+                    type="text"
+                  />
                 </div>
-                <n-list hoverable :show-divider="false" class="preset-list" :clickable="rename_id === null" >
-                    <n-list-item v-for="(preset, index) in store.presets" :key="preset.id" class="preset-list-item" @click="onPresetSelect(index)">
-                      <div v-if="preset.id === rename_id">
-                        <n-input v-model:value="rename_value" round show-count :maxlength="30" type="text" placeholder="基本的 Input" />
-                      </div>
-                      <div v-else>
-                        <n-thing :title="preset.name">
-                            <template #description>
-                                <n-space size="small" style="margin-top: 4px;">
-                                    <n-tag :bordered="false" size="small">
-                                        {{  preset.device.device_name  }}
-                                    </n-tag>
-                                </n-space>
-                            </template>
-                        </n-thing>
-                      </div>
-                        <template #suffix>
-                          <n-button-group v-if="preset.id === rename_id">
-                            <n-button strong secondary round :disabled="store.loading" @click.stop="onPresetRenameDone">
-                              <template #icon>
-                                  <n-icon>
-                                      <Checkmark />
-                                  </n-icon>
-                              </template>
-                                确定
-                            </n-button>
-                            
-                          </n-button-group>
-                          <n-button-group v-else>
-                            <n-button strong secondary round :disabled="store.loading" @click.stop="onPresetExport(index)">
-                              <template #icon>
-                                  <n-icon>
-                                      <Exit />
-                                  </n-icon>
-                              </template>
-                                导出
-                            </n-button>
-                            <n-button strong secondary round :disabled="store.loading" @click.stop="onPresetRename(index)">
-                              <template #icon>
-                                  <n-icon>
-                                      <Create />
-                                  </n-icon>
-                              </template>
-                                重命名
-                            </n-button>
-                              <n-button strong secondary round type="error" :disabled="store.loading" @click.stop="onPresetDelete(index)">
-                                  <template #icon>
-                                      <n-icon>
-                                          <Trash />
-                                      </n-icon>
-                                  </template>
-                                  删除
-                              </n-button>
-                          </n-button-group>
-                        </template>
-                    </n-list-item>
-                </n-list>
-            </n-scrollbar>
+                <div v-else>
+                  <n-thing :title="preset.name">
+                    <template #description>
+                      <n-space size="small" style="margin-top: 4px">
+                        <n-tag :bordered="false" size="small">
+                          {{ preset.device.device_name }}
+                        </n-tag>
+                      </n-space>
+                    </template>
+                  </n-thing>
+                </div>
+                <template #suffix>
+                  <n-button-group v-if="preset.id === rename_id">
+                    <n-button
+                      strong
+                      secondary
+                      round
+                      :disabled="store.loading"
+                      @click.stop="onPresetRenameDone"
+                    >
+                      <template #icon>
+                        <n-icon>
+                          <Checkmark />
+                        </n-icon>
+                      </template>
+                      {{ $t("confirm") }}
+                    </n-button>
+                  </n-button-group>
+                  <n-button-group v-else>
+                    <n-button
+                      strong
+                      secondary
+                      round
+                      :disabled="store.loading"
+                      @click.stop="onPresetExport(index)"
+                    >
+                      <template #icon>
+                        <n-icon>
+                          <Exit />
+                        </n-icon>
+                      </template>
+                      {{ $t("export") }}
+                    </n-button>
+                    <n-button
+                      strong
+                      secondary
+                      round
+                      :disabled="store.loading"
+                      @click.stop="onPresetRename(index)"
+                    >
+                      <template #icon>
+                        <n-icon>
+                          <Create />
+                        </n-icon>
+                      </template>
+                      {{ $t("rename") }}
+                    </n-button>
+                    <n-button
+                      strong
+                      secondary
+                      round
+                      type="error"
+                      :disabled="store.loading"
+                      @click.stop="onPresetDelete(index)"
+                    >
+                      <template #icon>
+                        <n-icon>
+                          <Trash />
+                        </n-icon>
+                      </template>
+                      {{ $t("delete") }}
+                    </n-button>
+                  </n-button-group>
+                </template>
+              </n-list-item>
+            </n-list>
+          </n-scrollbar>
         </n-card>
-        
       </n-modal>
-      <n-card hoverable class="preset-card" content-class="preset-card-content" @click="onPresetClick" >
-        <div style="font-size: 14px;">加载预设</div>
+      <n-card
+        hoverable
+        class="preset-card"
+        content-class="preset-card-content"
+        @click="onPresetClick"
+      >
+        <div style="font-size: 14px">{{ $t("load_preset") }}</div>
       </n-card>
-      <n-menu class="pure-menu" :icon-size="0" :options="menuOptions" v-model:value="kb.mode" :on-update:value="onModeChange" />
+      <n-menu
+        class="pure-menu"
+        :icon-size="0"
+        :options="menuOptions"
+        v-model:value="kb.mode"
+        :on-update:value="onModeChange"
+      />
     </n-layout-sider>
 
     <n-layout content-class="main-pure-config">
@@ -560,27 +650,59 @@ async function onPresetImport() {
         <div class="main-keyboard" v-if="kb.mode != 4">
           <div class="keyboard-frame" v-if="device.device_config != null">
             <div class="keyboard" :style="keymapStyle">
-              <div v-for="(keyIndex, lineIndex) in keyIndexes" :key="lineIndex" class="keyLine">
+              <div
+                v-for="(keyIndex, lineIndex) in keyIndexes"
+                :key="lineIndex"
+                class="keyLine"
+              >
                 <div v-for="i in keyIndex" :key="i">
                   <KeyFrame :unit-width="keyWidth[i]">
-                    <KeyHall v-if="kb.mode === 0" :key-show="kb.showkeys[i]" v-model:isSelected="kb.keyVarsRefs[i].isSelected"
-                      v-model:press_percentage="device.device_config.keys[i].press_percentage"
-                      v-model:release_percentage="device.device_config.keys[i].release_percentage"
+                    <KeyHall
+                      v-if="kb.mode === 0"
+                      :key-show="kb.showkeys[i]"
+                      v-model:isSelected="kb.keyVarsRefs[i].isSelected"
+                      v-model:press_percentage="
+                        device.device_config.keys[i].press_percentage
+                      "
+                      v-model:release_percentage="
+                        device.device_config.keys[i].release_percentage
+                      "
                       v-model:dead_zone="device.device_config.keys[i].dead_zone"
-                      v-model:release_dead_zone="device.device_config.keys[i].release_dead_zone"
-                      v-model:rt_enabled="device.device_config.keys[i].rt_enabled" />
-      
-                    <KeyModify v-if="kb.mode === 1" :key-show="kb.showkeys[i]" :key-str-index="i" v-model:key-current-index="currentOnKey"/>
-      
-                    <KeyCalibrate v-if="kb.mode === 2" :key-show="kb.showkeys[i]"
+                      v-model:release_dead_zone="
+                        device.device_config.keys[i].release_dead_zone
+                      "
+                      v-model:rt_enabled="
+                        device.device_config.keys[i].rt_enabled
+                      "
+                    />
+
+                    <KeyModify
+                      v-if="kb.mode === 1"
+                      :key-show="kb.showkeys[i]"
+                      :key-str-index="i"
+                      v-model:key-current-index="currentOnKey"
+                    />
+
+                    <KeyCalibrate
+                      v-if="kb.mode === 2"
+                      :key-show="kb.showkeys[i]"
                       v-model:isSelected="kb.keyVarsRefs[i].isSelected"
                       v-model:isCalibrated="kb.keyCalibrateRefs[i].isCalibrated"
-                      v-model:isCalibrating="kb.keyCalibrateRefs[i].isCalibrating" />
-      
-                    <KeyDebug v-if="kb.mode === 3" v-model:hallValue="kb.keyDebugRefs[i].hallValue"
-                      v-model:hallValuePercentage="kb.keyDebugRefs[i].hallValuePercentage"
-                      v-model:isPressed="kb.keyDebugRefs[i].isPressed" v-model:keyShowMode="keyShowMode"
-                      v-model:totalDistance="totalDistance" />
+                      v-model:isCalibrating="
+                        kb.keyCalibrateRefs[i].isCalibrating
+                      "
+                    />
+
+                    <KeyDebug
+                      v-if="kb.mode === 3"
+                      v-model:hallValue="kb.keyDebugRefs[i].hallValue"
+                      v-model:hallValuePercentage="
+                        kb.keyDebugRefs[i].hallValuePercentage
+                      "
+                      v-model:isPressed="kb.keyDebugRefs[i].isPressed"
+                      v-model:keyShowMode="keyShowMode"
+                      v-model:totalDistance="totalDistance"
+                    />
                   </KeyFrame>
                 </div>
               </div>
@@ -588,31 +710,44 @@ async function onPresetImport() {
           </div>
           <div class="keyboard-footer">
             <n-button-group v-if="kb.isSelectAble()">
-                <n-button @click="() => kb.selectAllKey(true)">
-                  全选
-                </n-button>
-                <n-button @click="() => kb.selectAllKey(false)">
-                  取消全选
-                </n-button>
-                <n-button @click="() => kb.selectReverse()">
-                  反选
-                </n-button>
-              </n-button-group>
-  
-              <n-input-number v-if="kb.mode === 3 && keyShowMode === 1" style="width: 100px;" v-model:value="totalDistance"
-              :precision="2" :show-button="false">
+              <n-button @click="() => kb.selectAllKey(true)">
+                {{ $t("select_all") }}
+              </n-button>
+              <n-button @click="() => kb.selectAllKey(false)">
+                {{ $t("unselect_all") }}
+              </n-button>
+              <n-button @click="() => kb.selectReverse()">
+                {{ $t("reverse_select") }}
+              </n-button>
+            </n-button-group>
+
+            <n-input-number
+              v-if="kb.mode === 3 && keyShowMode === 1"
+              style="width: 100px"
+              v-model:value="totalDistance"
+              :precision="2"
+              :show-button="false"
+            >
               <template #suffix>mm</template>
             </n-input-number>
-            <div style="padding-left: 5px;">
+            <div style="padding-left: 5px">
               <n-radio-group v-if="kb.mode === 3" v-model:value="keyShowMode">
-                <n-radio-button v-for="s in DebugSel" :key="s.value" :value="s.value" :label="s.label" />
+                <n-radio-button
+                  v-for="s in DebugSel"
+                  :key="s.value"
+                  :value="s.value"
+                  :label="s.label"
+                />
               </n-radio-group>
-    
-              <n-button v-if="kb.mode === 2" @click="() => selectKeyCalibrate()">
-                校准选中的键
+
+              <n-button
+                v-if="kb.mode === 2"
+                @click="() => selectKeyCalibrate()"
+              >
+                {{ $t("cali_selected_keys") }}
               </n-button>
               <n-button v-if="kb.mode === 1" @click="onLayerChange">
-                切换Fn层
+                {{ $t("switch_layer") }}
               </n-button>
             </div>
           </div>
@@ -621,11 +756,18 @@ async function onPresetImport() {
 
       <div class="bottom-config">
         <template v-if="kb.mode === 1">
-          <ModifyKeys @dragkey="startDragKey" @dragkeyend="endDragKey"></ModifyKeys>
+          <ModifyKeys
+            @dragkey="startDragKey"
+            @dragkeyend="endDragKey"
+          ></ModifyKeys>
         </template>
 
         <div v-if="device.device_config != null && kb.mode === 0">
-          <ConfigKeys v-model:key-config="keyconfig" @update="updateKeyConfig" style="top: 20px;"></ConfigKeys>
+          <ConfigKeys
+            v-model:key-config="keyconfig"
+            @update="updateKeyConfig"
+            style="top: 20px"
+          ></ConfigKeys>
         </div>
 
         <div v-if="device.device_config != null && kb.mode === 4">
@@ -636,10 +778,7 @@ async function onPresetImport() {
   </n-layout>
 </template>
 
-
-
 <style lang="scss" scoped>
-
 .preset-card {
   width: 80%;
   left: 20px;
@@ -655,11 +794,11 @@ async function onPresetImport() {
 }
 
 .preset-list {
-    --n-border-radius: 10px !important;
-    
-    border-radius: var(--n-border-radius);
-    border-color: var(--color-border);
-    background-color: var(--color-background-soft)
+  --n-border-radius: 10px !important;
+
+  border-radius: var(--n-border-radius);
+  border-color: var(--color-border);
+  background-color: var(--color-background-soft);
 }
 
 .preset-list-item {
@@ -672,12 +811,10 @@ async function onPresetImport() {
 }
 
 .preset-setting-card {
-    border-radius: 10px;
-    border-color: var(--color-border);
-    width: 600px;
+  border-radius: 10px;
+  border-color: var(--color-border);
+  width: 600px;
 }
-
-
 
 .pure-menu {
   height: 70%;
@@ -703,8 +840,6 @@ async function onPresetImport() {
     }
   }
 }
-
-
 </style>
 
 <style lang="scss" scoped>
@@ -737,12 +872,10 @@ async function onPresetImport() {
   margin-top: 10px;
 }
 
-
 .bottom-config {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-
 }
 </style>
 
@@ -750,10 +883,10 @@ async function onPresetImport() {
 // layout
 .preset-list-scrollbar {
   --n-border-radius: 10px !important;
-    
+
   border-radius: var(--n-border-radius);
   border-color: var(--color-border);
-  background-color: var(--color-background-soft)
+  background-color: var(--color-background-soft);
 }
 
 .side-pure-config {
@@ -770,6 +903,4 @@ async function onPresetImport() {
   display: grid;
   justify-content: center;
 }
-
-
 </style>

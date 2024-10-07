@@ -1,5 +1,6 @@
 import { IMixedKey } from "@/apis";
-
+import { VolumeMute, VolumeHigh, VolumeLow, Play, PlayBack, PlayForward, Stop, ArrowUp, ArrowBack, ArrowDown, ArrowForward } from "@vicons/ionicons5";
+import { NIcon } from "naive-ui";
 export declare type KeyMapType =
   | "BasicKeys"
   | "ExtendedKeys"
@@ -95,10 +96,10 @@ export const mapping: IKeyMaps[] = [
       { key: <span>RAlt</span>, code: { t: "Keyboard", c: 0xe6 } },
       { key: <span>RMeta</span>, code: { t: "Keyboard", c: 0xe7 } },
       { key: <span>PScreen</span>, code: { t: "Keyboard", c: 70 } },
-      { key: <span>←</span>, code: { t: "Keyboard", c: 0x50 } },
-      { key: <span>↓</span>, code: { t: "Keyboard", c: 0x51 } },
-      { key: <span>↑</span>, code: { t: "Keyboard", c: 0x52 } },
-      { key: <span>→</span>, code: { t: "Keyboard", c: 0x4f } },
+      { key: <NIcon size="20" component={ArrowBack} />, code: { t: "Keyboard", c: 0x50 } },
+      { key: <NIcon size="20" component={ArrowDown} />, code: { t: "Keyboard", c: 0x51 } },
+      { key: <NIcon size="20" component={ArrowUp} />, code: { t: "Keyboard", c: 0x52 } },
+      { key: <NIcon size="20" component={ArrowForward} />, code: { t: "Keyboard", c: 0x4f } },
       { key: <span>F1</span>, code: { t: "Keyboard", c: 0x3a } },
       { key: <span>F2</span>, code: { t: "Keyboard", c: 0x3b } },
       { key: <span>F3</span>, code: { t: "Keyboard", c: 0x3c } },
@@ -141,27 +142,27 @@ export const mapping: IKeyMaps[] = [
     type: "FunctionKeys",
     keys: [
         { key: <span>Fn</span>, code: { t: "Custom", c: 1 } },
-        { key: <span>Lock Win</span>, code: { t: "Custom", c: 2 } }
+        { key: <span>Win Lock</span>, code: { t: "Custom", c: 2 } }
     ],
   },
   {
     type: "MediaKeys",
     keys: [
-        { key: <span>Next Track</span>, code: { t: "Media", c: 0xb5 } },
-        { key: <span>Previous Track</span>, code: { t: "Media", c: 0xb6 } },
-        { key: <span>Stop</span>, code: { t: "Media", c: 0xb7 } },
-        { key: <span>Play/Pause</span>, code: { t: "Media", c: 0xcd } },
-        { key: <span>Mute</span>, code: { t: "Media", c: 0xe2 } },
-        { key: <span>Volume Up</span>, code: { t: "Media", c: 0xe9 } },
-        { key: <span>Volume Down</span>, code: { t: "Media", c: 0xea } },
+        { key: <NIcon size="20" component={PlayForward} />, code: { t: "Media", c: 0xb5 } },
+        { key: <NIcon size="20" component={PlayBack} />, code: { t: "Media", c: 0xb6 } },
+        { key: <NIcon size="20" component={Stop} />, code: { t: "Media", c: 0xb7 } },
+        { key:<NIcon size="20" component={Play} />, code: { t: "Media", c: 0xcd } },
+        { key: <NIcon size="20" component={VolumeMute} />, code: { t: "Media", c: 0xe2 } },
+        { key: <NIcon size="20" component={VolumeHigh} />, code: { t: "Media", c: 0xe9 } },
+        { key: <NIcon size="20" component={VolumeLow} />, code: { t: "Media", c: 0xea } },
     ],
   },
   {
     type: "MouseKeys",
     keys: [
-        { key: <span>Left</span>, code: { t: "Mouse", c: 1 } },
-        { key: <span>Right</span>, code: { t: "Mouse", c: 2 } },
-        { key: <span>Middle</span>, code: { t: "Mouse", c: 3 } }
+        { key: <span>Mouse L</span>, code: { t: "Mouse", c: 1 } },
+        { key: <span>Mouse R</span>, code: { t: "Mouse", c: 2 } },
+        { key: <span>Mouse M</span>, code: { t: "Mouse", c: 3 } }
     ],
   },
 ];

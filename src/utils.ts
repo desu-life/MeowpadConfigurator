@@ -36,7 +36,11 @@ export function getErrorMsg(t, e: IError): string {
   if (e.data) {
     return t(e.data);
   }
-  return t(e.type) || "未知错误";
+  if (e.type) {
+    return t(e.type);
+  }
+  console.error(e);
+  return e.toString();
 }
 
 export function formatKeys(keycodes: KeyCode[]) {

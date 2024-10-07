@@ -47,7 +47,6 @@ export const useKeyboard = defineStore("keyboard", () => {
     }
     showkeys.value[i] = {
       t: "None",
-      c: 0
     }
   }
 

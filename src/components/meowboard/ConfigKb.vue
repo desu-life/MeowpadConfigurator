@@ -29,12 +29,12 @@ function bottom_dz_available_change() {
 <template>
   <n-card :bordered="false" class="keyboard-config-card" content-class="keyboard-config-card-content">
     <n-grid :cols="24" :x-gap="9" :y-gap="16">
-      <n-form-item-gi :span="8" label="灯光颜色" path="led_color" :show-feedback="false">
+      <n-form-item-gi :span="8" :label="t('light_color')" path="led_color" :show-feedback="false">
         <n-color-picker v-model:value="device.led_colors![0]" :show-alpha="false" :modes="['hex']"></n-color-picker>
       </n-form-item-gi>
 
-      <n-form-item-gi :span="8" label="灯光亮度" path="max_brightness" :show-feedback="false">
-        <n-input-number v-model:value="device.max_brightness" placeholder="Input" :min="0" :max="100" :step="1">
+      <n-form-item-gi :span="8" :label="t('light_brightness')" path="max_brightness" :show-feedback="false">
+        <n-input-number v-model:value="device.max_brightness" :min="0" :max="100" :step="1">
           <template #suffix>
             %
           </template>
@@ -54,7 +54,7 @@ function bottom_dz_available_change() {
               </n-text>
             </template>
             <template #default>
-              用于切换键盘上报率
+              {{ $t('hs_desc') }}
             </template>
           </n-tooltip>
         </template>
@@ -66,11 +66,11 @@ function bottom_dz_available_change() {
           <n-tooltip trigger="hover" :delay="200">
             <template #trigger>
               <n-text underline>
-                自动校准
+                {{ $t('auto_calibration') }}
               </n-text>
             </template>
             <template #default>
-              当键盘空闲时，自动进行顶部校准
+              {{ $t('auto_calibration_desc') }}
             </template>
           </n-tooltip>
         </template>
@@ -79,7 +79,7 @@ function bottom_dz_available_change() {
       <n-form-item-gi :span="8" path="bottom_dz_available" :show-feedback="false">
         <n-select v-model:value="store.bottom_dz_available" @update:value="bottom_dz_available_change"  :options="ToggleSel" />
         <template #label>
-          允许调整底部死区
+          {{ $t('bottom_dz_available') }}
         </template>
       </n-form-item-gi>
     </n-grid>
