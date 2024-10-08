@@ -189,5 +189,8 @@
   "key_cali": "按键校准",
   "device_debug": "设备调试",
   "more_settings": "更多设置",
-  "unsupported_config": "配置不支持，可能是固件版本不匹配"
+  "unsupported_config": "配置不支持，可能是固件版本不匹配",
+  "device_cali_suggest": "设备未校准",
+  "fn_lock": "Fn 键只允许放在按键层",
+  "key_locked": "此按键已锁定"
 }

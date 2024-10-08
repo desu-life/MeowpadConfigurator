@@ -20,6 +20,7 @@ import { appWindow, LogicalSize } from '@tauri-apps/api/window';
 
 const { t } = useI18n();
 const dialog = useDialog()
+const message = useMessage();
 const store = useStore()
 const device = useDeviceStore()
 
@@ -194,17 +195,21 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       appWindow.setSize(new LogicalSize(1200, 750))
     }
 
-    if (device.device_status!.hall == false) {
-      dialog.warning({
-        title: t('warning'),
-        content: t('device_cali_warn'),
-        positiveText: t('yes'),
-        negativeText: t('no'),
-        maskClosable: false,
-        onPositiveClick: () => {
-          emitter.emit('calibration-key')
-        },
-      })
+    if (device.device_status!.hall == false && !store.developer_mode) {
+      if (device.is_pure()) {
+        message.warning(t('device_cali_suggest'));
+      } else {
+        dialog.warning({
+          title: t('warning'),
+          content: t('device_cali_warn'),
+          positiveText: t('yes'),
+          negativeText: t('no'),
+          maskClosable: false,
+          onPositiveClick: () => {
+            emitter.emit('calibration-key')
+          },
+        })
+      }
     }
 
   } catch (e) {

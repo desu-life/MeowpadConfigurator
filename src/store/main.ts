@@ -32,9 +32,8 @@ export const useStore = defineStore("main", () => {
   }
 
   function setLang(e: string) {
-    if (e === "zh" || e === "en") {
-      lang.value = e;
-      setI18nLanguage(e);
+    if (setI18nLanguage(e)) {
+      lang.value = e as LOCALES;
       return true;
     }
     return false;

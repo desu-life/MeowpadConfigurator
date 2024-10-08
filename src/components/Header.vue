@@ -35,12 +35,24 @@ const sync_btn_type = ref<Type | undefined>("default")
 const state = ref({
   options: [
     {
+      value: 'en',
+      label: 'English',
+    },
+    {
       value: 'zh',
       label: '简体中文',
     },
     {
-      value: 'en',
-      label: 'English',
+      value: 'zhHant',
+      label: '繁體中文',
+    },
+    {
+      value: 'ja',
+      label: '日本語',
+    },
+    {
+      value: 'ko',
+      label: '한국어',
     },
   ],
 })
@@ -212,6 +224,7 @@ async function clear_config() {
       await api3k.reset_device()
     } else if (device.is_pure()) {
       await apib.clear_config()
+      await apib.reset_device()
     }
     emitter.emit('connection-broke', { e: null })
     emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
