@@ -114,7 +114,7 @@ function startDragKey(key: IMixedKey) {
   pointer-events: none;
   user-select: none;
   opacity: 0.8;
-  z-index: 1000;
+  z-index: 100;
   transform: rotate(15deg);
   text-align: center;
 }

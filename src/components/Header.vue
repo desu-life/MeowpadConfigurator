@@ -291,7 +291,7 @@ async function clear_config() {
 <style scoped lang="scss">
 .header {
   position: relative;
-  z-index: 1000;
+  z-index: 50;
   top: 15px;
   height: 100%;
   width: 95%;

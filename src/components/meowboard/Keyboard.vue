@@ -862,10 +862,7 @@ async function onPresetImport() {
   justify-content: center;
 }
 
-.pure-config {
-  width: -webkit-fill-available;
-  height: -webkit-fill-available;
-}
+
 
 .top-bar {
   display: flex;
@@ -901,12 +898,25 @@ async function onPresetImport() {
   background-color: var(--color-background-soft);
 }
 
+.pure-config {
+  width: -webkit-fill-available;
+  height: -webkit-fill-available;
+  background: none !important;
+
+  .n-layout {
+    background: none !important;
+  }
+
+  .n-layout-sider {
+    background: none !important;
+  }
+}
+
 .side-pure-config {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background-color: var(--color-background);
 }
 
 .main-pure-config {
@@ -914,6 +924,5 @@ async function onPresetImport() {
   height: -webkit-fill-available;
   display: grid;
   justify-content: center;
-  background-color: var(--color-background);
 }
 </style>

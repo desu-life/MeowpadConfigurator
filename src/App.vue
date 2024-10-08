@@ -102,6 +102,8 @@ onMounted(async () => {
   height: calc(100vh - var(--header-height));
   color: var(--color-text);
   background: var(--color-background);
+
+
 }
 
 </style>
