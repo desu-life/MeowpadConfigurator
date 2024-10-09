@@ -229,13 +229,20 @@ function KeyStrModify({
   if (kb.mode != 1) return;
 
   let key: IMixedKey = currentkey ?? { t: "None" };
-  kb.showkeys[index] = key;
 
   if (keyLayer.value == 0) {
     device.device_config!.normal_layer[index] = key;
   } else if (keyLayer.value == 1) {
-    device.device_config!.fn_layer[index] = key;
+    if (key.t == "Custom" && key.c == 1) {
+      message.warning(t('fn_lock'));
+    } else if (device.device_config!.normal_layer[index].t == "Custom" && device.device_config!.normal_layer[index].c == 1) {
+      message.warning(t('key_locked'));
+    } else {
+      device.device_config!.fn_layer[index] = key;
+    }
   }
+
+  onLayerUpdate();
 }
 
 function onLayerUpdate() {
@@ -268,7 +275,11 @@ function setLayer(layer) {
     }
   } else {
     for (let i = 0; i < 64; i++) {
-      kb.showkeys[i] = device.device_config!.fn_layer[i];
+      if (device.device_config!.normal_layer[i].t == "Custom" && device.device_config!.normal_layer[i].c == 1) {
+        kb.showkeys[i] = { t: "Custom", c: 1 };
+      } else {
+        kb.showkeys[i] = device.device_config!.fn_layer[i];
+      }
     }
   }
 }
@@ -851,10 +862,7 @@ async function onPresetImport() {
   justify-content: center;
 }
 
-.pure-config {
-  width: -webkit-fill-available;
-  height: -webkit-fill-available;
-}
+
 
 .top-bar {
   display: flex;
@@ -890,12 +898,25 @@ async function onPresetImport() {
   background-color: var(--color-background-soft);
 }
 
+.pure-config {
+  width: -webkit-fill-available;
+  height: -webkit-fill-available;
+  background: none !important;
+
+  .n-layout {
+    background: none !important;
+  }
+
+  .n-layout-sider {
+    background: none !important;
+  }
+}
+
 .side-pure-config {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background-color: var(--color-background);
 }
 
 .main-pure-config {
@@ -903,6 +924,5 @@ async function onPresetImport() {
   height: -webkit-fill-available;
   display: grid;
   justify-content: center;
-  background-color: var(--color-background);
 }
 </style>

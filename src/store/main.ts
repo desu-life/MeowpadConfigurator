@@ -14,7 +14,7 @@ export const useStore = defineStore("main", () => {
   const refreshing_device_list = ref(false);
   const loading = ref(false);
   const iap_connected = ref(false);
-  const version_info = ref<IVersion | undefined>(undefined);
+  const version_info = ref<IVersion[] | undefined>(undefined);
   const latest_firmware_download_url = ref<string | null>(null);
   const need_update_firmware = ref<boolean>(false);
   const developer_mode = ref<boolean>(false);
@@ -32,9 +32,8 @@ export const useStore = defineStore("main", () => {
   }
 
   function setLang(e: string) {
-    if (e === "zh" || e === "en") {
-      lang.value = e;
-      setI18nLanguage(e);
+    if (setI18nLanguage(e)) {
+      lang.value = e as LOCALES;
       return true;
     }
     return false;

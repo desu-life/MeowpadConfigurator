@@ -10,6 +10,7 @@ import { EllipsisHorizontal } from '@vicons/ionicons5'
 import * as api from '@/apis/api'
 import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
+import { platform } from '@tauri-apps/api/os';
 
 const { t } = useI18n();
 const store = useStore()
@@ -52,6 +53,17 @@ function developer_mode(d: IHidDeviceInfo) {
 }
 
 async function continue_device_upgrade(d: IHidDeviceInfo) {
+    const platformName = await platform();
+
+    if (d.device_name == "Pure64") {
+        if (platformName == "win32") {
+            api.update_firmware_call()
+        } else {
+            emitter.emit('header-msg-update', { status: "error", str: t('unsupported_platform') })
+        }
+        return
+    }
+
     if (d.device_name != "Meowpad") {
         emitter.emit('header-msg-update', { status: "error", str: t('device_not_support') })
         return

@@ -1,6 +1,6 @@
 use std::{sync::Mutex, thread, time::Duration};
 
-use crate::{device::DeviceInfoExtened, error::{self, Error, Result}, MEOWPAD_DEVICE_NAME};
+use crate::{device::DeviceInfoExtened, error::{self, Error, Result}, MEOWPAD_DEVICE_NAME, PURE64_DEVICE_NAME};
 use hid_iap::iap::{IAPState, IAP};
 use hidapi::HidApi;
 use log::*;
@@ -23,6 +23,29 @@ pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
         // 连接设备
         Some(DeviceInfoExtened {
             device_name: MEOWPAD_DEVICE_NAME.to_owned(),
+            firmware_version: "IAP".to_owned(),
+            serial_number: None,
+            inner: d,
+        })
+    }).collect()
+}
+
+pub fn find_devices_pure(api: &HidApi) -> Vec<DeviceInfoExtened> {
+    // 期望的设备VID和PID
+    const VID: u16 = 0x5D3E;
+    const PID: u16 = 0xFA00;
+
+    // 迭代设备列表，查找符合条件的设备
+    let devices = api.device_list();
+    devices.filter_map(|d| {
+        // 过滤设备
+        if !(d.vendor_id() == VID && d.product_id() == PID) {
+            return None;
+        }
+
+        // 连接设备
+        Some(DeviceInfoExtened {
+            device_name: PURE64_DEVICE_NAME.to_owned(),
             firmware_version: "IAP".to_owned(),
             serial_number: None,
             inner: d,

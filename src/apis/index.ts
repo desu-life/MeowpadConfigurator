@@ -26,12 +26,22 @@ export interface IDeviceInfo {
 }
 
 export interface IVersion {
-    configurator_version: string
-    download_url: string
-    v2_starter_edition_latest_firmware_version: string
-    v2_starter_edition_firmware_download_url: string
-    v2_standard_edition_latest_firmware_version: string
-    v2_standard_edition_firmware_download_url: string
+    version: string
+    infomation: IVersionInfo
+}
+export interface IVersionInfo {
+    notes: string
+    date: string
+    platforms: IVersionPlatforms
+}
+export interface IVersionPlatforms {
+    'macos-app'?: IVersionPlatform
+    'linux-appimage'?: IVersionPlatform
+    'windows-x86_64'?: IVersionPlatform
+}
+export interface IVersionPlatform {
+    hash: string
+    url: string
 }
 
 export interface IKeyRTStatus {

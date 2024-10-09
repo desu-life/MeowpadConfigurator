@@ -35,12 +35,24 @@ const sync_btn_type = ref<Type | undefined>("default")
 const state = ref({
   options: [
     {
+      value: 'en',
+      label: 'English',
+    },
+    {
       value: 'zh',
       label: '简体中文',
     },
     {
-      value: 'en',
-      label: 'English',
+      value: 'zhHant',
+      label: '繁體中文',
+    },
+    {
+      value: 'ja',
+      label: '日本語',
+    },
+    {
+      value: 'ko',
+      label: '한국어',
     },
   ],
 })
@@ -212,6 +224,7 @@ async function clear_config() {
       await api3k.reset_device()
     } else if (device.is_pure()) {
       await apib.clear_config()
+      await apib.reset_device()
     }
     emitter.emit('connection-broke', { e: null })
     emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
@@ -251,7 +264,7 @@ async function clear_config() {
           </n-button>
           <template v-if="!store.debug_mode">
             <n-button  v-if="device.is_4k() || device.is_pure()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
-            <n-button  v-if="device.is_3k() || device.is_pure()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
+            <n-button  v-if="device.is_3k()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
             <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
             <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
           </template>
@@ -278,7 +291,7 @@ async function clear_config() {
 <style scoped lang="scss">
 .header {
   position: relative;
-  z-index: 1000;
+  z-index: 50;
   top: 15px;
   height: 100%;
   width: 95%;

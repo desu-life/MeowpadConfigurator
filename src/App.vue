@@ -9,7 +9,7 @@ import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { IVersion } from './apis';
-import { check_update, device_list, get_latest_version, get_theme, open_update_url, refresh_devices } from './apis/api';
+import { check_update, device_list, get_latest_version, get_theme, open_update_url, refresh_devices, update_firmware_call } from './apis/api';
 import { useI18n } from 'vue-i18n';
 import emitter from '@/mitt';
 import * as api4k from '@/apis/meowpad4k/api'
@@ -41,11 +41,14 @@ onMounted(async () => {
   await store.save()
   store.status_str = t("device_disconnected")
 
-  get_latest_version().then(async (version: IVersion) => {
+  get_latest_version().then(async (version) => {
+    console.log(version)
     store.version_info = version
-    let need_update = await check_update(version)
-    if (need_update) {
-      await open_update_url(version, t('update_warning'))
+    if (version.length > 0) {
+      let need_update = await check_update(version)
+      if (need_update) {
+        await open_update_url(version[0], t('update_warning'))
+      }
     }
   });
 
@@ -102,6 +105,8 @@ onMounted(async () => {
   height: calc(100vh - var(--header-height));
   color: var(--color-text);
   background: var(--color-background);
+
+
 }
 
 </style>
