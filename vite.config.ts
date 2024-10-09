@@ -55,7 +55,9 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       __APP_INFO__: JSON.stringify(__APP_INFO__),
     },
     css: {
-      preprocessorOptions: {},
+      preprocessorOptions: {
+        scss: { api: 'modern-compiler' },
+      },
     },
     server: {
       host: true,
