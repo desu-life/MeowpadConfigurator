@@ -1,5 +1,3 @@
-#![feature(cursor_remaining)]
-
 pub mod cbor;
 pub mod config;
 mod meowpad;

@@ -95,10 +95,6 @@ impl<D: Device> Meowpad<D> {
                 key.press_percentage = cur.read_u16::<BigEndian>()? as f32;
                 key.key_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
             }
-            let rem = cur.remaining_slice();
-            if !rem.is_empty() {
-                println!("{:?}", cur.remaining_slice());
-            }
             Ok(keys)
         } else {
             dbg!(packet.id);

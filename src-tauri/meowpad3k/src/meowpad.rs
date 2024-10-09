@@ -96,10 +96,6 @@ impl<D: Device> Meowpad<D> {
                 key.key_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
             }
             let btn_state = KeyState::from_u16(cur.read_u16::<BigEndian>()?).ok_or(Error::InvalidPacket)?;
-            let rem = cur.remaining_slice();
-            if !rem.is_empty() {
-                println!("{:?}", cur.remaining_slice());
-            }
             Ok((keys, btn_state))
         } else {
             dbg!(packet.id);
