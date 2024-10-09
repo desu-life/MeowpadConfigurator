@@ -44,7 +44,7 @@
     "vite.config.ts",
     "components.d.ts",
     "auto-imports.d.ts"
-  ],
+, "shims-tsx.d.ts"  ],
   "exclude": [
     "node_modules",
     "dist"
