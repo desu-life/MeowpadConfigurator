@@ -4,7 +4,7 @@ pub fn compare_version(version1: &str, version2: &str) -> std::cmp::Ordering {
     // 检查版本号的格式是否正确
     let re = regex::Regex::new(r"^\d+(\.\d+)*$").unwrap();
     if !re.is_match(version1) || !re.is_match(version2) {
-        panic!("Invalid version format");
+        return Equal
     }
 
     // 将版本号转换为数字向量

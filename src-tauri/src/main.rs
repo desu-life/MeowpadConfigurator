@@ -14,6 +14,7 @@ use meowpad3k::Meowpad as Meowpad3k;
 use meowpad4k::Meowpad as Meowpad4k;
 use reqwest::Client;
 use serde::Serialize;
+use tauri::api::dialog::blocking::FileDialogBuilder;
 use std::borrow::BorrowMut;
 use std::env;
 use std::io::Write;
@@ -113,27 +114,69 @@ async fn get_theme(_window: tauri::Window) -> &'static str {
 }
 
 #[tauri::command]
-async fn get_latest_version(client: State<'_, Client>) -> Result<Version> {
+async fn get_latest_version(client: State<'_, Client>) -> Result<Vec<Version>> {
     Ok(Version::get(client.deref()).await?)
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[tauri::command]
+fn update_firmware_call(handle: tauri::AppHandle) {
+    use std::process::Command;
+
+    tauri::async_runtime::spawn(async move {
+        let file_path = FileDialogBuilder::new().add_filter("Firmware File", &["hex"]).pick_file();
+    
+        if let Some(file_path) = file_path {
+            let resource_path = handle.path_resolver()
+              .resolve_resource("resources/FirmwareUpdater.exe")
+              .expect("failed to resolve resource");
+        
+            warn!("resource_path: {:#?}", resource_path);
+        
+            Command::new(resource_path)
+                .args([file_path])
+                .spawn()
+                .expect("failed to execute process");
+        }
+    });
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct Version {
-    configurator_version: String,
-    download_url: String,
-    v2_starter_edition_latest_firmware_version: String,
-    v2_starter_edition_firmware_download_url: String,
-    v2_standard_edition_latest_firmware_version: String,
-    v2_standard_edition_firmware_download_url: String,
+    version: String,
+    infomation: VersionInfo,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct VersionInfo {
+    notes: String,
+    date: String,
+    platforms: VersionPlatforms
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct VersionPlatforms {
+    #[serde(rename = "macos-app")]
+    macos: Option<VersionPlatform>,
+    #[serde(rename = "linux-appimage")]
+    linux: Option<VersionPlatform>,
+    #[serde(rename = "windows-x86_64")]
+    windows: Option<VersionPlatform>
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct VersionPlatform {
+    hash: String,
+    url: String
 }
 
 impl Version {
-    async fn get(client: &Client) -> reqwest::Result<Version> {
+    async fn get(client: &Client) -> reqwest::Result<Vec<Version>> {
         client
-            .get("https://desu.life/device/configurator_version/v2/")
+            .get("https://assets.desu.life/device/app/")
+            .query(&[("from", "a839dd451602fabdff70d25acc70cda3")])
             .send()
             .await?
-            .json::<Version>()
+            .json::<Vec<Version>>()
             .await
     }
 }
@@ -143,19 +186,22 @@ use tauri::api::shell;
 use crate::device::HidDevice;
 
 #[tauri::command]
-async fn check_update(_window: tauri::Window, version: Version) -> bool {
-    if compare_version(VERSION, &version.configurator_version) == std::cmp::Ordering::Less {
-        warn!("最新版本信息：\n{:#?}", version);
-        // window.hide().unwrap();
-        // message_dialog_f!(
-        //     "Meowpad Configurator",
-        //     "检测到配置器未更新，请下载新版",
-        //     move |_| {
-        //         shell::open(&window.shell_scope(), version.download_url, None).unwrap();
-        //         // window.close().unwrap();
-        //     }
-        // );
-        return true;
+async fn check_update(_window: tauri::Window, mut version: Vec<Version>) -> bool {
+    version.sort_by(|a, b| compare_version(&b.version, &a.version));
+    if let Some(version) = version.first() {
+        if compare_version(VERSION, &version.version) == std::cmp::Ordering::Less {
+            warn!("最新版本信息：\n{:#?}", version);
+            // window.hide().unwrap();
+            // message_dialog_f!(
+            //     "Meowpad Configurator",
+            //     "检测到配置器未更新，请下载新版",
+            //     move |_| {
+            //         shell::open(&window.shell_scope(), version.download_url, None).unwrap();
+            //         // window.close().unwrap();
+            //     }
+            // );
+            return true;
+        }
     }
     false
 }
@@ -164,7 +210,7 @@ async fn check_update(_window: tauri::Window, version: Version) -> bool {
 async fn open_update_url(window: tauri::Window, version: Version, str: String) {
     message_dialog_f_yn!("Meowpad Configurator", &str, move |r| {
         if r {
-            shell::open(&window.shell_scope(), version.download_url, None).unwrap();
+            let _ = shell::open(&window.shell_scope(), "https://desu.life/#device", None);
         }
         // window.close().unwrap();
     });
@@ -190,6 +236,7 @@ fn device_list(
     devices.append(&mut cmd3k::find_devices(&api));
     devices.append(&mut cmdkbd::find_devices(&api));
     devices.append(&mut cmdiap::find_devices(&api));
+    devices.append(&mut cmdiap::find_devices_pure(&api));
 
     // 清空已连接设备的缓冲
     if let Some(d) = device_handle_4k.as_mut() {
@@ -421,7 +468,8 @@ fn main() -> AnyResult<()> {
             load_preset_kb,
             gen_preset_kb,
             load_preset_from_file,
-            save_preset_to_file
+            save_preset_to_file,
+            update_firmware_call
         ])
         .manage(
             Client::builder()

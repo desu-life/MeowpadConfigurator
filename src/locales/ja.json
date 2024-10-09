@@ -192,5 +192,7 @@
   "unsupported_config": "サポートされていない設定、ファームウェアバージョンが一致しない可能性があります",
   "device_cali_suggest": "デバイスが校正されていません。",
   "fn_lock": "Fnキーはキー層にのみ配置が許可されています。",
-  "key_locked": "このキーはロックされています。"
+  "key_locked": "このキーはロックされています。",
+  "open_updater": "アップデーターを開く",
+  "unsupported_platform": "このプラットフォームはサポートされていません"
 }

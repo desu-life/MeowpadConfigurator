@@ -12,14 +12,14 @@ export async function iap_start(data: number[]) {
 export async function iap_flush() {
   return (await invoke("iap_flush")) as void;
 }
-export async function check_update(version: IVersion) {
+export async function check_update(version: IVersion[]) {
   return (await invoke("check_update", { version })) as boolean;
 }
 export async function open_update_url(version: IVersion, str: string) {
   return (await invoke("open_update_url", { version, str })) as boolean;
 }
 export async function get_latest_version() {
-  return (await invoke("get_latest_version")) as IVersion;
+  return (await invoke("get_latest_version")) as IVersion[];
 }
 export async function get_theme() {
   return (await invoke("get_theme")) as string;
@@ -44,4 +44,7 @@ export async function load_preset_from_file() {
 }
 export async function save_preset_to_file(preset: IDevicePreset) {
   return (await invoke("save_preset_to_file", { preset }));
+}
+export async function update_firmware_call() {
+  return (await invoke("update_firmware_call"));
 }

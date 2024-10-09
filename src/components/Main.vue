@@ -112,7 +112,7 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
     }
 
     if (store.version_info) {
-      store.latest_firmware_download_url = store.version_info.v2_standard_edition_firmware_download_url
+      store.latest_firmware_download_url = "https://desu.life/#device"
     }
 
     await device.get_status()

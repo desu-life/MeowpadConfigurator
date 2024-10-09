@@ -192,5 +192,7 @@
   "unsupported_config": "Unsupported configuration, possibly due to firmware mismatch",
   "device_cali_suggest": "Device not calibrated.",
   "fn_lock": "The Fn key is only allowed to be placed on the key layer",
-  "key_locked": "This key is locked"
+  "key_locked": "This key is locked",
+  "open_updater": "Open updater",
+  "unsupported_platform": "This platform is not supported"
 }

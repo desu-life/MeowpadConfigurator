@@ -192,5 +192,7 @@
   "unsupported_config": "配置不支持，可能是固件版本不匹配",
   "device_cali_suggest": "设备未校准",
   "fn_lock": "Fn 键只允许放在按键层",
-  "key_locked": "此按键已锁定"
+  "key_locked": "此按键已锁定",
+  "open_updater": "打开更新器",
+  "unsupported_platform": "不支持此平台"
 }
