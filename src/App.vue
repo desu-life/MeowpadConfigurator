@@ -65,9 +65,16 @@ onMounted(async () => {
   emitter.emit('refresh-device-list')
 
   const interval = setInterval(async () => {
-    let changes = await refresh_devices();
-    if (changes) {
-      emitter.emit('refresh-device-list')
+    if (store.refreshing_devices) { return }
+
+    try {
+      store.refreshing_devices = true
+      let changes = await refresh_devices();
+      if (changes) {
+        emitter.emit('refresh-device-list')
+      }
+    } finally {
+      store.refreshing_devices = false
     }
   }, 1000)
 })

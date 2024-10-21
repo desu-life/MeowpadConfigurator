@@ -217,12 +217,12 @@ async fn open_update_url(window: tauri::Window, version: Version, str: String) {
 }
 
 #[tauri::command]
-fn device_list(
+async fn device_list(
     api_handle: State<'_, Mutex<HidApi>>,
     device_handle_4k: State<'_, Mutex<Option<Meowpad4k<HidDevice>>>>,
     device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
     device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
-) -> Vec<DeviceInfoSerdi> {
+) -> Result<Vec<DeviceInfoSerdi>> {
     let api = api_handle.lock().unwrap();
     // 在执行扫描前先锁住设备，不让其他线程访问
     let mut device_handle_4k = device_handle_4k.lock().unwrap();
@@ -249,11 +249,11 @@ fn device_list(
         let _ = d.device.clear_buffer();
     }
 
-    devices.into_iter().map(|x| x.into()).collect()
+    Ok(devices.into_iter().map(|x| x.into()).collect())
 }
 
 #[tauri::command]
-fn refresh_devices(api_handle: State<'_, Mutex<HidApi>>) -> bool {
+async fn refresh_devices(api_handle: State<'_, Mutex<HidApi>>) -> Result<bool> {
     let mut api = api_handle.lock().unwrap();
 
     let devices_old: Vec<hidapi::DeviceInfo> = api.device_list().cloned().collect();
@@ -265,7 +265,7 @@ fn refresh_devices(api_handle: State<'_, Mutex<HidApi>>) -> bool {
     let (len, _) = device_list.size_hint();
 
     if len != devices_old.len() {
-        return true;
+        return Ok(true);
     }
 
     for d in device_list {
@@ -281,10 +281,10 @@ fn refresh_devices(api_handle: State<'_, Mutex<HidApi>>) -> bool {
         {
             continue;
         }
-        return true;
+        return Ok(true);
     }
 
-    false
+    Ok(false)
 }
 
 #[tauri::command]

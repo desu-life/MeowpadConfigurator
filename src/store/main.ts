@@ -11,6 +11,7 @@ export const useStore = defineStore("main", () => {
   const status = ref<Type | undefined>(undefined);
   const status_str = ref("");
   const lang = ref<LOCALES>("en");
+  const refreshing_devices = ref(false);
   const refreshing_device_list = ref(false);
   const loading = ref(false);
   const iap_connected = ref(false);
@@ -87,6 +88,7 @@ export const useStore = defineStore("main", () => {
     device_list,
     firmware_versions,
     refreshing_device_list,
+    refreshing_devices,
     bottom_dz_available,
     lang,
     app_store,
