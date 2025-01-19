@@ -217,7 +217,7 @@ async fn check_update(_window: tauri::Window, mut version: Vec<Version>) -> bool
 }
 
 #[tauri::command]
-async fn open_update_url(app: tauri::AppHandle, version: Version, str: String) {
+async fn open_update_url(app: tauri::AppHandle, _version: Version, str: String) {
     message_dialog_f_yn!(app, "Meowpad Configurator", &str, move |r| {
         if r {
             let _ = app
