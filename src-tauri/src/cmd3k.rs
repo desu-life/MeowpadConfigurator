@@ -3,7 +3,7 @@ use crate::{
     error::{Error, Result},
     FIRMWARE_VERSION_3K,
 };
-use hidapi::{DeviceInfo, HidApi};
+use hidapi::HidApi;
 use log::*;
 use meowpad::models::{DeviceStatus, KeyRTStatus, KeyState};
 use meowpad3k::Meowpad;

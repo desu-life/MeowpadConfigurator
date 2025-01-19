@@ -1,11 +1,5 @@
-use std::sync::Mutex;
 
-use crate::{device::HidDevice, device_preset::DevicePreset};
-use hidapi::HidApi;
-use meowboard::Meowboard;
-use meowpad::Device;
-use meowpad3k::Meowpad as Meowpad3k;
-use meowpad4k::Meowpad as Meowpad4k;
+use crate::device_preset::DevicePreset;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FilePath;
 

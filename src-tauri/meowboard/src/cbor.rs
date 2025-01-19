@@ -1,7 +1,6 @@
 use crate::config;
 use crate::keymap;
-use meowpad::{KeyCode, KbReport};
-use palette::{rgb::channels::Argb, WithAlpha};
+use palette::rgb::channels::Argb;
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
 use serde_with::*;

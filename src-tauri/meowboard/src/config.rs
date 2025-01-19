@@ -1,11 +1,8 @@
 use crate::{cbor, keymap};
-use meowpad::{error::Error, keycode::KeyValue, KbReport, KeyCode};
-use num::FromPrimitive;
-use num_derive::{FromPrimitive, ToPrimitive};
+use meowpad::{error::Error, keycode::KeyValue};
 use palette::rgb::channels::Argb;
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
-use serde_repr::*;
 use serde_with::*;
 
 

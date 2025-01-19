@@ -4,7 +4,7 @@
 )]
 
 use anyhow::Result as AnyResult;
-use device::{DeviceInfoExtened, DeviceInfoSerdi};
+use device::DeviceInfoSerdi;
 use hid_iap::iap::IAP;
 use hidapi::HidApi;
 use log::*;
@@ -13,14 +13,11 @@ use meowpad::Device;
 use meowpad3k::Meowpad as Meowpad3k;
 use meowpad4k::Meowpad as Meowpad4k;
 use reqwest::Client;
-use serde::Serialize;
-use std::borrow::BorrowMut;
 use std::env;
-use std::io::Write;
 use std::ops::Deref;
 use std::panic;
 use std::str::FromStr;
-use std::sync::{mpsc, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::State;
@@ -28,7 +25,6 @@ use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FilePath;
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 use tauri_plugin_opener::OpenerExt;
-use tauri_plugin_shell::ShellExt;
 
 mod cmd3k;
 mod cmd4k;
@@ -64,6 +60,7 @@ macro_rules! message_dialog {
 }
 
 /// non_blocking_dialog_with_fn
+#[allow(unused_macros)]
 macro_rules! message_dialog_f {
     ( $app:ident, $title:literal, $message:expr, $f:expr ) => {{
         use tauri_plugin_dialog::{MessageDialogButtons, MessageDialogKind};
@@ -148,7 +145,9 @@ fn update_firmware_call(handle: tauri::AppHandle) {
             Command::new(resource_path)
                 .args([file_path])
                 .spawn()
-                .expect("failed to execute process");
+                .expect("failed to execute process")
+                .wait()
+                .expect("process failed");
         }
     });
 }

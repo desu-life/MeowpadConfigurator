@@ -8,7 +8,7 @@ use crate::{
 use hid_iap::iap::{IAPState, IAP};
 use hidapi::HidApi;
 use log::*;
-use tauri::{Emitter, Manager, State};
+use tauri::{Emitter, State};
 
 pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
     // 期望的设备VID和PID

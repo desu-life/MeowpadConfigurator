@@ -3,7 +3,7 @@ use crate::{
     error::{Error, Result},
     FIRMWARE_VERSION_KB,
 };
-use hidapi::{DeviceInfo, HidApi};
+use hidapi::HidApi;
 use log::*;
 use meowboard::Meowboard;
 use meowpad::{
