@@ -4,7 +4,8 @@
 import Main from '@/components/Main.vue'
 import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
-import { LogicalSize, getCurrent } from '@tauri-apps/api/window';
+import { LogicalSize } from '@tauri-apps/api/dpi';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
@@ -15,7 +16,7 @@ import emitter from '@/mitt';
 import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
 import * as apib from '@/apis/meowboard/api'
-const appWindow = await getCurrent()
+
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
@@ -38,6 +39,7 @@ async function get_firmware_versions() {
 }
 
 onMounted(async () => {
+  const appWindow = await getCurrentWebviewWindow()
   await store.load()
   await store.save()
   store.status_str = t("device_disconnected")

@@ -33,7 +33,6 @@ import { IMixedKey } from "@/apis";
 import emitter from "@/mitt";
 import { getErrorMsg, most, splitArray, time_2_str } from "@/utils";
 import { useI18n } from "vue-i18n";
-import { getCurrentWebviewWindow, LogicalSize } from "@tauri-apps/api/webviewWindow";
 import { useKeyboard } from "@/store/keyboard";
 import { Toggle } from "@/interface";
 import { storeToRefs } from "pinia";
@@ -43,7 +42,6 @@ import { MenuGroupOption, MenuOption, NIcon } from "naive-ui";
 import { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import ConfigKb from "./ConfigKb.vue";
 import { Checkmark, Exit, Create, Trash } from "@vicons/ionicons5";
-const appWindow = getCurrentWebviewWindow()
 
 const message = useMessage();
 const dialog = useDialog();

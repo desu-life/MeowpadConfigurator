@@ -10,6 +10,7 @@
   ],
   "permissions": [
     "global-shortcut:default",
-    "opener:allow-open-url"
+    "opener:allow-open-url",
+    "store:default"
   ]
 }

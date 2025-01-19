@@ -16,8 +16,8 @@ import * as apib from '@/apis/meowboard/api'
 import { useDialog } from 'naive-ui'
 import { IError, IHidDeviceInfo } from '@/apis';
 import { compareArray, getErrorMsg } from '@/utils';
-import { getCurrentWebviewWindow, LogicalSize } from '@tauri-apps/api/webviewWindow';
-const appWindow = getCurrentWebviewWindow()
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { LogicalSize } from '@tauri-apps/api/dpi'
 
 const { t } = useI18n();
 const dialog = useDialog()
@@ -60,6 +60,7 @@ emitter.on('refresh-device-list', async (event: { e: IError }) => {
 })
 
 emitter.on('connection-broke', async (event: { e: IError | null }) => {
+  const appWindow = await getCurrentWebviewWindow()
   if (event.e != null) { 
     emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: getErrorMsg(t, event.e) }) })
     console.error(event.e)
@@ -77,6 +78,7 @@ emitter.on('connection-broke', async (event: { e: IError | null }) => {
 
 
 emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
+  const appWindow = await getCurrentWebviewWindow()
   emitter.emit('header-loading', { str: t('connecting') })
   try {
     let device_hid_info = event.device;

@@ -61,6 +61,7 @@ ashpd = "0.9.1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"
+tauri-plugin-single-instance = "2"
 
 [features]
 # by default Tauri runs in production mode
