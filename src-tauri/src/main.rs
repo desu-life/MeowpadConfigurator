@@ -14,7 +14,7 @@ use meowpad3k::Meowpad as Meowpad3k;
 use meowpad4k::Meowpad as Meowpad4k;
 use reqwest::Client;
 use serde::Serialize;
-use tauri::api::dialog::blocking::FileDialogBuilder;
+use tauri_plugin_fs::FilePath;
 use std::borrow::BorrowMut;
 use std::env;
 use std::io::Write;
@@ -23,22 +23,23 @@ use std::panic;
 use std::str::FromStr;
 use std::sync::{mpsc, Mutex};
 use std::time::Duration;
-use tauri::api::dialog::MessageDialogBuilder;
 use tauri::Manager;
 use tauri::State;
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
-use tauri_plugin_log::LogTarget;
+use tauri_plugin_shell::ShellExt;
+use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_opener::OpenerExt;
 
 mod cmd3k;
 mod cmd4k;
 mod cmdiap;
 mod cmdkbd;
+mod cmdpreset;
 mod consts;
 mod device;
+mod device_preset;
 mod error;
 mod utils;
-mod device_preset;
-mod cmdpreset;
 use cmd3k::*;
 use cmd4k::*;
 use cmdiap::*;
@@ -51,22 +52,20 @@ use crate::utils::compare_version;
 
 /// blocking_dialog
 macro_rules! message_dialog {
-    ( $title:expr, $message:expr ) => {{
-        use tauri::api::dialog::{MessageDialogBuilder, MessageDialogButtons, MessageDialogKind};
-        let (s, r) = mpsc::channel();
-        MessageDialogBuilder::new($title, $message)
+    ( $app:ident, $title:literal, $message:expr ) => {{
+        use tauri_plugin_dialog::{MessageDialogButtons, MessageDialogKind};
+        $app.dialog().message($message).title($title)
             .buttons(MessageDialogButtons::Ok)
             .kind(MessageDialogKind::Info)
-            .show(move |_| s.send(()).unwrap());
-        r.recv().unwrap();
+            .blocking_show();
     }};
 }
 
 /// non_blocking_dialog_with_fn
 macro_rules! message_dialog_f {
-    ( $title:expr, $message:expr, $f:expr ) => {{
-        use tauri::api::dialog::{MessageDialogBuilder, MessageDialogButtons, MessageDialogKind};
-        MessageDialogBuilder::new($title, $message)
+    ( $app:ident, $title:literal, $message:expr, $f:expr ) => {{
+        use tauri_plugin_dialog::{MessageDialogButtons, MessageDialogKind};
+        $app.dialog().message($message).title($title)
             .buttons(MessageDialogButtons::Ok)
             .kind(MessageDialogKind::Info)
             .show($f);
@@ -75,9 +74,9 @@ macro_rules! message_dialog_f {
 
 /// non_blocking_dialog_with_fn_yes_no
 macro_rules! message_dialog_f_yn {
-    ( $title:expr, $message:expr, $f:expr ) => {{
-        use tauri::api::dialog::{MessageDialogBuilder, MessageDialogButtons, MessageDialogKind};
-        MessageDialogBuilder::new($title, $message)
+    ( $app:ident, $title:literal, $message:expr, $f:expr ) => {{
+        use tauri_plugin_dialog::{MessageDialogButtons, MessageDialogKind};
+        $app.dialog().message($message).title($title)
             .buttons(MessageDialogButtons::YesNo)
             .kind(MessageDialogKind::Info)
             .show($f);
@@ -123,15 +122,18 @@ fn update_firmware_call(handle: tauri::AppHandle) {
     use std::process::Command;
 
     tauri::async_runtime::spawn(async move {
-        let file_path = FileDialogBuilder::new().add_filter("Firmware File", &["hex"]).pick_file();
-    
-        if let Some(file_path) = file_path {
-            let resource_path = handle.path_resolver()
-              .resolve_resource("resources/FirmwareUpdater.exe")
-              .expect("failed to resolve resource");
-        
+        let file_path = handle.dialog().file()
+            .add_filter("Firmware File", &["hex"])
+            .blocking_pick_file();
+
+        if let Some(FilePath::Path(file_path)) = file_path {
+            let resource_path = handle
+                .path()
+                .resolve("resources/FirmwareUpdater.exe", tauri::path::BaseDirectory::Resource)
+                .expect("failed to resolve resource");
+
             warn!("resource_path: {:#?}", resource_path);
-        
+
             Command::new(resource_path)
                 .args([file_path])
                 .spawn()
@@ -150,7 +152,7 @@ struct Version {
 struct VersionInfo {
     notes: String,
     date: String,
-    platforms: VersionPlatforms
+    platforms: VersionPlatforms,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -160,13 +162,13 @@ struct VersionPlatforms {
     #[serde(rename = "linux-appimage")]
     linux: Option<VersionPlatform>,
     #[serde(rename = "windows-x86_64")]
-    windows: Option<VersionPlatform>
+    windows: Option<VersionPlatform>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct VersionPlatform {
     hash: String,
-    url: String
+    url: String,
 }
 
 impl Version {
@@ -180,8 +182,6 @@ impl Version {
             .await
     }
 }
-
-use tauri::api::shell;
 
 use crate::device::HidDevice;
 
@@ -207,10 +207,10 @@ async fn check_update(_window: tauri::Window, mut version: Vec<Version>) -> bool
 }
 
 #[tauri::command]
-async fn open_update_url(window: tauri::Window, version: Version, str: String) {
-    message_dialog_f_yn!("Meowpad Configurator", &str, move |r| {
+async fn open_update_url(app: tauri::AppHandle, version: Version, str: String) {
+    message_dialog_f_yn!(app, "Meowpad Configurator", &str, move |r| {
         if r {
-            let _ = shell::open(&window.shell_scope(), "https://desu.life/#device", None);
+            let _ = app.opener().open_url("https://desu.life/#device", None::<&str>);
         }
         // window.close().unwrap();
     });
@@ -341,31 +341,35 @@ fn connect_device(
 }
 
 fn main() -> AnyResult<()> {
-    panic::set_hook(Box::new(|e| {
-        use better_panic::Settings;
-        use std::backtrace::Backtrace;
-        let emessage = format!("Unexcepted Error：\n{}\n{}", e, Backtrace::force_capture());
-        // eprintln!("{emessage}");
-        let handler = Settings::debug()
-            .most_recent_first(false)
-            .create_panic_handler();
-        handler(e);
-        message_dialog!("Meowpad Configurator", &emessage);
-        std::process::exit(1);
-    }));
+    
 
     // init_logger("INFO");
     let log_level = LevelFilter::from_str(&std::env::var("LOG_LEVEL").unwrap_or_default())
         .unwrap_or(LevelFilter::Info);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             println!("{}, {argv:?}, {cwd}", app.package_info().name);
         }))
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(
             tauri_plugin_log::Builder::default()
-                .targets([LogTarget::LogDir, LogTarget::Stdout])
+                .targets([tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::Stdout,
+                  ), tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::LogDir { file_name: Some("logs".to_string()) },
+                  )])
+                .max_file_size(50_000 /* bytes */)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
                 .level(log_level)
                 .level_for(
                     "tao::platform_impl::platform::event_loop::runner",
@@ -382,10 +386,24 @@ fn main() -> AnyResult<()> {
                 })
                 .build(),
         )
-        .setup(|_app| {
+        .setup(|app| {
+            let handle = app.handle().clone();
+            panic::set_hook(Box::new(|e| {
+                use better_panic::Settings;
+                use std::backtrace::Backtrace;
+                let emessage = format!("Unexcepted Error：\n{}\n{}", e, Backtrace::force_capture());
+                // eprintln!("{emessage}");
+                let handler = Settings::debug()
+                    .most_recent_first(false)
+                    .create_panic_handler();
+                handler(e);
+                message_dialog!(handle, "Meowpad Configurator", &emessage);
+                std::process::exit(1);
+            }));
+
             #[cfg(debug_assertions)] // only include this code on debug builds
             {
-                let window = _app.get_window("main").unwrap();
+                let window = app.get_webview_window("main").unwrap();
                 window.open_devtools();
                 window.set_fullscreen(false).unwrap();
             }

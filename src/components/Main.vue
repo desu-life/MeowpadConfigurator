@@ -16,7 +16,8 @@ import * as apib from '@/apis/meowboard/api'
 import { useDialog } from 'naive-ui'
 import { IError, IHidDeviceInfo } from '@/apis';
 import { compareArray, getErrorMsg } from '@/utils';
-import { appWindow, LogicalSize } from '@tauri-apps/api/window';
+import { getCurrentWebviewWindow, LogicalSize } from '@tauri-apps/api/webviewWindow';
+const appWindow = getCurrentWebviewWindow()
 
 const { t } = useI18n();
 const dialog = useDialog()

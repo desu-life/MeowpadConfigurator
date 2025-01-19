@@ -9,16 +9,20 @@ pub struct DevicePreset {
     pub id: String,
     pub name: String,
     pub device: DevicePresetInfo,
-    pub config: DevicePresetConfig
+    pub config: DevicePresetConfig,
 }
 
 impl DevicePreset {
-    pub fn new(name: &str, device: impl Into<DevicePresetInfo>, config: impl Into<DevicePresetConfig>) -> Self {
+    pub fn new(
+        name: &str,
+        device: impl Into<DevicePresetInfo>,
+        config: impl Into<DevicePresetConfig>,
+    ) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             name: name.to_string(),
             device: device.into(),
-            config: config.into()
+            config: config.into(),
         }
     }
 }
@@ -33,7 +37,7 @@ impl From<DeviceInfoSerdi> for DevicePresetInfo {
     fn from(value: DeviceInfoSerdi) -> Self {
         Self {
             device_name: value.device_name,
-            serial_number: value.serial_number
+            serial_number: value.serial_number,
         }
     }
 }
@@ -42,7 +46,7 @@ impl From<&str> for DevicePresetInfo {
     fn from(value: &str) -> Self {
         Self {
             device_name: value.to_string(),
-            serial_number: None
+            serial_number: None,
         }
     }
 }
@@ -58,14 +62,21 @@ impl From<meowboard::config::Device> for DevicePresetConfig {
         let mut key_layers = vec![];
         let mut key_configs = vec![];
 
-        key_layers.push(KeyLayer { keys: value.normal_layer.to_vec() });
-        key_layers.push(KeyLayer { keys: value.fn_layer.to_vec() });
+        key_layers.push(KeyLayer {
+            keys: value.normal_layer.to_vec(),
+        });
+        key_layers.push(KeyLayer {
+            keys: value.fn_layer.to_vec(),
+        });
 
         for key in value.keys {
             key_configs.push(key.into());
         }
 
-        Self { key_layers: Some(key_layers), key_configs: Some(key_configs) }
+        Self {
+            key_layers: Some(key_layers),
+            key_configs: Some(key_configs),
+        }
     }
 }
 
@@ -90,7 +101,7 @@ impl From<meowboard::config::KeyConfig> for KeyConfig {
             release_percentage: value.release_percentage as u32,
             dead_zone: value.dead_zone as u32,
             release_dead_zone: value.release_dead_zone as u32,
-            rt_enabled: Some(value.rt_enabled)
+            rt_enabled: Some(value.rt_enabled),
         }
     }
 }
@@ -102,7 +113,7 @@ impl From<KeyConfig> for meowboard::config::KeyConfig {
             release_percentage: value.release_percentage as u8,
             dead_zone: value.dead_zone as u8,
             release_dead_zone: value.release_dead_zone as u8,
-            rt_enabled: value.rt_enabled.unwrap_or(true)
+            rt_enabled: value.rt_enabled.unwrap_or(true),
         }
     }
 }

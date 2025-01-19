@@ -3,62 +3,53 @@
   "build": {
     "beforeBuildCommand": "pnpm run build",
     "beforeDevCommand": "pnpm run dev",
-    "devPath": "http://localhost:5777",
-    "distDir": "../dist"
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5777"
   },
-  "package": {
-    "productName": "MeowpadConfiguratorForV2",
-    "version": "1.0.3"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": true
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "category": "Utility",
-      "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [
-        
-      ],
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.ico"
-      ],
-      "identifier": "meowpad.configurator.v2",
-      "longDescription": "",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [
-        "resources/FirmwareUpdater.exe"
-      ],
-      "shortDescription": "",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": "",
-        "webviewInstallMode": {
-          "type": "embedBootstrapper"
-        }
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Utility",
+    "copyright": "",
+    "shortDescription": "",
+    "externalBin": [],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
       }
     },
-    "security": {
-      "csp": null
+    "longDescription": "",
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": "",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
     },
-    "updater": {
-      "active": false
-    },
+    "resources": [
+      "resources/FirmwareUpdater.exe"
+    ],
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    }
+  },
+  "productName": "MeowpadConfiguratorForV2",
+  "mainBinaryName": "MeowpadConfiguratorForV2",
+  "version": "1.0.3",
+  "identifier": "meowpad.configurator.v2",
+  "plugins": {},
+  "app": {
     "windows": [
       {
         "fullscreen": false,
@@ -66,9 +57,11 @@
         "title": "Meowpad Configurator for v2",
         "width": 800,
         "height": 600,
-        "fileDropEnabled": false,
         "visible": false
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
   }
 }

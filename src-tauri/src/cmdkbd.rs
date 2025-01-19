@@ -1,11 +1,17 @@
-
-use std::sync::Mutex;
+use crate::{
+    device::{DeviceInfoExtened, HidDevice},
+    error::{Error, Result},
+    FIRMWARE_VERSION_KB,
+};
 use hidapi::{DeviceInfo, HidApi};
-use meowpad::{models::{DeviceStatus, KeyHallConfig, KeyRTStatus, KeyState}, Device};
-use meowboard::Meowboard;
-use tauri::State;
-use crate::{device::{DeviceInfoExtened, HidDevice}, error::{Error, Result}, FIRMWARE_VERSION_KB};
 use log::*;
+use meowboard::Meowboard;
+use meowpad::{
+    models::{DeviceStatus, KeyHallConfig, KeyRTStatus, KeyState},
+    Device,
+};
+use std::sync::Mutex;
+use tauri::State;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
 struct Config {
@@ -18,7 +24,9 @@ pub fn get_firmware_kb_version(_app: tauri::AppHandle) -> &'static str {
 }
 
 #[tauri::command]
-pub fn get_device_info_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<serde_json::Value> {
+pub fn get_device_info_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<serde_json::Value> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.get_device_name()?;
@@ -34,7 +42,9 @@ pub fn get_device_info_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDev
 }
 
 #[tauri::command]
-pub fn get_device_status_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<DeviceStatus> {
+pub fn get_device_status_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<DeviceStatus> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     let status = d.get_status()?;
@@ -46,7 +56,10 @@ pub fn get_device_status_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidD
 }
 
 #[tauri::command]
-pub fn calibration_key_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, key_indexs: Vec<u8>) -> Result<()> {
+pub fn calibration_key_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+    key_indexs: Vec<u8>,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.calibration_key(&key_indexs)?;
@@ -54,7 +67,9 @@ pub fn calibration_key_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDev
 }
 
 #[tauri::command]
-pub fn clear_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<()> {
+pub fn clear_config_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.clear_hall_config()?;
@@ -63,7 +78,9 @@ pub fn clear_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice
 }
 
 #[tauri::command]
-pub fn reset_device_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<()> {
+pub fn reset_device_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.reset_device()?;
@@ -71,49 +88,64 @@ pub fn reset_device_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice
 }
 
 #[tauri::command]
-pub async fn get_debug_value_part_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, index: u8) -> Result<Vec<KeyRTStatus>> {
+pub async fn get_debug_value_part_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+    index: u8,
+) -> Result<Vec<KeyRTStatus>> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_debug_value_part(index)?.to_vec())
 }
 
 #[tauri::command]
-pub async fn get_debug_value_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<KeyRTStatus>> {
+pub async fn get_debug_value_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<Vec<KeyRTStatus>> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_debug_value()?.to_vec())
 }
 
 #[tauri::command]
-pub async fn get_hall_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<KeyHallConfig>> {
+pub async fn get_hall_config_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<Vec<KeyHallConfig>> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_hall_config()?.to_vec())
 }
 
 #[tauri::command]
-pub async fn get_keystates_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<KeyState>> {
+pub async fn get_keystates_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<Vec<KeyState>> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_keystates()?.to_vec())
 }
 
 #[tauri::command]
-pub async fn get_keyvalues_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<u16>> {
+pub async fn get_keyvalues_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<Vec<u16>> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_keyvalues()?.to_vec())
 }
 
 #[tauri::command]
-pub async fn get_key_calibrate_status_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<Vec<bool>> {
+pub async fn get_key_calibrate_status_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<Vec<bool>> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     Ok(d.get_key_calibrate_status()?.to_vec())
 }
 
 #[tauri::command]
-pub fn erase_firmware_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<()> {
+pub fn erase_firmware_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.erase_firmware()?;
@@ -126,7 +158,9 @@ pub fn get_default_key_config_kb() -> meowboard::config::Device {
 }
 
 #[tauri::command]
-pub async fn get_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<meowboard::config::Device> {
+pub async fn get_key_config_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<meowboard::config::Device> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_key_config()?;
@@ -134,7 +168,10 @@ pub async fn get_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<H
 }
 
 #[tauri::command]
-pub fn set_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, config: meowboard::config::Device) -> Result<()> {
+pub fn set_key_config_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+    config: meowboard::config::Device,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.key_config = Some(config.into());
@@ -142,18 +179,20 @@ pub fn set_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevi
     Ok(())
 }
 
-
 #[tauri::command]
-pub fn save_key_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<()> {
+pub fn save_key_config_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.save_key_config()?;
     Ok(())
 }
 
-
 #[tauri::command]
-pub fn get_raw_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> Result<String> {
+pub fn get_raw_config_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+) -> Result<String> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_key_config()?;
@@ -169,7 +208,10 @@ pub fn check_raw_config_kb(config: String) -> bool {
 }
 
 #[tauri::command]
-pub fn save_raw_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>, config: String) -> Result<()> {
+pub fn save_raw_config_kb(
+    device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+    config: String,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     let cfg = toml::from_str::<Config>(&config).expect("错误配置");
@@ -178,7 +220,6 @@ pub fn save_raw_config_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDev
     d.save_key_config()?;
     Ok(())
 }
-
 
 #[tauri::command]
 pub fn connect_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>) -> bool {
@@ -199,17 +240,16 @@ pub fn connect_kb(device_handle: State<'_, Mutex<Option<Meowboard<HidDevice>>>>)
     }
 }
 
-
 fn find_device() -> Option<Meowboard<HidDevice>> {
     // 获取设备列表
     let api = HidApi::new().unwrap();
 
-    find_devices(&api).first().and_then(|d| {
-        match d.inner.open_device(&api) {
+    find_devices(&api)
+        .first()
+        .and_then(|d| match d.inner.open_device(&api) {
             Ok(d) => Some(Meowboard::new(HidDevice { device: d })),
             Err(_) => None,
-        }
-    })
+        })
 }
 
 pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
@@ -219,47 +259,47 @@ pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
 
     // 迭代设备列表，查找符合条件的设备
     let devices = api.device_list();
-    devices.filter_map(|d| {
-        // 过滤设备
-        if !(d.vendor_id() == VID && d.product_id() == PID) {
-            return None;
-        }
-
-        // 连接设备
-        let mut device_handle = match d.open_device(api) {
-            Ok(d) => {
-                let d = HidDevice { device: d };
-                let _ = d.clear_buffer();
-                Meowboard::new(d)
-            },
-            Err(_) => return None,
-        };
-
-        // 测试连接
-        match device_handle.ping() {
-            Ok(r) if !r => None,
-            Err(_) => None,
-            _ => {
-                debug!("Name: {}", d.product_string().unwrap_or_default());
-                debug!(
-                    "Manufacturer: {}",
-                    d.manufacturer_string().unwrap_or_default()
-                );
-                debug!("Addr: {}", d.path().to_string_lossy());
-                debug!("{:?}", d);
-
-                let _ = device_handle.get_device_name();
-                let _ = device_handle.get_firmware_version();
-
-                Some(DeviceInfoExtened {
-                    device_name: device_handle.device_name.take().unwrap_or_default(),
-                    firmware_version: device_handle.firmware_version.take().unwrap_or_default(),
-                    serial_number: d.serial_number().map(|s| s.to_string()),
-                    inner: d,
-                })
+    devices
+        .filter_map(|d| {
+            // 过滤设备
+            if !(d.vendor_id() == VID && d.product_id() == PID) {
+                return None;
             }
-        }
-    }).collect()
+
+            // 连接设备
+            let mut device_handle = match d.open_device(api) {
+                Ok(d) => {
+                    let d = HidDevice { device: d };
+                    let _ = d.clear_buffer();
+                    Meowboard::new(d)
+                }
+                Err(_) => return None,
+            };
+
+            // 测试连接
+            match device_handle.ping() {
+                Ok(r) if !r => None,
+                Err(_) => None,
+                _ => {
+                    debug!("Name: {}", d.product_string().unwrap_or_default());
+                    debug!(
+                        "Manufacturer: {}",
+                        d.manufacturer_string().unwrap_or_default()
+                    );
+                    debug!("Addr: {}", d.path().to_string_lossy());
+                    debug!("{:?}", d);
+
+                    let _ = device_handle.get_device_name();
+                    let _ = device_handle.get_firmware_version();
+
+                    Some(DeviceInfoExtened {
+                        device_name: device_handle.device_name.take().unwrap_or_default(),
+                        firmware_version: device_handle.firmware_version.take().unwrap_or_default(),
+                        serial_number: d.serial_number().map(|s| s.to_string()),
+                        inner: d,
+                    })
+                }
+            }
+        })
+        .collect()
 }
-
-

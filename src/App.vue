@@ -4,7 +4,7 @@
 import Main from '@/components/Main.vue'
 import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
-import { appWindow, LogicalSize, Theme } from "@tauri-apps/api/window";
+import { LogicalSize, getCurrent } from '@tauri-apps/api/window';
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
@@ -15,6 +15,7 @@ import emitter from '@/mitt';
 import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
 import * as apib from '@/apis/meowboard/api'
+const appWindow = await getCurrent()
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {

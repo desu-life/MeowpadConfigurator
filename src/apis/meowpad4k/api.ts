@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { IDeviceInfo, IDeviceStatus, IKeyRTStatus } from "..";
 import { IKeyboard, ILighting } from "./config";
 

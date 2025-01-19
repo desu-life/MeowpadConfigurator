@@ -10,7 +10,17 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "1.6.0",
+    "@tauri-apps/api": "~2",
+    "@tauri-apps/plugin-dialog": "~2",
+    "@tauri-apps/plugin-fs": "~2",
+    "@tauri-apps/plugin-global-shortcut": "~2",
+    "@tauri-apps/plugin-http": "~2",
+    "@tauri-apps/plugin-notification": "~2",
+    "@tauri-apps/plugin-opener": "~2",
+    "@tauri-apps/plugin-os": "~2",
+    "@tauri-apps/plugin-process": "~2",
+    "@tauri-apps/plugin-shell": "~2.2.0",
+    "@tauri-apps/plugin-store": "~2",
     "@vitejs/plugin-vue-jsx": "4.0.1",
     "animate.css": "^4.1.1",
     "autoprefixer": "^10.4.18",
@@ -20,7 +30,6 @@
     "pinia": "^2.1.7",
     "postcss": "^8.4.35",
     "sass": "^1.79.4",
-    "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1",
     "unplugin-auto-import": "0.18.3",
     "unplugin-vue-components": "0.27.4",
     "vfonts": "0.1.0",
@@ -28,7 +37,7 @@
     "vue-i18n": "10.0.3"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "1.6.2",
+    "@tauri-apps/cli": "2.2.5",
     "@types/node": "^20.11.25",
     "@vicons/fluent": "^0.12.0",
     "@vicons/ionicons5": "^0.12.0",

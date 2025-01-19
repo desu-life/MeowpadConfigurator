@@ -10,7 +10,7 @@ import { EllipsisHorizontal } from '@vicons/ionicons5'
 import * as api from '@/apis/api'
 import * as api4k from '@/apis/meowpad4k/api'
 import * as api3k from '@/apis/meowpad3k/api'
-import { platform } from '@tauri-apps/api/os';
+import { platform } from '@tauri-apps/plugin-os';
 
 const { t } = useI18n();
 const store = useStore()

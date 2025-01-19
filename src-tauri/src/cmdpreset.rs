@@ -1,12 +1,13 @@
 use std::sync::Mutex;
 
+use crate::{device::HidDevice, device_preset::DevicePreset};
 use hidapi::HidApi;
-use tauri::{api::dialog::blocking::FileDialogBuilder, State};
+use meowboard::Meowboard;
 use meowpad::Device;
 use meowpad3k::Meowpad as Meowpad3k;
 use meowpad4k::Meowpad as Meowpad4k;
-use meowboard::Meowboard;
-use crate::{device::HidDevice, device_preset::DevicePreset};
+use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_fs::FilePath;
 
 // #[tauri::command]
 // fn load_preset(
@@ -23,10 +24,14 @@ use crate::{device::HidDevice, device_preset::DevicePreset};
 // }
 
 #[tauri::command]
-pub async fn load_preset_from_file() -> Option<DevicePreset> {
-    let file_path = FileDialogBuilder::new().add_filter("desu.life Config File", &["pcf"]).pick_file();
+pub async fn load_preset_from_file(app: tauri::AppHandle) -> Option<DevicePreset> {
+    let file_path = app
+        .dialog()
+        .file()
+        .add_filter("desu.life Config File", &["pcf"])
+        .blocking_pick_file();
 
-    if let Some(file_path) = file_path {
+    if let Some(FilePath::Path(file_path)) = file_path {
         let content = std::fs::read_to_string(file_path).ok()?;
         Some(serde_json::from_str(&content).ok()?)
     } else {
@@ -35,10 +40,15 @@ pub async fn load_preset_from_file() -> Option<DevicePreset> {
 }
 
 #[tauri::command]
-pub async fn save_preset_to_file(preset: DevicePreset) {
-    let file_path = FileDialogBuilder::new().set_file_name(&preset.name).add_filter("desu.life Config File", &["pcf"]).save_file();
+pub async fn save_preset_to_file(app: tauri::AppHandle, preset: DevicePreset) {
+    let file_path = app
+        .dialog()
+        .file()
+        .set_file_name(&preset.name)
+        .add_filter("desu.life Config File", &["pcf"])
+        .blocking_save_file();
 
-    if let Some(file_path) = file_path {
+    if let Some(FilePath::Path(file_path)) = file_path {
         if let Ok(content) = serde_json::to_string(&preset) {
             let _ = std::fs::write(file_path, content);
         }
@@ -46,7 +56,10 @@ pub async fn save_preset_to_file(preset: DevicePreset) {
 }
 
 #[tauri::command]
-pub fn load_preset_kb(mut config: meowboard::config::Device, preset: DevicePreset) -> meowboard::config::Device {
+pub fn load_preset_kb(
+    mut config: meowboard::config::Device,
+    preset: DevicePreset,
+) -> meowboard::config::Device {
     if let Some(d) = preset.config.key_configs {
         if d.len() == 64 {
             for (i, &k) in d.iter().enumerate() {

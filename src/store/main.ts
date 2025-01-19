@@ -3,11 +3,11 @@ import { DeviceName, IDevicePreset, IHidDeviceInfo, IVersion } from "@/apis";
 import { Type } from "naive-ui/es/button/src/interface";
 import { Toggle } from "@/interface";
 import { LOCALES, setI18nLanguage } from "@/locales";
-import { Store } from "tauri-plugin-store-api";
+import { LazyStore } from "@tauri-apps/plugin-store";
 
 export const useStore = defineStore("main", () => {
-  const app_store = new Store(".settings.dat");
-  const device_presets_store = new Store(".device.presets.dat");
+  const app_store = new LazyStore(".settings.dat");
+  const device_presets_store = new LazyStore(".device.presets.dat");
   const status = ref<Type | undefined>(undefined);
   const status_str = ref("");
   const lang = ref<LOCALES>("en");

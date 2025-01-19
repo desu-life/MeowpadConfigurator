@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { IDevicePreset, IHidDeviceInfo, IVersion } from ".";
 import { IKeyboard as PureConfig } from "./meowboard/config";
 
