@@ -74,7 +74,6 @@
     "process:allow-exit",
     "core:app:allow-app-show",
     "core:app:allow-app-hide",
-    "notification:default",
     "process:default",
     "http:default"
   ]
