@@ -27,6 +27,29 @@ impl From<KeyCode> for KeyValue {
     }
 }
 
+impl KeyValue {
+    pub fn from_u8(type_val: u8, value: u8) -> Self {
+        match type_val {
+            1 => KeyValue::Keyboard(KeyCode::from(value)),
+            2 => KeyValue::Custom(value),
+            3 => KeyValue::Mouse(value),
+            4 => KeyValue::Media(value),
+            _ => KeyValue::None,
+        }
+    }
+
+    pub fn to_u8(&self) -> (u8, u8) {
+        match self {
+            KeyValue::Keyboard(val) => (1, (*val) as u8),
+            KeyValue::Custom(val) => (2, *val),
+            KeyValue::Mouse(val) => (3, *val),
+            KeyValue::Media(val) => (4, *val),
+            KeyValue::None => (0, 0), // 或者你可以选择其他默认值
+        }
+    }
+}
+
+
 
 #[allow(non_camel_case_types)]
 #[derive(

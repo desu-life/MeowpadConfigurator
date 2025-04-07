@@ -11,6 +11,11 @@ export interface IKeyConfigBoard {
     rt_enabled: boolean
 }
 
+export interface ISOCDKeyPairs {
+    key1: number
+    key2: number
+}
+
 
 export interface IKeyboard {
     keys: IKeyConfigBoard[]
@@ -23,4 +28,5 @@ export interface IKeyboard {
     hall_filter: number
     max_brightness: number
     led_color: IRgb
+    socd_key_pairs: ISOCDKeyPairs[]
 }

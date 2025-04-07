@@ -6,6 +6,11 @@ use serde::{Deserialize, Serialize};
 use serde_with::*;
 
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Copy)]
+pub struct SOCDKeyPairs {
+    pub key1: u8,
+    pub key2: u8,
+}
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Copy)]
@@ -18,7 +23,7 @@ pub struct KeyConfig {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Clone, Debug, Copy)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Device {
     #[serde_as(as = "[_; 64]")]
     pub keys: [KeyConfig; 64],
@@ -33,6 +38,7 @@ pub struct Device {
     pub hall_filter: u8,
     pub max_brightness: u8,
     pub led_color: Srgb<u8>,
+    pub socd_key_pairs: Vec<SOCDKeyPairs>
 }
 
 impl Default for Device {
@@ -61,6 +67,7 @@ impl TryFrom<cbor::Device> for Device {
             jitters_elimination_time: cfg.JittersEliminationTime,
             max_brightness: cfg.MaxBrightness,
             led_color: Srgb::from_u32::<Argb>(cfg.led_color),
+            socd_key_pairs: cfg.socd_pairs[..cfg.socd_pair_count as usize].iter().map(|p| SOCDKeyPairs::from(*p)).collect(),
         })
     }
 }
@@ -73,6 +80,15 @@ impl From<cbor::KeyRTConfig> for KeyConfig {
             dead_zone: cfg.DeadZone,
             release_dead_zone: cfg.ReleaseDeadZone,
             rt_enabled: cfg.RtEnabled
+        }
+    }
+}
+
+impl From<cbor::SOCDPairConfig> for SOCDKeyPairs {
+    fn from(cfg: cbor::SOCDPairConfig) -> Self {
+        Self {
+            key1: cfg.key1,
+            key2: cfg.key2,
         }
     }
 }

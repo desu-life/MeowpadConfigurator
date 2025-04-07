@@ -120,34 +120,6 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 
     await device.get_status()
 
-    if (device.device_status!.key === false) {
-      if (device.is_4k()) {
-        await api4k.set_key_config(await api4k.get_default_key_config())
-        await api4k.save_key_config()
-      }
-      if (device.is_3k()) {
-        await api3k.set_key_config(await api3k.get_default_key_config())
-        await api3k.save_key_config()
-      }
-      if (device.is_pure()) {
-        await apib.set_key_config(await apib.get_default_key_config())
-        await apib.save_key_config()
-      }
-    }
-
-    if (device.device_status!.light != undefined && device.device_status!.light != null) {
-      if (device.device_status!.light === false) {
-        if (device.is_4k()) {
-          await api4k.set_light_config(await api4k.get_default_light_config())
-          await api4k.save_light_config()
-        }
-        if (device.is_3k()) {
-          await api3k.set_light_config(await api3k.get_default_light_config())
-          await api3k.save_light_config()
-        }
-      }
-    }
-
     if (store.developer_mode) {
       try {
         if (device.is_4k()) {
@@ -166,8 +138,36 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
           throw e
         }
       }
-      
     } else {
+      // 重置状态
+      if (device.device_status!.key === false) {
+        if (device.is_4k()) {
+          await api4k.set_key_config(await api4k.get_default_key_config())
+          await api4k.save_key_config()
+        }
+        if (device.is_3k()) {
+          await api3k.set_key_config(await api3k.get_default_key_config())
+          await api3k.save_key_config()
+        }
+        if (device.is_pure()) {
+          await apib.set_key_config(await apib.get_default_key_config())
+          await apib.save_key_config()
+        }
+      }
+
+      if (device.device_status!.light != undefined && device.device_status!.light != null) {
+        if (device.device_status!.light === false) {
+          if (device.is_4k()) {
+            await api4k.set_light_config(await api4k.get_default_light_config())
+            await api4k.save_light_config()
+          }
+          if (device.is_3k()) {
+            await api3k.set_light_config(await api3k.get_default_light_config())
+            await api3k.save_light_config()
+          }
+        }
+      }
+
       if (device.is_4k()) {
         device.key_config = await api4k.get_key_config()
         device.extract_key_config_4k()

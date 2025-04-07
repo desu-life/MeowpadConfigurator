@@ -13,7 +13,7 @@ use meowpad::{
 use std::sync::Mutex;
 use tauri::State;
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 struct Config {
     key: meowboard::config::Device,
 }
