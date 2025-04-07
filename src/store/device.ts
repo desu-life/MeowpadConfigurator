@@ -1,12 +1,12 @@
-import { IDeviceInfo, IDeviceStatus, IHidDeviceInfo } from "../apis";
+import { IDeviceInfo, IDeviceStatus, IHidDeviceInfo } from "@/apis";
 import { defineStore, acceptHMRUpdate } from "pinia";
-import { IKeyboard as IKB4K, ILighting as ILT4K } from "../apis/meowpad4k/config";
-import { IKeyboard as IKB3K, ILighting as ILT3K, LightingMode as LM3K } from "../apis/meowpad3k/config";
-import { IKeyboard as IKBB } from "../apis/meowboard/config";
+import { IKeyboard as IKBV2, ILighting as ILTV2 } from "@/apis/meowpadv2/config";
+import { IKeyboard as IKBV2SE, ILighting as ILTV2SE, LightingMode as LMV2SE } from "@/apis/meowpadv2se/config";
+import { IKeyboard as IKBP64 } from "@/apis/pure64/config";
 import { Toggle } from "../interface";
-import * as api4k from '@/apis/meowpad4k/api'
-import * as api3k from '@/apis/meowpad3k/api'
-import * as apib from '@/apis/meowboard/api'
+import * as apiv2 from '@/apis/meowpadv2/api'
+import * as apiv2se from '@/apis/meowpadv2se/api'
+import * as apib from '@/apis/pure64/api'
 import { Hex2Rgb, Rgb2Hex } from "@/utils";
 import { KeyCode } from "@/keycode";
 
@@ -19,9 +19,9 @@ export const useDeviceStore = defineStore("device", () => {
   const raw_config = ref<string | undefined>(undefined);
 
   // configs
-  const device_config = ref<IKBB | undefined>(undefined);
-  const key_config = ref<IKB4K | IKB3K | undefined>(undefined);
-  const light_config = ref<ILT4K | ILT3K | undefined>(undefined);
+  const device_config = ref<IKBP64 | undefined>(undefined);
+  const key_config = ref<IKBV2 | IKBV2SE | undefined>(undefined);
+  const light_config = ref<ILTV2 | ILTV2SE | undefined>(undefined);
   const led_colors = ref<string[] | null>(null);
   const high_speed_color = ref<string | null>(null);
   const low_speed_color = ref<string | null>(null);
@@ -38,11 +38,11 @@ export const useDeviceStore = defineStore("device", () => {
   const auto_calibration = ref<Toggle>(Toggle.Off);
   const hall_filter = ref<number>(0);
 
-  function is_4k() {
+  function is_v2() {
     return device_hid_info.value?.device_name == 'Meowpad'
   }
 
-  function is_3k() {
+  function is_v2se() {
     return device_hid_info.value?.device_name == 'Meowpad SE v2'
   }
 
@@ -51,12 +51,12 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   async function try_connect() {
-    if (await api4k.connect()) {
-      device_info.value = await api4k.get_device_info()
+    if (await apiv2.connect()) {
+      device_info.value = await apiv2.get_device_info()
       return true
     }
-    if (await api3k.connect()) {
-      device_info.value = await api3k.get_device_info()
+    if (await apiv2se.connect()) {
+      device_info.value = await apiv2se.get_device_info()
       return true
     }
     if (await apib.connect()) {
@@ -67,11 +67,11 @@ export const useDeviceStore = defineStore("device", () => {
   }
   
   async function get_status() {
-    if (is_4k()) {
-      device_status.value = await api4k.get_device_status()
+    if (is_v2()) {
+      device_status.value = await apiv2.get_device_status()
     }
-    if (is_3k()) {
-      device_status.value = await api3k.get_device_status()
+    if (is_v2se()) {
+      device_status.value = await apiv2se.get_device_status()
     }
     if (is_pure()) {
       device_status.value = await apib.get_device_status()
@@ -79,11 +79,11 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   async function get_config_raw() {
-    if (is_4k()) {
-      raw_config.value = await api4k.get_raw_config()
+    if (is_v2()) {
+      raw_config.value = await apiv2.get_raw_config()
     }
-    if (is_3k()) {
-      raw_config.value = await api3k.get_raw_config()
+    if (is_v2se()) {
+      raw_config.value = await apiv2se.get_raw_config()
     }
     if (is_pure()) {
       raw_config.value = await apib.get_raw_config()
@@ -91,11 +91,11 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   async function save_config_raw() {
-    if (is_4k()) {
-      await api4k.save_raw_config(raw_config.value!)
+    if (is_v2()) {
+      await apiv2.save_raw_config(raw_config.value!)
     }
-    if (is_3k()) {
-      await api3k.save_raw_config(raw_config.value!)
+    if (is_v2se()) {
+      await apiv2se.save_raw_config(raw_config.value!)
     }
     if (is_pure()) {
       await apib.save_raw_config(raw_config.value!)
@@ -103,11 +103,11 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   async function check_config_raw() {
-    if (is_4k()) {
-      return await api4k.check_raw_config(raw_config.value!)
+    if (is_v2()) {
+      return await apiv2.check_raw_config(raw_config.value!)
     }
-    if (is_3k()) {
-      return await api3k.check_raw_config(raw_config.value!)
+    if (is_v2se()) {
+      return await apiv2se.check_raw_config(raw_config.value!)
     }
     if (is_pure()) {
       return await apib.check_raw_config(raw_config.value!)
@@ -117,7 +117,7 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   function store_key_config_pure64() {
-    let config = device_config as Ref<IKBB>;
+    let config = device_config as Ref<IKBP64>;
     config.value!.jitters_elimination_time = Math.round(jitters_elimination_time.value * 8)
     config.value!.high_reportrate = enable_hs.value == Toggle.On ? true : false
     config.value!.key_proof = key_proof.value == Toggle.On ? true : false
@@ -137,7 +137,7 @@ export const useDeviceStore = defineStore("device", () => {
 
 
   function extract_key_config_pure64() {
-    let config = device_config as Ref<IKBB>;
+    let config = device_config as Ref<IKBP64>;
     jitters_elimination_time.value = config.value!.jitters_elimination_time / 8
     enable_hs.value = config.value!.high_reportrate == true ? Toggle.On : Toggle.Off
     key_proof.value = config.value!.key_proof == true ? Toggle.On : Toggle.Off
@@ -157,8 +157,8 @@ export const useDeviceStore = defineStore("device", () => {
   }
   
 
-  function store_key_config_4k() {
-    let config = key_config as Ref<IKB4K>;
+  function store_key_config_v2() {
+    let config = key_config as Ref<IKBV2>;
     for (let i = 0; i < config.value!.keys.length; i++) {
       while (config.value!.keys[i].key_data.length < 6) {
         config.value!.keys[i].key_data.push(KeyCode.None)
@@ -174,8 +174,8 @@ export const useDeviceStore = defineStore("device", () => {
     config.value!.enable_hs = enable_hs.value == Toggle.On ? true : false
   }
 
-  function store_light_config_4k() {
-    let config = light_config as Ref<ILT4K>;
+  function store_light_config_v2() {
+    let config = light_config as Ref<ILTV2>;
     config.value!.led_colors = []
     for (let i = 0; i < led_colors.value!.length; i++) {
       config.value!.led_colors.push(Hex2Rgb(led_colors.value![i]))
@@ -190,8 +190,8 @@ export const useDeviceStore = defineStore("device", () => {
     config.value!.max_brightness = Math.round(max_brightness.value / 2)
   }
 
-  function extract_key_config_4k() {
-    let config = key_config as Ref<IKB4K>;
+  function extract_key_config_v2() {
+    let config = key_config as Ref<IKBV2>;
     jitters_elimination_time.value = config.value!.jitters_elimination_time / 8
     continuous_report.value = config.value!.continuous_report == true ? Toggle.On : Toggle.Off
     kalman_filter.value = config.value!.kalman_filter == true ? Toggle.On : Toggle.Off
@@ -201,8 +201,8 @@ export const useDeviceStore = defineStore("device", () => {
     }
   }
   
-  function extract_light_config_4k() {
-    let config = light_config as Ref<ILT4K>;
+  function extract_light_config_v2() {
+    let config = light_config as Ref<ILTV2>;
     led_colors.value = []
     for (let i = 0; i < config.value!.led_colors.length; i++) {
       led_colors.value.push(Rgb2Hex(config.value!.led_colors[i]))
@@ -217,8 +217,8 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   
-  function store_key_config_3k() {
-    let config = key_config as Ref<IKB3K>;
+  function store_key_config_v2se() {
+    let config = key_config as Ref<IKBV2SE>;
     for (let i = 0; i < config.value!.keys.length; i++) {
       while (config.value!.keys[i].key_data.length < 6) {
         config.value!.keys[i].key_data.push(KeyCode.None)
@@ -242,19 +242,19 @@ export const useDeviceStore = defineStore("device", () => {
     config.value!.kalman_filter = kalman_filter.value == Toggle.On ? true : false
   }
 
-  function store_light_config_3k() {
-    let config = light_config as Ref<ILT3K>;
+  function store_light_config_v2se() {
+    let config = light_config as Ref<ILTV2SE>;
     config.value!.led_colors = []
     for (let i = 0; i < led_colors.value!.length; i++) {
       config.value!.led_colors.push(Hex2Rgb(led_colors.value![i]))
     }
 
     config.value!.max_brightness = Math.round(max_brightness.value / 2)
-    config.value!.lighting_mode = enable_light.value == Toggle.On ? LM3K.Solid : LM3K.Off
+    config.value!.lighting_mode = enable_light.value == Toggle.On ? LMV2SE.Solid : LMV2SE.Off
   }
 
-  function extract_key_config_3k() {
-    let config = key_config as Ref<IKB3K>;
+  function extract_key_config_v2se() {
+    let config = key_config as Ref<IKBV2SE>;
     jitters_elimination_time.value = config.value!.jitters_elimination_time
     continuous_report.value = config.value!.continuous_report == true ? Toggle.On : Toggle.Off
     kalman_filter.value = config.value!.kalman_filter == true ? Toggle.On : Toggle.Off
@@ -264,14 +264,14 @@ export const useDeviceStore = defineStore("device", () => {
     config.value.side_btn = config.value.side_btn.filter(k => k != KeyCode.None)
   }
 
-  function extract_light_config_3k() {
-    let config = light_config as Ref<ILT3K>;
+  function extract_light_config_v2se() {
+    let config = light_config as Ref<ILTV2SE>;
     led_colors.value = []
     for (let i = 0; i < config.value!.led_colors.length; i++) {
       led_colors.value.push(Rgb2Hex(config.value!.led_colors[i]))
     }
     max_brightness.value = Math.floor(config.value!.max_brightness * 2)
-    enable_light.value = config.value!.lighting_mode == LM3K.Solid ? Toggle.On : Toggle.Off
+    enable_light.value = config.value!.lighting_mode == LMV2SE.Solid ? Toggle.On : Toggle.Off
   }
 
 
@@ -299,22 +299,22 @@ export const useDeviceStore = defineStore("device", () => {
     key_proof,
     auto_calibration,
     device_config,
-    is_4k,
-    is_3k,
+    is_v2,
+    is_v2se,
     is_pure,
     try_connect,
     get_status,
     get_config_raw,
     check_config_raw,
     save_config_raw,
-    extract_key_config_3k,
-    store_key_config_3k,
-    extract_key_config_4k,
-    store_key_config_4k,
-    extract_light_config_3k,
-    store_light_config_3k,
-    extract_light_config_4k,
-    store_light_config_4k,
+    extract_key_config_v2se,
+    store_key_config_v2se,
+    extract_key_config_v2,
+    store_key_config_v2,
+    extract_light_config_v2se,
+    store_light_config_v2se,
+    extract_light_config_v2,
+    store_light_config_v2,
     store_key_config_pure64,
     extract_key_config_pure64,
 

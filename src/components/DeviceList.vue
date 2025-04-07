@@ -8,8 +8,8 @@ import { useDialog } from 'naive-ui'
 import { ArrowForward } from '@vicons/ionicons5'
 import { EllipsisHorizontal } from '@vicons/ionicons5'
 import * as api from '@/apis/api'
-import * as api4k from '@/apis/meowpad4k/api'
-import * as api3k from '@/apis/meowpad3k/api'
+import * as apiv2 from '@/apis/meowpadv2/api'
+import * as apiv2se from '@/apis/meowpadv2se/api'
 import { type } from '@tauri-apps/plugin-os';
 
 const { t } = useI18n();
@@ -108,7 +108,7 @@ async function device_update(d: IHidDeviceInfo) {
             negativeText: t('no'),
             maskClosable: false,
             onPositiveClick: async () => {
-                await api4k.erase_firmware()
+                await apiv2.erase_firmware()
                 setTimeout(async () => {
                     try {
                         await api.connect_iap()

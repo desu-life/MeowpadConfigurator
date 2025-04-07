@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { IDevicePreset, IHidDeviceInfo, IVersion } from ".";
-import { IKeyboard as PureConfig } from "./meowboard/config";
+import { IKeyboard as PureConfig } from "./pure64/config";
 
 export async function connect_iap() {
   return (await invoke("connect_iap")) as void;

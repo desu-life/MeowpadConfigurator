@@ -8,13 +8,12 @@ import { setI18nLanguage, i18n, LOCALES } from '@/locales/index'
 import { Rgb2Hex, Hex2Rgb, getErrorMsg } from '@/utils';
 import { useDialog } from 'naive-ui'
 import * as api from '@/apis/api'
-import * as api4k from '@/apis/meowpad4k/api'
-import * as api3k from '@/apis/meowpad3k/api'
-import * as apib from '@/apis/meowboard/api'
+import * as apiv2 from '@/apis/meowpadv2/api'
+import * as apiv2se from '@/apis/meowpadv2se/api'
+import * as apip64 from '@/apis/pure64/api'
 import { IError } from '@/apis';
 import { Toggle } from '@/interface';
 import { KeyCode } from '@/keycode';
-import { IKeyboard as IKB3K } from "@/apis/meowpad3k/config";
 import { storeToRefs } from 'pinia';
 import { emit, listen } from '@tauri-apps/api/event'
 import emitter from "@/mitt";
@@ -162,7 +161,7 @@ async function device_update() {
       emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: t('device_not_found') }) })
       return
     }
-    if (!device.is_4k()) {
+    if (!device.is_v2()) {
       emitter.emit('header-msg-update', { status: "error", str: t('device_not_support') })
       return
     }
@@ -173,7 +172,7 @@ async function device_update() {
       negativeText: t('no'),
       maskClosable: false,
       onPositiveClick: async () => {
-        await api4k.erase_firmware()
+        await apiv2.erase_firmware()
         setTimeout(async () => {
           try {
             await api.connect_iap()
@@ -205,10 +204,10 @@ async function debug() {
 
 async function erase_firmware() {
   try {
-    if (device.is_4k()) {
-      await api4k.erase_firmware()
+    if (device.is_v2()) {
+      await apiv2.erase_firmware()
     } else if (device.is_pure()) {
-      await apib.erase_firmware()
+      await apip64.erase_firmware()
     }
     emitter.emit('connection-broke', { e: null })
     emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
@@ -219,12 +218,12 @@ async function erase_firmware() {
 
 async function clear_config() {
   try {
-    if (device.is_3k()) {
-      await api3k.clear_config()
-      await api3k.reset_device()
+    if (device.is_v2se()) {
+      await apiv2se.clear_config()
+      await apiv2se.reset_device()
     } else if (device.is_pure()) {
-      await apib.clear_config()
-      await apib.reset_device()
+      await apip64.clear_config()
+      await apip64.reset_device()
     }
     emitter.emit('connection-broke', { e: null })
     emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
@@ -259,12 +258,12 @@ async function clear_config() {
           </template>
         </template>
         <template v-else>
-          <n-button v-if="device.is_4k() || device.is_3k()" class="mr" :disabled="store.loading" @click="debug">
+          <n-button v-if="device.is_v2() || device.is_v2se()" class="mr" :disabled="store.loading" @click="debug">
             {{ store.debug_mode ? $t('exit') : t('debug_mode') }}
           </n-button>
           <template v-if="!store.debug_mode">
-            <n-button  v-if="device.is_4k() || device.is_pure()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
-            <n-button  v-if="device.is_3k()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
+            <n-button  v-if="device.is_v2() || device.is_pure()" class="mr" :disabled="store.loading"  @click="erase_firmware">{{ $t('erase_firmware') }}</n-button>
+            <n-button  v-if="device.is_v2se()" class="mr" :disabled="store.loading"  @click="clear_config">{{ $t('clear_config') }}</n-button>
             <n-button class="mr" :disabled="store.loading || !store.can_sync" @click="sync_config_raw">{{$t('sync_config') }}</n-button>
             <n-button class="mr" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
           </template>
@@ -278,7 +277,7 @@ async function clear_config() {
           placeholder="Language" :options="state.options"></n-select>
         </template>
         <template v-else>
-          <n-button v-if="device.is_4k() || device.is_3k()" class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device') }}</n-button>
+          <n-button v-if="device.is_v2() || device.is_v2se()" class="mr" :disabled="store.loading" @click="calibration_key">{{ $t('cali_device') }}</n-button>
           <n-button class="mr" :disabled="store.loading" @click="get_default_config">{{ $t('default_config') }}</n-button>
           <n-button class="mr" :disabled="store.loading" v-if="!store.need_check" @click="sync_config" :type="sync_btn_type">{{ $t('sync_config') }}</n-button>
           <n-button class="mr" :disabled="store.loading" v-if="store.need_check" @click="save_config" type="warning">{{ $t('save_config') }}</n-button>

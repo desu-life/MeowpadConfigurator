@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { IKeyConfigBoard } from '@/apis/meowboard/config';
 import { Toggle } from '@/interface';
 import { useDeviceStore } from '@/store/device';
 import { useStore } from '@/store/main';

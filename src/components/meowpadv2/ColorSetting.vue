@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { LightingMode } from '@/apis/meowpad4k/config';
+import { LightingMode } from '@/apis/meowpadv2/config';
 import { Toggle } from '@/interface';
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { Rgb2Hex, Hex2Rgb, IsModifierKey, compareArray } from '@/utils';
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from 'pinia';
-import { ILighting } from "@/apis/meowpad4k/config";
+import { ILighting } from "@/apis/meowpadv2/config";
 
 const { t } = useI18n();
 const store = useDeviceStore()

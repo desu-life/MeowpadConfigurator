@@ -1,7 +1,7 @@
 import { IRgb } from "@/interface";
 import { KeyCode } from "@/keycode";
-import * as api4k from '@/apis/meowpad4k/api'
-import * as api3k from '@/apis/meowpad3k/api'
+import * as api4k from '@/apis/meowpadv2/api'
+import * as api3k from '@/apis/meowpadv2se/api'
 import * as api from '@/apis/api'
 
 export declare type Error = 'DeviceDisconnected' | 'DeviceNotFound' | 'Network' | 'Meowpad' | 'Iap';

@@ -1,7 +1,7 @@
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { IVersion, KeyState } from "@/apis";
 import { Type } from "naive-ui/es/button/src/interface";
-import * as apib from '@/apis/meowboard/api'
+import * as apip64 from '@/apis/pure64/api'
 import { mapping } from "@/keycode";
 import emitter from "@/mitt";
 import { IMixedKey } from "@/apis";
@@ -67,14 +67,14 @@ export const useKeyboard = defineStore("keyboard", () => {
 
   async function updateKey() {
     if (mode.value == 2) {
-      let states = await apib.get_keystates()
-      let cali_status = await apib.get_key_calibrate_status()
+      let states = await apip64.get_keystates()
+      let cali_status = await apip64.get_key_calibrate_status()
       for (let i = 0; i < 64; i++) {
         keyCalibrateRefs.value[i].isCalibrated = cali_status[i]
         keyCalibrateRefs.value[i].isCalibrating = states[i] == KeyState.Calibrating
       }
     } else if (mode.value == 3) {
-      let value = await apib.get_debug_value()
+      let value = await apip64.get_debug_value()
 
       for (let i = 0; i < 64; i++) {
         keyDebugRefs.value[i].hallValue = value[i].adc_value

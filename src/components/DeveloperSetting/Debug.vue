@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { IError, IKeyRTStatus, KeyState } from '@/apis';
-import * as api4k from '@/apis/meowpad4k/api'
-import * as api3k from '@/apis/meowpad3k/api'
+import * as apiv2 from '@/apis/meowpadv2/api'
+import * as apiv2se from '@/apis/meowpadv2se/api'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { getErrorMsg } from '@/utils';
@@ -56,11 +56,11 @@ onMounted(() => {
       if (!device.connected) {
         return
       }
-      if (device.is_4k()) {
-        debug_data.value = await api4k.get_debug_value();
+      if (device.is_v2()) {
+        debug_data.value = await apiv2.get_debug_value();
       }
-      if (device.is_3k()) {
-        let v = await api3k.get_debug_value();
+      if (device.is_v2se()) {
+        let v = await apiv2se.get_debug_value();
         debug_data.value = v.key;
         btn_state.value = v.btn;
       }

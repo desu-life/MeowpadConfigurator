@@ -5,12 +5,12 @@ import Keyboard from './Keyboard.vue'
 import { h } from 'vue'
 import { useI18n } from "vue-i18n";
 import { IKeymap, Toggle } from '@/interface';
-import { LightingMode } from '@/apis/meowpad4k/config';
+import { LightingMode } from '@/apis/meowpadv2/config';
 
 import meowpad from '@/meowpad4k.json'
 const keymap: IKeymap[][] = meowpad;
 
-import { ILighting } from "@/apis/meowpad4k/config";
+import { ILighting } from "@/apis/meowpadv2/config";
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();

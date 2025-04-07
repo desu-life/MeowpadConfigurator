@@ -9,7 +9,7 @@ import { IKeymap, Toggle } from '@/interface';
 import meowpad from '@/meowpad3k.json'
 const keymap: IKeymap[][] = meowpad;
 
-import { ILighting } from "@/apis/meowpad3k/config";
+import { ILighting } from "@/apis/meowpadv2se/config";
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();

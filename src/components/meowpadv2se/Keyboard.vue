@@ -9,7 +9,7 @@ import type { IKeymap } from '@/interface';
 import { ref } from 'vue';
 import { formatKeys, IsModifierKey, compareArray } from '@/utils'
 
-import { IKeyboard } from "@/apis/meowpad3k/config";
+import { IKeyboard } from "@/apis/meowpadv2se/config";
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();

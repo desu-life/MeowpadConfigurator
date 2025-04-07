@@ -13,9 +13,9 @@ import { IVersion } from './apis';
 import { check_update, device_list, get_latest_version, get_theme, open_update_url, refresh_devices, update_firmware_call } from './apis/api';
 import { useI18n } from 'vue-i18n';
 import emitter from '@/mitt';
-import * as api4k from '@/apis/meowpad4k/api'
-import * as api3k from '@/apis/meowpad3k/api'
-import * as apib from '@/apis/meowboard/api'
+import * as apiv2 from '@/apis/meowpadv2/api'
+import * as apiv2se from '@/apis/meowpadv2se/api'
+import * as apip64 from '@/apis/pure64/api'
 
 
 const lightThemeOverrides: GlobalThemeOverrides = {
@@ -33,9 +33,9 @@ const theme = ref<string>()
 document.body.onselectstart = document.body.oncontextmenu = () => false
 
 async function get_firmware_versions() {
-  store.firmware_versions.set("Meowpad", await api4k.get_firmware_version())
-  store.firmware_versions.set("Meowpad SE v2", await api3k.get_firmware_version())
-  store.firmware_versions.set("Pure64", await apib.get_firmware_version())
+  store.firmware_versions.set("Meowpad", await apiv2.get_firmware_version())
+  store.firmware_versions.set("Meowpad SE v2", await apiv2se.get_firmware_version())
+  store.firmware_versions.set("Pure64", await apip64.get_firmware_version())
 }
 
 onMounted(async () => {

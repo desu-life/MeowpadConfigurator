@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
-import Settings4K from '@/components/meowpad4k/Settings.vue'
-import Settings3K from '@/components/meowpad3k/Settings.vue'
+import SettingsV2 from '@/components/meowpadv2/Settings.vue'
+import SettingsV2SE from '@/components/meowpadv2se/Settings.vue'
+import Pure64 from '@/components/pure64/Keyboard.vue'
 import DeviceList from '@/components/DeviceList.vue'
-import Pure64 from '@/components/meowboard/Keyboard.vue'
 import DeveloperSettings from '@/components/DeveloperSetting/DeveloperSettings.vue'
 import { useI18n } from "vue-i18n";
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import emitter from "@/mitt";
 import * as api from '@/apis/api'
-import * as api4k from '@/apis/meowpad4k/api'
-import * as api3k from '@/apis/meowpad3k/api'
-import * as apib from '@/apis/meowboard/api'
+import * as apiv2 from '@/apis/meowpadv2/api'
+import * as apiv2se from '@/apis/meowpadv2se/api'
+import * as apib from '@/apis/pure64/api'
 import { useDialog } from 'naive-ui'
 import { IError, IHidDeviceInfo } from '@/apis';
 import { compareArray, getErrorMsg } from '@/utils';
@@ -96,10 +96,10 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       return
     }
 
-    if (device.is_4k()) {
-      device.device_info = await api4k.get_device_info()
-    } else if (device.is_3k()) {
-      device.device_info = await api3k.get_device_info()
+    if (device.is_v2()) {
+      device.device_info = await apiv2.get_device_info()
+    } else if (device.is_v2se()) {
+      device.device_info = await apiv2se.get_device_info()
     } else if (device.is_pure()) {
       device.device_info = await apib.get_device_info()
     }
@@ -122,11 +122,11 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 
     if (store.developer_mode) {
       try {
-        if (device.is_4k()) {
-        device.raw_config = await api4k.get_raw_config()
+        if (device.is_v2()) {
+        device.raw_config = await apiv2.get_raw_config()
         }
-        if (device.is_3k()) {
-          device.raw_config = await api3k.get_raw_config()
+        if (device.is_v2se()) {
+          device.raw_config = await apiv2se.get_raw_config()
         }
         if (device.is_pure()) {
           device.raw_config = await apib.get_raw_config()
@@ -141,13 +141,13 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
     } else {
       // 重置状态
       if (device.device_status!.key === false) {
-        if (device.is_4k()) {
-          await api4k.set_key_config(await api4k.get_default_key_config())
-          await api4k.save_key_config()
+        if (device.is_v2()) {
+          await apiv2.set_key_config(await apiv2.get_default_key_config())
+          await apiv2.save_key_config()
         }
-        if (device.is_3k()) {
-          await api3k.set_key_config(await api3k.get_default_key_config())
-          await api3k.save_key_config()
+        if (device.is_v2se()) {
+          await apiv2se.set_key_config(await apiv2se.get_default_key_config())
+          await apiv2se.save_key_config()
         }
         if (device.is_pure()) {
           await apib.set_key_config(await apib.get_default_key_config())
@@ -157,28 +157,28 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 
       if (device.device_status!.light != undefined && device.device_status!.light != null) {
         if (device.device_status!.light === false) {
-          if (device.is_4k()) {
-            await api4k.set_light_config(await api4k.get_default_light_config())
-            await api4k.save_light_config()
+          if (device.is_v2()) {
+            await apiv2.set_light_config(await apiv2.get_default_light_config())
+            await apiv2.save_light_config()
           }
-          if (device.is_3k()) {
-            await api3k.set_light_config(await api3k.get_default_light_config())
-            await api3k.save_light_config()
+          if (device.is_v2se()) {
+            await apiv2se.set_light_config(await apiv2se.get_default_light_config())
+            await apiv2se.save_light_config()
           }
         }
       }
 
-      if (device.is_4k()) {
-        device.key_config = await api4k.get_key_config()
-        device.extract_key_config_4k()
-        device.light_config = await api4k.get_light_config()
-        device.extract_light_config_4k()
+      if (device.is_v2()) {
+        device.key_config = await apiv2.get_key_config()
+        device.extract_key_config_v2()
+        device.light_config = await apiv2.get_light_config()
+        device.extract_light_config_v2()
       }
-      if (device.is_3k()) {
-        device.key_config = await api3k.get_key_config()
-        device.extract_key_config_3k()
-        device.light_config = await api3k.get_light_config()
-        device.extract_light_config_3k()
+      if (device.is_v2se()) {
+        device.key_config = await apiv2se.get_key_config()
+        device.extract_key_config_v2se()
+        device.light_config = await apiv2se.get_light_config()
+        device.extract_light_config_v2se()
       }
       if (device.is_pure()) {
         device.device_config = await apib.get_key_config()
@@ -232,11 +232,11 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       </template>
 
       <template v-else-if="device.connected">
-        <template v-if="device.is_4k()">
-          <Settings4K></Settings4K>
+        <template v-if="device.is_v2()">
+          <SettingsV2></SettingsV2>
         </template>
-        <template v-else-if="device.is_3k()">
-          <Settings3K></Settings3K>
+        <template v-else-if="device.is_v2se()">
+          <SettingsV2SE></SettingsV2SE>
         </template>
         <template v-else-if="device.is_pure()">
           <Pure64></Pure64>

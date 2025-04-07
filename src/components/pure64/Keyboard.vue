@@ -14,21 +14,21 @@
  * 还有个问题是配色，已经校准的按键的背景色是绿的，但是选中按键显示的图标也是绿的，你看看能不能改个好看的配色
  */
 
-import KeyFrame from "@/components/meowboard/Keyboard/KeyFrame.vue";
-import KeyDebug from "@/components/meowboard/Keyboard/KeyDebug.vue";
-import KeyCalibrate from "@/components/meowboard/Keyboard/KeyCalibrate.vue";
-import KeyHall from "@/components/meowboard/Keyboard/KeyHall.vue";
-import KeyModify from "@/components/meowboard/Keyboard/KeyModify.vue";
-import KeyModifyOption from "@/components/meowboard/Keyboard/KeyModifyOption.vue";
+import KeyFrame from "@/components/pure64/Keyboard/KeyFrame.vue";
+import KeyDebug from "@/components/pure64/Keyboard/KeyDebug.vue";
+import KeyCalibrate from "@/components/pure64/Keyboard/KeyCalibrate.vue";
+import KeyHall from "@/components/pure64/Keyboard/KeyHall.vue";
+import KeyModify from "@/components/pure64/Keyboard/KeyModify.vue";
+import KeyModifyOption from "@/components/pure64/Keyboard/KeyModifyOption.vue";
 import { ComponentPublicInstance, createVNode } from "vue";
 
-import * as apib from "@/apis/meowboard/api";
+import * as apib from "@/apis/pure64/api";
 import * as api from "@/apis/api";
 import { IError, KeyState } from "@/apis";
 import { useDeviceStore } from "@/store/device";
 import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
-import { IKeyboard, IKeyConfigBoard } from "@/apis/meowboard/config";
+import { IKeyboard, IKeyConfigBoard } from "@/apis/pure64/config";
 import { IMixedKey } from "@/apis";
 import emitter from "@/mitt";
 import { getErrorMsg, most, splitArray, time_2_str } from "@/utils";
