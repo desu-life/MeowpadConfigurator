@@ -26,11 +26,11 @@
     "date-fns": "^4.1.0",
     "mitt": "^3.0.1",
     "naive-ui": "^2.41.0",
-    "pinia": "^2.1.7",
+    "pinia": "3.0.2",
     "postcss": "^8.5.1",
     "sass": "^1.83.4",
     "unplugin-auto-import": "19.0.0",
-    "unplugin-vue-components": "0.27.4",
+    "unplugin-vue-components": "28.5.0",
     "vfonts": "0.1.0",
     "vue": "^3.5.13",
     "vue-i18n": "11.0.1"

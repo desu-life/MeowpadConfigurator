@@ -125,6 +125,9 @@ function clickKey(k: number) {
     setKeys(k)
   } else {
     selectKey(k)
+    if (k == -1) {
+      message.info(t('click_again_to_bind_key'))
+    }
   }
 }
 
@@ -198,53 +201,74 @@ function getKeyText(index: number) {
       </transition>
     </div>
 
-
-    <transition name="fade">
-      <div v-if="selectedKey != null && selectedKey != -1">
-        <div class="hall-config">
-          <!-- <n-button type="error" class="badge" @click="set_auto_config">
-            {{ $t('need_help') }} </n-button> -->
-          <n-form-item :label="$t('dead_zone')" path="dead_zone" label-placement="left" :show-feedback="false">
-            <n-input-number v-model:value="key_cfg!.keys[selectedKey!].dead_zone" :min="1" :max="100"
-              :placeholder="$t('no_data')">
-              <template #suffix>
-                %
-              </template>
-            </n-input-number>
-          </n-form-item>
-          <n-form-item :label="$t('key_trigger_degree')" path="press_percentage" label-placement="left"
-            :show-feedback="false">
-            <n-input-number v-model:value="key_cfg!.keys[selectedKey!].press_percentage" :min="1" :max="100"
-              :placeholder="$t('no_data')">
-              <template #suffix>
-                %
-              </template>
-            </n-input-number>
-          </n-form-item>
-          <n-form-item :label="$t('key_release_degree')" path="release_percentage" label-placement="left"
-            :show-feedback="false">
-            <n-input-number v-model:value="key_cfg!.keys[selectedKey!].release_percentage" :min="1" :max="100"
-              :placeholder="$t('no_data')">
-              <template #suffix>
-                %
-              </template>
-            </n-input-number>
-          </n-form-item>
-          <div class="apply-to-all">
-            <n-button size="small" secondary @click="applyKeySetting">{{ $t('apply_to_all_key') }}</n-button>
+    <div class="hall-config-full">
+      <transition name="fade">
+        <template v-if="selectedKey != null && selectedKey != -1">
+          <div class="hall-config">
+            <!-- <n-button type="error" class="badge" @click="set_auto_config">
+              {{ $t('need_help') }} </n-button> -->
+            <n-form-item :label="$t('dead_zone')" path="dead_zone" label-placement="left" :show-feedback="false">
+              <n-input-number v-model:value="key_cfg!.keys[selectedKey!].dead_zone" :min="1" :max="100"
+                :placeholder="$t('no_data')">
+                <template #suffix>
+                  %
+                </template>
+              </n-input-number>
+            </n-form-item>
+            <n-form-item :label="$t('key_trigger_degree')" path="press_percentage" label-placement="left"
+              :show-feedback="false">
+              <n-input-number v-model:value="key_cfg!.keys[selectedKey!].press_percentage" :min="1" :max="100"
+                :placeholder="$t('no_data')">
+                <template #suffix>
+                  %
+                </template>
+              </n-input-number>
+            </n-form-item>
+            <n-form-item :label="$t('key_release_degree')" path="release_percentage" label-placement="left"
+              :show-feedback="false">
+              <n-input-number v-model:value="key_cfg!.keys[selectedKey!].release_percentage" :min="1" :max="100"
+                :placeholder="$t('no_data')">
+                <template #suffix>
+                  %
+                </template>
+              </n-input-number>
+            </n-form-item>
+            <div class="apply-to-all">
+              <n-button size="small" secondary @click="applyKeySetting">{{ $t('apply_to_all_key') }}</n-button>
+            </div>
           </div>
-        </div>
-      </div>
-    </transition>
+        </template>
+        <template v-else>
+          <div class="hall-config-empty">
+            <n-empty :description="t('select_key_please')">
+            </n-empty>
+          </div>
+        </template>
+      </transition>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.hall-config {
-  max-width: 400px;
-  min-width: 200px;
-  top: 20px;
+.hall-config-full {
+  width: 320px;
+  height: 140px;
   position: relative;
+}
+
+.hall-config {
+  position: absolute;
+  top: 20px;
+}
+
+.hall-config-empty {
+  position: absolute;
+  width: 200px;
+  top: 20px;
+  left: 75px;
+  padding: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
 }
 
 .apply-to-all {
@@ -275,8 +299,8 @@ function getKeyText(index: number) {
   display: flex;
   flex-direction: column;
   height: fit-content;
-  width: fit-content;
   padding: 10px;
+  width: fit-content;
   outline: 6px solid var(--color-border);
 }
 

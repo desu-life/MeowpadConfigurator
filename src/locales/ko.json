@@ -194,5 +194,7 @@
   "fn_lock": "Fn 키는 키 레이어에만 배치할 수 있습니다.",
   "key_locked": "이 키는 잠겼습니다.",
   "open_updater": "업데이트 프로그램을 열다",
-  "unsupported_platform": "이 플랫폼은 지원되지 않습니다"
+  "unsupported_platform": "이 플랫폼은 지원되지 않습니다",
+  "light_setting": "조명 설정",
+  "click_again_to_bind_key": "키를 바인딩하려면 다시 클릭하십시오"
 }

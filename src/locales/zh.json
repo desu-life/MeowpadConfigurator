@@ -194,5 +194,7 @@
   "fn_lock": "Fn 键只允许放在按键层",
   "key_locked": "此按键已锁定",
   "open_updater": "打开更新器",
-  "unsupported_platform": "不支持此平台"
+  "unsupported_platform": "不支持此平台",
+  "light_setting": "灯光设置",
+  "click_again_to_bind_key": "再次点击以绑定按键"
 }

@@ -5,6 +5,7 @@ import Keyboard from './Keyboard.vue'
 import { h } from 'vue'
 import { useI18n } from "vue-i18n";
 import { IKeymap, Toggle } from '@/interface';
+import { BulbOutline, KeypadOutline } from '@vicons/ionicons5';
 
 import meowpad from '@/meowpad3k.json'
 const keymap: IKeymap[][] = meowpad;
@@ -37,82 +38,101 @@ function GetToggleSel() {
 </script>
 
 <template>
-  <div style="width: 80vw;height: 30vh;" class="key-config">
-    <Keyboard :keymap="keymap"></Keyboard>
-  </div>
+    <div class="keyboard-container">
+      <div class="key-config">
+        <Keyboard :keymap="keymap"></Keyboard>
+      </div>
+    </div>
 
-  <n-grid :cols="20" :x-gap="18" style="width: 80vw;">
-    <n-gi :span="5">
-      <n-form-item :label="$t('keyboard_jitters_elimination_time')" path="jitters_elimination_time">
-        <n-input-number v-model:value="store.jitters_elimination_time" :min="0" :max="50" :step="0.5">
-          <template #suffix>
-            ms
-          </template>
-        </n-input-number>
-      </n-form-item>
-    </n-gi>
-    <n-gi :span="3">
-      <n-form-item :label="$t('continous_report')" path="continuous_report">
-        <n-select v-model:value="store.continuous_report" :options="GetToggleSel()" />
-      </n-form-item>
-    </n-gi>
+  
+    <div class="settings-container">
+      <!-- 按键设置面板 -->
+      <div class="settings-panel key-settings">
+        <div class="panel-header">
+          <n-icon size="24" class="panel-icon">
+            <keypad-outline />
+          </n-icon>
+          <h3>{{ $t('key_setting') }}</h3>
+        </div>
+        <div class="panel-content">
+          <n-grid :cols="1" :x-gap="18">
+            <n-gi>
+              <n-form-item :label="$t('keyboard_jitters_elimination_time')" path="jitters_elimination_time">
+                <n-input-number v-model:value="store.jitters_elimination_time" :min="0" :max="50" :step="0.5">
+                  <template #suffix>
+                    ms
+                  </template>
+                </n-input-number>
+              </n-form-item>
+            </n-gi>
+            <n-gi>
+              <n-form-item :label="$t('continous_report')" path="continuous_report">
+                <n-select v-model:value="store.continuous_report" :options="GetToggleSel()" />
+              </n-form-item>
+            </n-gi>
+            <!-- 可以添加更多按键相关的配置在这里 -->
+          </n-grid>
+        </div>
+      </div>
 
-        <!-- <n-gi :span="3">
-      <n-form-item :label="$t('kalman_filter')" path="kalman_filter">
-        <n-select v-model:value="store.kalman_filter" :options="GetToggleSel()" />
-      </n-form-item>
-    </n-gi> -->
+      <!-- 灯光设置面板 -->
+      <div class="settings-panel light-settings">
+        <div class="panel-header">
+          <n-icon size="24" class="panel-icon">
+            <bulb-outline />
+          </n-icon>
+          <h3>{{ $t('light_setting') }}</h3>
+        </div>
+        <div class="panel-content">
+          <n-grid :cols="1" :x-gap="14">
+            <n-gi>
+              <div class="color-settings">
+                <div class="color-pickers">
+                  <n-form-item :label="$t('led_color_num', { num: 'K1' })" path="led_colors_0">
+                    <n-color-picker v-model:value="store.led_colors![0]" :show-alpha="false" :modes="['hex']" />
+                  </n-form-item>
+                  <n-form-item :label="$t('led_color_num', { num: 'K2' })" path="led_colors_1">
+                    <n-color-picker v-model:value="store.led_colors![1]" :show-alpha="false" :modes="['hex']" />
+                  </n-form-item>
+                  <n-form-item :label="$t('led_color_num', { num: 'K3' })" path="led_colors_2">
+                    <n-color-picker v-model:value="store.led_colors![2]" :show-alpha="false" :modes="['hex']" />
+                  </n-form-item>
+                </div>
+              </div>
+            </n-gi>
+            <n-gi>
+              <n-grid :cols="2" :x-gap="14">
+                <n-gi>
+                  <n-form-item :label="$t('device_sleep_idle_time')" path="sleep_time">
+                    <n-input-number v-model:value="light_cfg!.sleep_time" :min="0" :max="65535">
+                      <template #suffix>
+                        {{ $t('sec') }}
+                      </template>
+                    </n-input-number>
+                  </n-form-item>
+                </n-gi>
+                <n-gi>
+                  <n-form-item :label="$t('maximum_brightness')" path="max_brightness">
+                    <n-input-number v-model:value="store.max_brightness" :min="1" :max="100">
+                      <template #suffix>
+                        {{ '%' }}
+                      </template>
+                    </n-input-number>
+                  </n-form-item>
+                </n-gi>
+                <n-gi>
+                  <n-form-item :label="$t('enable_light')" path="enable_light">
+                    <n-select v-model:value="store.enable_light" :options="GetToggleSel()" />
+                  </n-form-item>
+                </n-gi>
+              </n-grid>
+            </n-gi>
+            
 
-    <n-gi :span="10"></n-gi>
-
-
-    <n-gi :span="5">
-      <n-form-item :label="$t('device_sleep_idle_time')" path="sleep_time">
-        <n-input-number v-model:value="light_cfg!.sleep_time" :min="0" :max="65535">
-          <template #suffix>
-            {{ $t('sec') }}
-          </template>
-        </n-input-number>
-      </n-form-item>
-    </n-gi>
-    <n-gi :span="5">
-      <n-form-item :label="$t('maximum_brightness')" path="max_brightness">
-        <!-- <n-slider v-model:value="store.max_brightness" :step="1" :max="100" :min="1" /> -->
-        <n-input-number v-model:value="store.max_brightness" :min="1" :max="100">
-          <template #suffix>
-            {{ '%' }}
-          </template>
-        </n-input-number>
-      </n-form-item>
-    </n-gi>
-    <n-gi :span="3">
-      <n-form-item :label="$t('enable_light')" path="enable_light">
-        <n-select v-model:value="store.enable_light" :options="GetToggleSel()" />
-      </n-form-item>
-    </n-gi>
-
-    <n-gi :span="7"></n-gi>
-
-    <n-gi :span="5">
-      <n-form-item :label="$t('led_color_num', { num: 'K1' })" path="led_colors_0">
-        <n-color-picker v-model:value="store.led_colors![0]" :show-alpha="false" :modes="['hex']" />
-      </n-form-item>
-    </n-gi>
-    <n-gi :span="5">
-      <n-form-item :label="$t('led_color_num', { num: 'K2' })" path="led_colors_1">
-        <n-color-picker v-model:value="store.led_colors![1]" :show-alpha="false" :modes="['hex']" />
-      </n-form-item>
-    </n-gi>
-    <n-gi :span="5">
-      <n-form-item :label="$t('led_color_num', { num: 'K3' })" path="led_colors_2">
-        <n-color-picker v-model:value="store.led_colors![2]" :show-alpha="false" :modes="['hex']" />
-      </n-form-item>
-    </n-gi>
-    
-    
-
-    
-  </n-grid>
+          </n-grid>
+        </div>
+      </div>
+    </div>
 </template>
 
 <style scoped>
@@ -120,22 +140,93 @@ function GetToggleSel() {
   display: block;
 } */
 
-.badge {
-  position: absolute;
-  height: 18px;
-  line-height: 18px;
-  border-radius: 9px;
-  padding: 0 6px;
-  text-align: center;
-  font-size: var(--n-font-size);
-  transform: translateX(-50%);
-  left: 100%;
-  bottom: calc(100% - 9px);
-  /* bottom: calc(100% - 9px); */
-  font-variant-numeric: tabular-nums;
-  z-index: 1;
+.key-config {
+  width: 100%;
+  height: 100%;
+}
+
+.keyboard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 80vw;
+  margin-bottom: 40px;
+  margin-top: 10px;
+}
+
+.settings-container {
+  display: flex;
+  justify-content: space-between;
+  width: 80vw;
+  gap: 30px;
+}
+
+/* 按键设置面板占三份，灯光设置面板占七份 */
+.key-settings {
+  flex: 3;
+  background: var(--color-background-soft);
+  border-radius: 12px;
+  padding: 20px 20px 0px 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.light-settings {
+  flex: 7;
+  background: var(--color-background-soft);
+  border-radius: 12px;
+  padding: 20px 20px 0px 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+
+.panel-header {
   display: flex;
   align-items: center;
-  width: fit-content;
+  margin-bottom: 5px;
+  gap: 10px;
+  border-bottom: 1px solid var(--n-border-color);
 }
+
+.panel-icon {
+  color: var(--n-primary-color);
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--n-title-text-color);
+}
+
+.panel-content {
+  padding: 10px 0;
+}
+
+.color-settings {
+  margin-top: 5px;
+}
+
+.color-settings h4 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--n-title-text-color);
+}
+
+.color-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.color-pickers .n-form-item {
+  margin-bottom: 0;
+  width: calc(33.33% - 10px);
+}
+
 </style>

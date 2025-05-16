@@ -194,5 +194,7 @@
   "fn_lock": "The Fn key is only allowed to be placed on the key layer",
   "key_locked": "This key is locked",
   "open_updater": "Open updater",
-  "unsupported_platform": "This platform is not supported"
+  "unsupported_platform": "This platform is not supported",
+  "light_setting": "Light settings",
+  "click_again_to_bind_key": "Click again to bind the key"
 }

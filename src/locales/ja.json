@@ -194,5 +194,7 @@
   "fn_lock": "Fnキーはキー層にのみ配置が許可されています。",
   "key_locked": "このキーはロックされています。",
   "open_updater": "アップデーターを開く",
-  "unsupported_platform": "このプラットフォームはサポートされていません"
+  "unsupported_platform": "このプラットフォームはサポートされていません",
+  "light_setting": "照明設定",
+  "click_again_to_bind_key": "もう一度クリックしてキーをバインドします"
 }
