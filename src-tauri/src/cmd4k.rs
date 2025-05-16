@@ -1,7 +1,7 @@
 use crate::{
     device::{DeviceInfoExtened, HidDevice},
     error::{Error, Result},
-    FIRMWARE_VERSION_4K,
+    FIRMWARE_VERSION_V2,
 };
 use hidapi::HidApi;
 use log::*;
@@ -18,7 +18,7 @@ struct Config {
 
 #[tauri::command]
 pub fn get_firmware_4k_version(_app: tauri::AppHandle) -> &'static str {
-    FIRMWARE_VERSION_4K
+    FIRMWARE_VERSION_V2
 }
 
 #[tauri::command]

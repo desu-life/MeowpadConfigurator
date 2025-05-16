@@ -1,35 +1,31 @@
 use crate::{
     device::{DeviceInfoExtened, HidDevice},
     error::{Error, Result},
-    FIRMWARE_VERSION_V2SE,
+    FIRMWARE_VERSION_V3,
 };
 use hidapi::HidApi;
 use log::*;
-use meowpad::models::{DeviceStatus, KeyRTStatus, KeyState};
-use meowpad3k::Meowpad;
+use meowpadv3::MeowpadV3;
+use meowpad::{
+    models::{DeviceStatus, KeyHallConfig, KeyRTStatus, KeyState},
+    Device,
+};
 use std::sync::Mutex;
 use tauri::State;
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
-pub struct DebugValue {
-    pub key: [KeyRTStatus; 3],
-    pub btn: KeyState,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Copy)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 struct Config {
-    key: meowpad3k::config::Key,
-    light: meowpad3k::config::Light,
+    key: meowpadv3::config::Device,
 }
 
 #[tauri::command]
-pub fn get_firmware_3k_version(_app: tauri::AppHandle) -> &'static str {
-    FIRMWARE_VERSION_V2SE
+pub fn get_firmware_v3_version(_app: tauri::AppHandle) -> &'static str {
+    FIRMWARE_VERSION_V3
 }
 
 #[tauri::command]
-pub fn get_device_info_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
+pub fn get_device_info_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
 ) -> Result<serde_json::Value> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
@@ -46,44 +42,45 @@ pub fn get_device_info_3k(
 }
 
 #[tauri::command]
-pub fn get_device_status_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
+pub fn get_device_status_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
 ) -> Result<DeviceStatus> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     let status = d.get_status()?;
     info!(
-        "按键配置状态: {}，灯光配置状态: {}，按键校准状态: {}，按键是否启用: {}",
-        status.key,
-        status.light.unwrap(),
-        status.hall,
-        status.enabled
+        "按键配置状态: {}，按键校准状态: {}，按键是否启用: {}",
+        status.key, status.hall, status.enabled
     );
     Ok(status)
 }
 
 #[tauri::command]
-pub fn calibration_key_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
+pub fn calibration_key_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+    key_indexs: Vec<u8>,
 ) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.calibration_key()?;
+    d.calibration_key(&key_indexs)?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn clear_config_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<()> {
+pub fn clear_config_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.clear_hall_config()?;
     d.clear_key_config()?;
-    d.clear_light_config()?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn reset_device_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> Result<()> {
+pub fn reset_device_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.reset_device()?;
@@ -91,18 +88,63 @@ pub fn reset_device_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>
 }
 
 #[tauri::command]
-pub async fn get_debug_value_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
-) -> Result<DebugValue> {
+pub async fn get_debug_value_part_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+    index: u8,
+) -> Result<Vec<KeyRTStatus>> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    let v = d.get_debug_value()?;
-    Ok(DebugValue { key: v.0, btn: v.1 })
+    Ok(d.get_debug_value_part(index)?.to_vec())
 }
 
 #[tauri::command]
-pub fn erase_firmware_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
+pub async fn get_debug_value_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+) -> Result<Vec<KeyRTStatus>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_debug_value()?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_hall_config_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+) -> Result<Vec<KeyHallConfig>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_hall_config()?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_keystates_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+) -> Result<Vec<KeyState>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_keystates()?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_keyvalues_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+) -> Result<Vec<u16>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_keyvalues()?.to_vec())
+}
+
+#[tauri::command]
+pub async fn get_key_calibrate_status_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+) -> Result<Vec<bool>> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    Ok(d.get_key_calibrate_status()?.to_vec())
+}
+
+#[tauri::command]
+pub fn erase_firmware_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
 ) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
@@ -111,19 +153,14 @@ pub fn erase_firmware_3k(
 }
 
 #[tauri::command]
-pub fn get_default_key_config_3k() -> meowpad3k::config::Key {
-    meowpad3k::cbor::Keyboard::default().try_into().unwrap()
+pub fn get_default_key_config_v3() -> meowpadv3::config::Device {
+    meowpadv3::cbor::Device::default().try_into().unwrap()
 }
 
 #[tauri::command]
-pub fn get_default_light_config_3k() -> meowpad3k::config::Light {
-    meowpad3k::cbor::Light::default().try_into().unwrap()
-}
-
-#[tauri::command]
-pub fn get_key_config_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
-) -> Result<meowpad3k::config::Key> {
+pub async fn get_key_config_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+) -> Result<meowpadv3::config::Device> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_key_config()?;
@@ -131,19 +168,9 @@ pub fn get_key_config_3k(
 }
 
 #[tauri::command]
-pub fn get_light_config_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
-) -> Result<meowpad3k::config::Light> {
-    let mut _d = device_handle.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.load_light_config()?;
-    Ok(d.light_config.unwrap().try_into()?)
-}
-
-#[tauri::command]
-pub fn set_key_config_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
-    config: meowpad3k::config::Key,
+pub fn set_key_config_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+    config: meowpadv3::config::Device,
 ) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
@@ -153,20 +180,8 @@ pub fn set_key_config_3k(
 }
 
 #[tauri::command]
-pub fn set_light_config_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
-    config: meowpad3k::config::Light,
-) -> Result<()> {
-    let mut _d = device_handle.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.light_config = Some(config.into());
-    d.set_light_config()?;
-    Ok(())
-}
-
-#[tauri::command]
-pub fn save_key_config_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
+pub fn save_key_config_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
 ) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
@@ -175,38 +190,26 @@ pub fn save_key_config_3k(
 }
 
 #[tauri::command]
-pub fn save_light_config_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
-) -> Result<()> {
-    let mut _d = device_handle.lock().unwrap();
-    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.save_light_config()?;
-    Ok(())
-}
-
-#[tauri::command]
-pub fn get_raw_config_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
+pub fn get_raw_config_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
 ) -> Result<String> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     d.load_key_config()?;
-    d.load_light_config()?;
     Ok(toml::to_string(&Config {
         key: d.key_config.unwrap().try_into()?,
-        light: d.light_config.unwrap().try_into()?,
     })
     .unwrap())
 }
 
 #[tauri::command]
-pub fn check_raw_config_3k(config: String) -> bool {
+pub fn check_raw_config_v3(config: String) -> bool {
     toml::from_str::<Config>(&config).is_ok()
 }
 
 #[tauri::command]
-pub fn save_raw_config_3k(
-    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
+pub fn save_raw_config_v3(
+    device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
     config: String,
 ) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
@@ -215,14 +218,11 @@ pub fn save_raw_config_3k(
     d.key_config = Some(cfg.key.into());
     d.set_key_config()?;
     d.save_key_config()?;
-    d.light_config = Some(cfg.light.into());
-    d.set_light_config()?;
-    d.save_light_config()?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn connect_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -> bool {
+pub fn connect_v3(device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>) -> bool {
     let mut _d = device_handle.lock().unwrap();
     info!("开始连接!");
     let found_device = find_device();
@@ -240,14 +240,14 @@ pub fn connect_3k(device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>) -
     }
 }
 
-fn find_device() -> Option<Meowpad<HidDevice>> {
+fn find_device() -> Option<MeowpadV3<HidDevice>> {
     // 获取设备列表
     let api = HidApi::new().unwrap();
 
     find_devices(&api)
         .first()
         .and_then(|d| match d.inner.open_device(&api) {
-            Ok(d) => Some(Meowpad::new(HidDevice { device: d })),
+            Ok(d) => Some(MeowpadV3::new(HidDevice { device: d })),
             Err(_) => None,
         })
 }
@@ -255,7 +255,7 @@ fn find_device() -> Option<Meowpad<HidDevice>> {
 pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
     // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
-    const PID: u16 = 0xFE17;
+    const PID: u16 = 0xFB02;
 
     // 迭代设备列表，查找符合条件的设备
     let devices = api.device_list();
@@ -268,7 +268,11 @@ pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
 
             // 连接设备
             let mut device_handle = match d.open_device(api) {
-                Ok(d) => Meowpad::new(HidDevice { device: d }),
+                Ok(d) => {
+                    let d = HidDevice { device: d };
+                    let _ = d.clear_buffer();
+                    MeowpadV3::new(d)
+                }
                 Err(_) => return None,
             };
 
@@ -291,7 +295,7 @@ pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
                     Some(DeviceInfoExtened {
                         device_name: device_handle.device_name.take().unwrap_or_default(),
                         firmware_version: device_handle.firmware_version.take().unwrap_or_default(),
-                        serial_number: None,
+                        serial_number: d.serial_number().map(|s| s.to_string()),
                         inner: d,
                     })
                 }

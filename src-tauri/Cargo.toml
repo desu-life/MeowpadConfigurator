@@ -37,10 +37,11 @@ anyhow = "1.0.89"
 log = "0.4.22"
 env_logger = "0.11.5"
 toml = "0.8.19"
-meowpad4k = { path = "./meowpad4k" }
-meowpad3k = { path = "./meowpad3k" }
+meowpadv3 = { path = "./meowpadv3" }
+meowpad4k = { path = "./meowpadv2" }
+meowpad3k = { path = "./meowpadv2se" }
 meowpad = { path = "./meowpad" }
-meowboard = { path = "./meowboard" }
+meowboard = { path = "./pure64" }
 hid-iap = { path = "./hid-iap" }
 reqwest = { version = "0.12.7", features = ["json"] }
 regex = "1.10.6"

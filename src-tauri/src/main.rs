@@ -12,6 +12,7 @@ use meowboard::Meowboard;
 use meowpad::Device;
 use meowpad3k::Meowpad as Meowpad3k;
 use meowpad4k::Meowpad as Meowpad4k;
+use meowpadv3::MeowpadV3;
 use reqwest::Client;
 use std::env;
 use std::ops::Deref;
@@ -36,6 +37,7 @@ mod device;
 mod device_preset;
 mod error;
 mod utils;
+mod cmdv3;
 use cmd3k::*;
 use cmd4k::*;
 use cmdiap::*;
@@ -234,18 +236,21 @@ async fn device_list(
     device_handle_4k: State<'_, Mutex<Option<Meowpad4k<HidDevice>>>>,
     device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
     device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+    device_handle_v3: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
 ) -> Result<Vec<DeviceInfoSerdi>> {
     let api = api_handle.lock().unwrap();
     // 在执行扫描前先锁住设备，不让其他线程访问
     let mut device_handle_4k = device_handle_4k.lock().unwrap();
     let mut device_handle_3k = device_handle_3k.lock().unwrap();
     let mut device_handle_pure64 = device_handle_pure64.lock().unwrap();
+    let mut device_handle_v3 = device_handle_v3.lock().unwrap();
 
     // 扫描设备
     let mut devices = vec![];
 
     devices.append(&mut cmd4k::find_devices(&api));
     devices.append(&mut cmd3k::find_devices(&api));
+    devices.append(&mut cmdv3::find_devices(&api));
     devices.append(&mut cmdkbd::find_devices(&api));
     devices.append(&mut cmdiap::find_devices(&api));
     devices.append(&mut cmdiap::find_devices_pure(&api));
@@ -255,6 +260,9 @@ async fn device_list(
         let _ = d.device.clear_buffer();
     }
     if let Some(d) = device_handle_3k.as_mut() {
+        let _ = d.device.clear_buffer();
+    }
+    if let Some(d) = device_handle_v3.as_mut() {
         let _ = d.device.clear_buffer();
     }
     if let Some(d) = device_handle_pure64.as_mut() {
@@ -306,6 +314,7 @@ fn connect_device(
     device_handle_4k: State<'_, Mutex<Option<Meowpad4k<HidDevice>>>>,
     device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
     device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
+    device_handle_v3: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
     device_info: DeviceInfoSerdi,
 ) -> bool {
     let api = api_handle.lock().unwrap();
@@ -340,6 +349,9 @@ fn connect_device(
         } else if device_info.device_name == PURE64_DEVICE_NAME {
             *device_handle_pure64.lock().unwrap() =
                 Some(Meowboard::new(device::HidDevice { device: d }));
+        } else if device_info.device_name == MEOWPAD_V3_DEVICE_NAME {
+            *device_handle_v3.lock().unwrap() =
+                Some(MeowpadV3::new(device::HidDevice { device: d }));
         } else {
             warn!("连接失败，无法找到设备");
             return false;
@@ -509,7 +521,28 @@ fn main() -> AnyResult<()> {
             gen_preset_kb,
             load_preset_from_file,
             save_preset_to_file,
-            update_firmware_call
+            update_firmware_call,
+            cmdv3::get_firmware_v3_version,
+            cmdv3::get_device_info_v3,
+            cmdv3::get_device_status_v3,
+            cmdv3::calibration_key_v3,
+            cmdv3::clear_config_v3,
+            cmdv3::reset_device_v3,
+            cmdv3::get_debug_value_part_v3,
+            cmdv3::get_debug_value_v3,
+            cmdv3::get_hall_config_v3,
+            cmdv3::get_keystates_v3,
+            cmdv3::get_keyvalues_v3,
+            cmdv3::get_key_calibrate_status_v3,
+            cmdv3::erase_firmware_v3,
+            cmdv3::get_default_key_config_v3,
+            cmdv3::get_key_config_v3,
+            cmdv3::set_key_config_v3,
+            cmdv3::save_key_config_v3,
+            cmdv3::get_raw_config_v3,
+            cmdv3::check_raw_config_v3,
+            cmdv3::save_raw_config_v3,
+            cmdv3::connect_v3,
         ])
         .manage(
             Client::builder()
@@ -519,6 +552,7 @@ fn main() -> AnyResult<()> {
         )
         .manage::<Mutex<Option<Meowpad3k<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<Meowpad4k<HidDevice>>>>(Mutex::new(None))
+        .manage::<Mutex<Option<MeowpadV3<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<Meowboard<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<IAP>>>(Mutex::new(None))
         .manage::<Mutex<HidApi>>(Mutex::new(HidApi::new().unwrap()))

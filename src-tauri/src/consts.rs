@@ -1,7 +1,9 @@
 pub static VERSION: &str = "1.0.3";
-pub static FIRMWARE_VERSION_4K: &str = "0.1.1";
-pub static FIRMWARE_VERSION_3K: &str = "0.1.1";
-pub static FIRMWARE_VERSION_KB: &str = "0.1.3";
+pub static FIRMWARE_VERSION_V2: &str = "0.1.1";
+pub static FIRMWARE_VERSION_V2SE: &str = "0.1.1";
+pub static FIRMWARE_VERSION_PURE64: &str = "0.1.3";
+pub static FIRMWARE_VERSION_V3: &str = "0.1.3";
 pub static MEOWPAD_DEVICE_NAME: &str = "Meowpad";
+pub static MEOWPAD_V3_DEVICE_NAME: &str = "MeowpadV3";
 pub static MEOWPAD_SE_DEVICE_NAME: &str = "Meowpad SE v2";
 pub static PURE64_DEVICE_NAME: &str = "Pure64";
