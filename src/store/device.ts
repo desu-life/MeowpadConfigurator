@@ -2,10 +2,12 @@ import { IDeviceInfo, IDeviceStatus, IHidDeviceInfo } from "@/apis";
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { IKeyboard as IKBV2, ILighting as ILTV2 } from "@/apis/meowpadv2/config";
 import { IKeyboard as IKBV2SE, ILighting as ILTV2SE, LightingMode as LMV2SE } from "@/apis/meowpadv2se/config";
+import { IKeyboard as IKBV21SE, ILighting as ILTV21SE, LightingMode as LMV21SE } from "@/apis/meowpadv21se/config";
 import { IKeyboard as IKBP64 } from "@/apis/pure64/config";
 import { Toggle } from "../interface";
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
+import * as apiv21se from '@/apis/meowpadv21se/api'
 import * as apib from '@/apis/pure64/api'
 import { Hex2Rgb, Rgb2Hex } from "@/utils";
 import { KeyCode } from "@/keycode";
@@ -20,8 +22,8 @@ export const useDeviceStore = defineStore("device", () => {
 
   // configs
   const device_config = ref<IKBP64 | undefined>(undefined);
-  const key_config = ref<IKBV2 | IKBV2SE | undefined>(undefined);
-  const light_config = ref<ILTV2 | ILTV2SE | undefined>(undefined);
+  const key_config = ref<any | undefined>(undefined);
+  const light_config = ref<any | undefined>(undefined);
   const led_colors = ref<string[] | null>(null);
   const high_speed_color = ref<string | null>(null);
   const low_speed_color = ref<string | null>(null);
@@ -50,6 +52,10 @@ export const useDeviceStore = defineStore("device", () => {
     return device_hid_info.value?.device_name == 'Pure64'
   }
 
+  function is_v21se() {
+    return device_hid_info.value?.device_name == 'Meowpad SE v2.1'
+  }
+
   async function try_connect() {
     if (await apiv2.connect()) {
       device_info.value = await apiv2.get_device_info()
@@ -61,6 +67,10 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (await apib.connect()) {
       device_info.value = await apib.get_device_info()
+      return true
+    }
+    if (await apiv21se.connect()) {
+      device_info.value = await apiv21se.get_device_info()
       return true
     }
     return false;
@@ -76,6 +86,9 @@ export const useDeviceStore = defineStore("device", () => {
     if (is_pure()) {
       device_status.value = await apib.get_device_status()
     }
+    if (is_v21se()) {
+      device_status.value = await apiv21se.get_device_status()
+    }
   }
 
   async function get_config_raw() {
@@ -87,6 +100,9 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (is_pure()) {
       raw_config.value = await apib.get_raw_config()
+    }
+    if (is_v21se()) {
+      raw_config.value = await apiv21se.get_raw_config()
     }
   }
 
@@ -100,6 +116,9 @@ export const useDeviceStore = defineStore("device", () => {
     if (is_pure()) {
       await apib.save_raw_config(raw_config.value!)
     }
+    if (is_v21se()) {
+      await apiv21se.save_raw_config(raw_config.value!)
+    }
   }
 
   async function check_config_raw() {
@@ -111,6 +130,9 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (is_pure()) {
       return await apib.check_raw_config(raw_config.value!)
+    }
+    if (is_v21se()) {
+      return await apiv21se.check_raw_config(raw_config.value!)
     }
     // 无设备连接时不检查，永远通过
     return true
@@ -273,6 +295,65 @@ export const useDeviceStore = defineStore("device", () => {
     max_brightness.value = Math.floor(config.value!.max_brightness * 2)
     enable_light.value = config.value!.lighting_mode == LMV2SE.Solid ? Toggle.On : Toggle.Off
   }
+  
+  function store_key_config_v21se() {
+    let config = key_config as Ref<IKBV21SE>;
+    for (let i = 0; i < config.value!.hall_keys.length; i++) {
+      while (config.value!.hall_keys[i].key_data.length < 6) {
+        config.value!.hall_keys[i].key_data.push(KeyCode.None)
+      }
+  
+      while (config.value!.hall_keys[i].key_data.length > 6) {
+        config.value!.hall_keys[i].key_data.pop()
+      }
+    }
+
+    for (let i = 0; i < config.value!.normal_keys.length; i++) {
+      while (config.value!.normal_keys[i].key_data.length < 6) {
+        config.value!.normal_keys[i].key_data.push(KeyCode.None)
+      }
+  
+      while (config.value!.normal_keys[i].key_data.length > 6) {
+        config.value!.normal_keys[i].key_data.pop()
+      }
+    }
+
+    config.value!.jitters_elimination_time = Math.round(jitters_elimination_time.value)
+    config.value!.continuous_report = continuous_report.value == Toggle.On ? true : false
+    config.value!.kalman_filter = kalman_filter.value == Toggle.On ? true : false
+  }
+
+  function store_light_config_v21se() {
+    let config = light_config as Ref<ILTV21SE>;
+    config.value!.led_colors = []
+    for (let i = 0; i < led_colors.value!.length; i++) {
+      config.value!.led_colors.push(Hex2Rgb(led_colors.value![i]))
+    }
+
+    config.value!.max_brightness = Math.round(max_brightness.value / 2)
+  }
+
+  function extract_key_config_v21se() {
+    let config = key_config as Ref<IKBV21SE>;
+    jitters_elimination_time.value = config.value!.jitters_elimination_time
+    continuous_report.value = config.value!.continuous_report == true ? Toggle.On : Toggle.Off
+    kalman_filter.value = config.value!.kalman_filter == true ? Toggle.On : Toggle.Off
+    for (let i = 0; i < config.value.hall_keys.length; i++) {
+      config.value.hall_keys[i].key_data = config.value.hall_keys[i].key_data.filter(k => k != KeyCode.None)
+    }
+    for (let i = 0; i < config.value.normal_keys.length; i++) {
+      config.value.normal_keys[i].key_data = config.value.normal_keys[i].key_data.filter(k => k != KeyCode.None)
+    }
+  }
+
+  function extract_light_config_v21se() {
+    let config = light_config as Ref<ILTV21SE>;
+    led_colors.value = []
+    for (let i = 0; i < config.value!.led_colors.length; i++) {
+      led_colors.value.push(Rgb2Hex(config.value!.led_colors[i]))
+    }
+    max_brightness.value = Math.floor(config.value!.max_brightness * 2)
+  }
 
 
   return {
@@ -301,18 +382,23 @@ export const useDeviceStore = defineStore("device", () => {
     device_config,
     is_v2,
     is_v2se,
+    is_v21se,
     is_pure,
     try_connect,
     get_status,
     get_config_raw,
     check_config_raw,
     save_config_raw,
+    extract_key_config_v21se,
+    store_key_config_v21se,
+    extract_light_config_v21se,
+    store_light_config_v21se,
     extract_key_config_v2se,
     store_key_config_v2se,
-    extract_key_config_v2,
-    store_key_config_v2,
     extract_light_config_v2se,
     store_light_config_v2se,
+    extract_key_config_v2,
+    store_key_config_v2,
     extract_light_config_v2,
     store_light_config_v2,
     store_key_config_pure64,

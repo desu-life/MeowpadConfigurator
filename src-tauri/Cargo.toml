@@ -40,6 +40,7 @@ toml = "0.8.19"
 meowpadv3 = { path = "./meowpadv3" }
 meowpad4k = { path = "./meowpadv2" }
 meowpad3k = { path = "./meowpadv2se" }
+meowpadv21se = { path = "./meowpadv21se" }
 meowpad = { path = "./meowpad" }
 meowboard = { path = "./pure64" }
 hid-iap = { path = "./hid-iap" }

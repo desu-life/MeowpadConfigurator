@@ -38,6 +38,7 @@ mod device_preset;
 mod error;
 mod utils;
 mod cmdv3;
+mod cmd21se;
 use cmd3k::*;
 use cmd4k::*;
 use cmdiap::*;
@@ -237,6 +238,7 @@ async fn device_list(
     device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
     device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
     device_handle_v3: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+    device_handle_v21se: State<'_, Mutex<Option<meowpadv21se::Meowpad<HidDevice>>>>,
 ) -> Result<Vec<DeviceInfoSerdi>> {
     let api = api_handle.lock().unwrap();
     // 在执行扫描前先锁住设备，不让其他线程访问
@@ -244,6 +246,7 @@ async fn device_list(
     let mut device_handle_3k = device_handle_3k.lock().unwrap();
     let mut device_handle_pure64 = device_handle_pure64.lock().unwrap();
     let mut device_handle_v3 = device_handle_v3.lock().unwrap();
+    let mut device_handle_v21se = device_handle_v21se.lock().unwrap();
 
     // 扫描设备
     let mut devices = vec![];
@@ -251,6 +254,7 @@ async fn device_list(
     devices.append(&mut cmd4k::find_devices(&api));
     devices.append(&mut cmd3k::find_devices(&api));
     devices.append(&mut cmdv3::find_devices(&api));
+    devices.append(&mut cmd21se::find_devices(&api));
     devices.append(&mut cmdkbd::find_devices(&api));
     devices.append(&mut cmdiap::find_devices(&api));
     devices.append(&mut cmdiap::find_devices_pure(&api));
@@ -263,6 +267,9 @@ async fn device_list(
         let _ = d.device.clear_buffer();
     }
     if let Some(d) = device_handle_v3.as_mut() {
+        let _ = d.device.clear_buffer();
+    }
+    if let Some(d) = device_handle_v21se.as_mut() {
         let _ = d.device.clear_buffer();
     }
     if let Some(d) = device_handle_pure64.as_mut() {
@@ -315,6 +322,7 @@ fn connect_device(
     device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
     device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
     device_handle_v3: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
+    device_handle_v21se: State<'_, Mutex<Option<meowpadv21se::Meowpad<HidDevice>>>>,
     device_info: DeviceInfoSerdi,
 ) -> bool {
     let api = api_handle.lock().unwrap();
@@ -352,6 +360,9 @@ fn connect_device(
         } else if device_info.device_name == MEOWPAD_V3_DEVICE_NAME {
             *device_handle_v3.lock().unwrap() =
                 Some(MeowpadV3::new(device::HidDevice { device: d }));
+        } else if device_info.device_name == MEOWPAD_V21SE_DEVICE_NAME {
+            *device_handle_v21se.lock().unwrap() =
+                Some(meowpadv21se::Meowpad::new(device::HidDevice { device: d }));
         } else {
             warn!("连接失败，无法找到设备");
             return false;
@@ -446,6 +457,7 @@ fn main() -> AnyResult<()> {
         .invoke_handler(tauri::generate_handler![
             get_theme,
             calibration_key_4k,
+            reset_middle_point_4k,
             get_debug_value_4k,
             erase_firmware_4k,
             get_default_key_config_4k,
@@ -462,6 +474,7 @@ fn main() -> AnyResult<()> {
             save_raw_config_4k,
             connect_4k,
             reset_device_4k,
+            reset_middle_point_3k,
             calibration_key_3k,
             get_debug_value_3k,
             erase_firmware_3k,
@@ -543,6 +556,27 @@ fn main() -> AnyResult<()> {
             cmdv3::check_raw_config_v3,
             cmdv3::save_raw_config_v3,
             cmdv3::connect_v3,
+            cmd21se::reset_middle_point_21se,
+            cmd21se::get_firmware_21se_version,
+            cmd21se::get_device_info_21se,
+            cmd21se::get_device_status_21se,
+            cmd21se::calibration_key_21se,
+            cmd21se::clear_config_21se,
+            cmd21se::reset_device_21se,
+            cmd21se::get_debug_value_21se,
+            cmd21se::erase_firmware_21se,
+            cmd21se::get_default_key_config_21se,
+            cmd21se::get_default_light_config_21se,
+            cmd21se::get_key_config_21se,
+            cmd21se::set_key_config_21se,
+            cmd21se::save_key_config_21se,
+            cmd21se::get_light_config_21se,
+            cmd21se::set_light_config_21se,
+            cmd21se::save_light_config_21se,
+            cmd21se::get_raw_config_21se,
+            cmd21se::check_raw_config_21se,
+            cmd21se::save_raw_config_21se,
+            cmd21se::connect_21se,
         ])
         .manage(
             Client::builder()
@@ -554,6 +588,7 @@ fn main() -> AnyResult<()> {
         .manage::<Mutex<Option<Meowpad4k<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<MeowpadV3<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<Meowboard<HidDevice>>>>(Mutex::new(None))
+        .manage::<Mutex<Option<meowpadv21se::Meowpad<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<IAP>>>(Mutex::new(None))
         .manage::<Mutex<HidApi>>(Mutex::new(HidApi::new().unwrap()))
         .run(tauri::generate_context!())

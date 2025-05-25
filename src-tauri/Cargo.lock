@@ -2632,6 +2632,7 @@ dependencies = [
  "meowpad",
  "meowpad3k",
  "meowpad4k",
+ "meowpadv21se",
  "meowpadv3",
  "once_cell",
  "pretty-hex",
@@ -2656,6 +2657,28 @@ dependencies = [
  "thiserror 2.0.12",
  "toml",
  "uuid",
+]
+
+[[package]]
+name = "meowpadv21se"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "ciborium",
+ "log",
+ "meowpad",
+ "num",
+ "num-derive",
+ "num-traits",
+ "palette",
+ "pretty-hex",
+ "rand 0.8.5",
+ "serde",
+ "serde_repr",
+ "serde_with",
+ "strum",
+ "strum_macros",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

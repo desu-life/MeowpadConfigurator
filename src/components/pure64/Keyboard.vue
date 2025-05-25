@@ -795,9 +795,10 @@ async function onPresetImport() {
   left: 20px;
   margin-bottom: 20px;
 
-  border-radius: 10px;
+  border-radius: 2px;
   border-color: var(--color-border);
   cursor: pointer;
+  text-align: center;
 
   &:hover {
     border-color: var(--n-color-target);
@@ -829,6 +830,7 @@ async function onPresetImport() {
 
 .pure-menu {
   height: 70%;
+  text-align: center;
 }
 
 .keyboard-frame {

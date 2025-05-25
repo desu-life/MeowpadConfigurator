@@ -22,6 +22,17 @@ pub fn get_firmware_4k_version(_app: tauri::AppHandle) -> &'static str {
 }
 
 #[tauri::command]
+pub fn reset_middle_point_4k(
+    device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
+) -> Result<()> {
+    let mut _d = device_handle.lock().unwrap();
+    let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
+    d.reset_middle_point()?;
+    Ok(())
+}
+
+
+#[tauri::command]
 pub fn get_device_info_4k(
     device_handle: State<'_, Mutex<Option<Meowpad<HidDevice>>>>,
 ) -> Result<serde_json::Value> {

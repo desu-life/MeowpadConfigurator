@@ -2,6 +2,7 @@
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
 import SettingsV2 from '@/components/meowpadv2/Settings.vue'
 import SettingsV2SE from '@/components/meowpadv2se/Settings.vue'
+import SettingsV21SE from '@/components/meowpadv21se/Settings.vue'
 import Pure64 from '@/components/pure64/Keyboard.vue'
 import DeviceList from '@/components/DeviceList.vue'
 import DeveloperSettings from '@/components/DeveloperSetting/DeveloperSettings.vue'
@@ -12,6 +13,7 @@ import emitter from "@/mitt";
 import * as api from '@/apis/api'
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
+import * as apiv21se from '@/apis/meowpadv21se/api'
 import * as apib from '@/apis/pure64/api'
 import { useDialog } from 'naive-ui'
 import { IError, IHidDeviceInfo } from '@/apis';
@@ -60,7 +62,7 @@ emitter.on('refresh-device-list', async (event: { e: IError }) => {
 })
 
 emitter.on('connection-broke', async (event: { e: IError | null }) => {
-  const appWindow = await getCurrentWebviewWindow()
+  const appWindow = getCurrentWebviewWindow()
   if (event.e != null) { 
     emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: getErrorMsg(t, event.e) }) })
     console.error(event.e)
@@ -78,7 +80,7 @@ emitter.on('connection-broke', async (event: { e: IError | null }) => {
 
 
 emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
-  const appWindow = await getCurrentWebviewWindow()
+  const appWindow = getCurrentWebviewWindow()
   emitter.emit('header-loading', { str: t('connecting') })
   try {
     let device_hid_info = event.device;
@@ -102,6 +104,8 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       device.device_info = await apiv2se.get_device_info()
     } else if (device.is_pure()) {
       device.device_info = await apib.get_device_info()
+    } else if (device.is_v21se()) {
+      device.device_info = await apiv21se.get_device_info()
     }
 
     console.table(device.device_info)
@@ -131,6 +135,9 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
         if (device.is_pure()) {
           device.raw_config = await apib.get_raw_config()
         }
+        if (device.is_v21se()) {
+          device.raw_config = await apiv21se.get_raw_config()
+        }
       } catch (e: IError | any) {
         if (e.type === 'meowpad' && e.data === 'config_cbor_parse_failed') {
           device.raw_config = t('unsupported_config')
@@ -153,6 +160,10 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
           await apib.set_key_config(await apib.get_default_key_config())
           await apib.save_key_config()
         }
+        if (device.is_v21se()) {
+          await apiv21se.set_key_config(await apiv21se.get_default_key_config())
+          await apiv21se.save_key_config()
+        }
       }
 
       if (device.device_status!.light != undefined && device.device_status!.light != null) {
@@ -164,6 +175,10 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
           if (device.is_v2se()) {
             await apiv2se.set_light_config(await apiv2se.get_default_light_config())
             await apiv2se.save_light_config()
+          }
+          if (device.is_v21se()) {
+            await apiv21se.set_light_config(await apiv21se.get_default_light_config())
+            await apiv21se.save_light_config()
           }
         }
       }
@@ -183,6 +198,12 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       if (device.is_pure()) {
         device.device_config = await apib.get_key_config()
         device.extract_key_config_pure64()
+      }
+      if (device.is_v21se()) {
+        device.key_config = await apiv21se.get_key_config()
+        device.extract_key_config_v21se()
+        device.light_config = await apiv21se.get_light_config()
+        device.extract_light_config_v21se()
       }
     }
 
@@ -240,6 +261,9 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
         </template>
         <template v-else-if="device.is_pure()">
           <Pure64></Pure64>
+        </template>
+        <template v-else-if="device.is_v21se()">
+          <SettingsV21SE></SettingsV21SE>
         </template>
       </template>
 

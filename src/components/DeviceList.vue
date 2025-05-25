@@ -53,7 +53,7 @@ function developer_mode(d: IHidDeviceInfo) {
 }
 
 async function continue_device_upgrade(d: IHidDeviceInfo) {
-    const ostype = await type();
+    const ostype = type();
 
     if (d.device_name == "Pure64") {
         if (ostype == "windows") {
@@ -146,7 +146,7 @@ async function device_update(d: IHidDeviceInfo) {
         <n-scrollbar style="max-height: 360px">
             <n-list hoverable :show-divider="false" class="device-list">
                 <n-list-item v-for="(device, index) in store.device_list" :key="device.device_name">
-                    <n-thing :title="t(device.device_name)">
+                    <n-thing :title="device.device_name">
                         <template #description>
                             <n-space size="small" style="margin-top: 4px">
                                 <n-tag :bordered="false" :type="fv_tag_type(device)" size="small">

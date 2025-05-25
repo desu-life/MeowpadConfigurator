@@ -5,7 +5,7 @@ import * as api3k from '@/apis/meowpadv2se/api'
 import * as api from '@/apis/api'
 
 export declare type Error = 'DeviceDisconnected' | 'DeviceNotFound' | 'Network' | 'Meowpad' | 'Iap';
-export declare type DeviceName = 'Meowpad' | 'Meowpad SE v2' | 'Pure64';
+export declare type DeviceName = 'Meowpad' | 'Meowpad SE v2' | 'Pure64' | 'Meowpad SE v2.1';
 export declare type KeyType = 'None' | 'Keyboard' | 'Custom' | 'Mouse' | 'Media';
 
 export interface IError {
@@ -55,6 +55,10 @@ export interface IKeyConfig {
     press_percentage: number
     release_percentage: number
     dead_zone: number
+    key_data: KeyCode[]
+}
+
+export interface INormalKeyConfig {
     key_data: KeyCode[]
 }
 

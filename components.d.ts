@@ -81,6 +81,5 @@ declare module 'vue' {
     NUpload: typeof import('naive-ui')['NUpload']
     NUploadDragger: typeof import('naive-ui')['NUploadDragger']
     Settings: typeof import('./src/components/meowpadv2/Settings.vue')['default']
-    Temp: typeof import('./src/components/meowboard/temp.vue')['default']
   }
 }

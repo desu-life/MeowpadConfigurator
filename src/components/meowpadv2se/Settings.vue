@@ -77,7 +77,7 @@ emitter.on('sync-config', async () => {
   emitter.emit('header-loading', { str: t('syncing_config') })
   if (device.is_v2se()) {
     const { key_config } = storeToRefs(device)
-    const cfg = key_config;
+    const cfg = key_config as Ref<IKB3K>;
 
     try {
       device.store_key_config_v2se()

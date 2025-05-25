@@ -10,7 +10,7 @@ import { BulbOutline, KeypadOutline } from '@vicons/ionicons5';
 import meowpad from '@/meowpad3k.json'
 const keymap: IKeymap[][] = meowpad;
 
-import { ILighting } from "@/apis/meowpadv2se/config";
+import { ILighting, LightingMode } from "@/apis/meowpadv21se/config";
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
@@ -19,6 +19,51 @@ const dialog = useDialog()
 const store = useDeviceStore()
 const { light_config } = storeToRefs(store)
 const light_cfg = light_config as Ref<ILighting>;
+
+  
+const LighingModeSel = [
+  {
+    value: LightingMode.Off,
+    label: t('off')
+  },
+  {
+    value: LightingMode.Solid,
+    label: t('solid')
+  },
+  {
+    value: LightingMode.RainbowMode,
+    label: t('rainbow_gradient_switch')
+  },
+  {
+    value: LightingMode.RainbowFlowMode,
+    label: t('rainbow_flow')
+  },
+  {
+    value: LightingMode.PressRadianceMode,
+    label: t('ya-gan-mo-shi')
+  },
+  {
+    value: LightingMode.BreatheGlowMode,
+    label: t('rainbow_breath_sync')
+  },
+  {
+    value: LightingMode.BreatheGlowAsyncMode,
+    label: t('rainbow_breath_switch')
+  },
+  {
+    value: LightingMode.RainDropMode,
+    label: t('rain_drop')
+  },
+  {
+    value: LightingMode.TapToGlowMode,
+    label: t('press_and_light')
+  },
+  {
+    value: LightingMode.SpeedLightMode,
+    label: t('speed_press')
+  },
+]
+
 
 
 const ToggleSel = [
@@ -121,8 +166,8 @@ function GetToggleSel() {
                   </n-form-item>
                 </n-gi>
                 <n-gi>
-                  <n-form-item :label="$t('enable_light')" path="enable_light">
-                    <n-select v-model:value="store.enable_light" :options="GetToggleSel()" />
+                  <n-form-item :label="$t('lighting_mode')" path="lighting_mode">
+                    <n-select v-model:value="light_cfg!.lighting_mode" :options="LighingModeSel" />
                   </n-form-item>
                 </n-gi>
               </n-grid>

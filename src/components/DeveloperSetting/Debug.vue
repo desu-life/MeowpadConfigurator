@@ -2,6 +2,7 @@
 import { IError, IKeyRTStatus, KeyState } from '@/apis';
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
+import * as apiv21se from '@/apis/meowpadv21se/api'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { getErrorMsg } from '@/utils';
@@ -14,7 +15,7 @@ const device = useDeviceStore()
 const { t } = useI18n();
 
 const debug_data = ref<IKeyRTStatus[]>()
-const btn_state = ref<KeyState>()
+const btn_state = ref<KeyState[]>()
 
 function key_state_to_str(state: KeyState) {
   switch (state) {
@@ -27,6 +28,16 @@ function key_state_to_str(state: KeyState) {
   }
 }
 
+function key_states_to_str(states: KeyState[]) {
+  let str = ''
+  for (let i = 0; i < states.length; i++) {
+    if (i > 0) {
+      str += ', '
+    }
+    str += key_state_to_str(states[i])
+  }
+  return str
+}
 
 const columns: DataTableColumns<IKeyRTStatus> = [
   {
@@ -62,7 +73,12 @@ onMounted(() => {
       if (device.is_v2se()) {
         let v = await apiv2se.get_debug_value();
         debug_data.value = v.key;
-        btn_state.value = v.btn;
+        btn_state.value = [v.btn];
+      }
+      if (device.is_v21se()) {
+        let v = await apiv21se.get_debug_value();
+        debug_data.value = v.keys;
+        btn_state.value = v.btns;
       }
     } catch (e) {
       emitter.emit('connection-broke', {e: e as IError})
@@ -86,7 +102,7 @@ onMounted(() => {
     />
   </div>
   <div v-if="btn_state" class="side-btn">
-    侧键状态：{{ key_state_to_str(btn_state) }}
+    侧键状态：{{ key_states_to_str(btn_state) }}
   </div>
 </template>
 
