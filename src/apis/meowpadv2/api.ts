@@ -60,7 +60,7 @@ export async function get_device_status() {
   return (await invoke("get_device_status_4k")) as IDeviceStatus;
 }
 export async function get_firmware_version() {
-  return (await invoke("get_firmware_4k_version")) as string;
+  return (await invoke("get_firmware_4k_version")) as string[];
 }
 export async function reset_middle_point() {
   return (await invoke("reset_middle_point_4k")) as void;

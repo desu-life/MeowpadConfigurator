@@ -110,7 +110,7 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 
     console.table(device.device_info)
 
-    if (device.device_info!.version != firmware_version) {
+    if (!firmware_version.includes(device.device_info!.version)) {
       if (!store.developer_mode) {
         store.need_update_firmware = true // 需要更新固件
         emitter.emit('header-msg-update', { status: "error", str: t('bad_firmware_version', { version: device.device_info!.version }) })

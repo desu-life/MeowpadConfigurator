@@ -318,7 +318,7 @@ export const useDeviceStore = defineStore("device", () => {
       }
     }
 
-    config.value!.jitters_elimination_time = Math.round(jitters_elimination_time.value)
+    config.value!.jitters_elimination_time = Math.round(jitters_elimination_time.value * 8)
     config.value!.continuous_report = continuous_report.value == Toggle.On ? true : false
     config.value!.kalman_filter = kalman_filter.value == Toggle.On ? true : false
   }
@@ -335,7 +335,7 @@ export const useDeviceStore = defineStore("device", () => {
 
   function extract_key_config_v21se() {
     let config = key_config as Ref<IKBV21SE>;
-    jitters_elimination_time.value = config.value!.jitters_elimination_time
+    jitters_elimination_time.value = config.value!.jitters_elimination_time / 8
     continuous_report.value = config.value!.continuous_report == true ? Toggle.On : Toggle.Off
     kalman_filter.value = config.value!.kalman_filter == true ? Toggle.On : Toggle.Off
     for (let i = 0; i < config.value.hall_keys.length; i++) {

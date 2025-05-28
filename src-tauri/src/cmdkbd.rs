@@ -19,7 +19,7 @@ struct Config {
 }
 
 #[tauri::command]
-pub fn get_firmware_kb_version(_app: tauri::AppHandle) -> &'static str {
+pub fn get_firmware_kb_version(_app: tauri::AppHandle) -> &'static [&'static str] {
     FIRMWARE_VERSION_PURE64
 }
 
@@ -163,8 +163,7 @@ pub async fn get_key_config_kb(
 ) -> Result<meowboard::config::Device> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.load_key_config()?;
-    Ok(d.key_config.unwrap().try_into()?)
+    Ok(d.load_key_config()?)
 }
 
 #[tauri::command]
@@ -174,8 +173,7 @@ pub fn set_key_config_kb(
 ) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.key_config = Some(config.into());
-    d.set_key_config()?;
+    d.set_key_config(config)?;
     Ok(())
 }
 
@@ -195,9 +193,8 @@ pub fn get_raw_config_kb(
 ) -> Result<String> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.load_key_config()?;
     Ok(toml::to_string(&Config {
-        key: d.key_config.unwrap().try_into()?,
+        key: d.load_key_config()?,
     })
     .unwrap())
 }
@@ -215,8 +212,7 @@ pub fn save_raw_config_kb(
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
     let cfg = toml::from_str::<Config>(&config).expect("错误配置");
-    d.key_config = Some(cfg.key.into());
-    d.set_key_config()?;
+    d.set_key_config(cfg.key)?;
     d.save_key_config()?;
     Ok(())
 }

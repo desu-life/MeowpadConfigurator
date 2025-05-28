@@ -38,5 +38,4 @@ export enum LightingMode {
 
     RainDropMode = 9,
     TapToGlowMode = 10,
-    SpeedLightMode = 11
 }

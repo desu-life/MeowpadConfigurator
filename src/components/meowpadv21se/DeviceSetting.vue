@@ -58,10 +58,6 @@ const LighingModeSel = [
     value: LightingMode.TapToGlowMode,
     label: t('press_and_light')
   },
-  {
-    value: LightingMode.SpeedLightMode,
-    label: t('speed_press')
-  },
 ]
 
 

@@ -92,3 +92,29 @@ impl From<cbor::SOCDPairConfig> for SOCDKeyPairs {
         }
     }
 }
+
+
+impl TryFrom<cbor::DeviceOld> for Device {
+    type Error = Error;
+    fn try_from(cfg: cbor::DeviceOld) -> Result<Self, Self::Error> {
+        let mut keys = [KeyConfig::default(); 64];
+        for i in 0..64 {
+            keys[i] = KeyConfig::from(cfg.KeyConfigs[i]);
+        }
+        let map: [[KeyValue; 64]; 2] = keymap::KeyMap::from(cfg.KeyMap).into();
+
+        Ok(Device {
+            keys,
+            normal_layer: map[0],
+            fn_layer: map[1],
+            high_reportrate: cfg.HighReportRate,
+            key_proof: cfg.KeyProof,
+            auto_calibration: cfg.AutoCalibration,
+            hall_filter: cfg.HallFilter,
+            jitters_elimination_time: cfg.JittersEliminationTime,
+            max_brightness: cfg.MaxBrightness,
+            led_color: Srgb::from_u32::<Argb>(cfg.led_color),
+            socd_key_pairs: vec![],
+        })
+    }
+}

@@ -19,7 +19,7 @@ const dialog = useDialog()
 
 
 function check_firmware_version(d: IHidDeviceInfo) {
-    return d.firmware_version == store.firmware_versions.get(d.device_name)
+    return store.firmware_versions.get(d.device_name)!.includes(d.firmware_version)
 }
 
 function fv_tag_type(d: IHidDeviceInfo) {

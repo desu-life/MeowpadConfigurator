@@ -1,5 +1,5 @@
 use crate::{
-    cbor, packet_id::PacketID
+    cbor, config, packet_id::PacketID
 };
 use meowpad::{Packet, error::Error, Result, models::*, Device};
 use byteorder::{BigEndian, ReadBytesExt};
@@ -10,20 +10,19 @@ use std::{io::Cursor, thread, time::Duration};
 use crate::cbor::CborConvertor;
 
 pub struct Meowboard<D: Device> {
-    pub key_config: Option<cbor::Device>,
     pub device_name: Option<String>,
     pub firmware_version: Option<String>,
+    pub is_old_firmware: bool,
     pub device: D,
 }
-
 
 impl<D: Device> Meowboard<D> {
     pub fn new(device: D) -> Meowboard<D> {
         Meowboard {
             device,
-            key_config: None,
             device_name: None,
             firmware_version: None,
+            is_old_firmware: false,
         }
     }
 
@@ -54,7 +53,9 @@ impl<D: Device> Meowboard<D> {
         self.write(Packet::new(PacketID::GetFirmwareVersion, []))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
-            self.firmware_version = Some(String::from_utf8(packet.data)?);
+            let version = String::from_utf8(packet.data)?;
+            self.is_old_firmware = version == "0.1.2";
+            self.firmware_version = Some(version);
             Ok(())
         } else {
             dbg!(packet.id);
@@ -202,18 +203,25 @@ impl<D: Device> Meowboard<D> {
     }
 
 
-    pub fn load_key_config(&mut self) -> Result<()> {
+    pub fn load_key_config(&mut self) -> Result<config::Device> {
         self.write(Packet::new(PacketID::GetKeyConfig, []))?;
         let packet = self.read()?;
-        self.key_config = Some(cbor::Device::from_cbor(packet.data)?);
-        Ok(())
+        if self.is_old_firmware {
+            Ok(cbor::DeviceOld::from_cbor(packet.data)?.try_into()?)
+        } else {
+            Ok(cbor::Device::from_cbor(packet.data)?.try_into()?)
+        }
     }
 
 
-    pub fn set_key_config(&self) -> Result<()> {
-        let config = self.key_config.ok_or(Error::EmptyConfig)?;
+    pub fn set_key_config(&self, config: config::Device) -> Result<()> {
+        let config = if self.is_old_firmware {
+            cbor::DeviceOld::from(config).to_cbor()
+        } else {
+            cbor::Device::from(config).to_cbor()
+        };
         // debug!("写入键盘配置：{:?}", config);
-        self.write(Packet::new(PacketID::SetKeyConfig, config.to_cbor()))?;
+        self.write(Packet::new(PacketID::SetKeyConfig, config))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
             Ok(())

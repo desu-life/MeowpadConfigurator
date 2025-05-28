@@ -41,6 +41,33 @@ pub struct KeyRTConfig {
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[allow(non_snake_case)]
+pub struct DeviceOld {
+    #[serde(rename = "ks")]
+    #[serde_as(as = "[_; 64]")]
+    pub KeyConfigs: [KeyRTConfig; 64],
+    #[serde(rename = "km")]
+    #[serde_as(as = "[_; 256]")]
+    pub KeyMap: [u8; 256],
+    #[serde(rename = "jet")]
+    pub JittersEliminationTime: u16,
+    #[serde(rename = "hr")]
+    pub HighReportRate: bool,
+    #[serde(rename = "kp")]
+    pub KeyProof: bool,
+    #[serde(rename = "ac")]
+    pub AutoCalibration: bool,
+    #[serde(rename = "hf")]
+    pub HallFilter: u8,
+    #[serde(rename = "mb")]
+    pub MaxBrightness: u8,
+    #[serde(rename = "c")]
+    pub led_color: u32,
+}
+
+#[repr(C)]
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[allow(non_snake_case)]
 pub struct Device {
     #[serde(rename = "ks")]
     #[serde_as(as = "[_; 64]")]
@@ -86,6 +113,7 @@ where
 }
 
 impl CborConvertor for Device {}
+impl CborConvertor for DeviceOld {}
 
 impl From<config::KeyConfig> for KeyRTConfig {
     fn from(cfg: config::KeyConfig) -> Self {
@@ -142,7 +170,7 @@ impl Default for Device {
     fn default() -> Self {
         let key_configs = [KeyRTConfig::default(); 64];
         let key_maps = keymap::KeyMap::default();
-        let mut socd_pairs = [SOCDPairConfig::default(); 5];
+        let socd_pairs = [SOCDPairConfig::default(); 5];
         // socd_pairs[0].key1 = 29;
         // socd_pairs[0].key2 = 31;
         Self {
@@ -155,7 +183,7 @@ impl Default for Device {
             HallFilter: 1,
             MaxBrightness: 50,
             led_color: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            socd_pair_count: 1,
+            socd_pair_count: 0,
             socd_pairs
         }
     }
@@ -179,6 +207,50 @@ impl Default for SOCDPairConfig {
         Self {
             key1: 0,
             key2: 0,
+        }
+    }
+}
+
+
+impl From<config::Device> for DeviceOld {
+    fn from(cfg: config::Device) -> Self {
+        let mut key_configs = [KeyRTConfig::default(); 64];
+        for i in 0..64 {
+            key_configs[i] = cfg.keys[i].into();
+        }
+        let map = keymap::KeyMap::from([cfg.normal_layer, cfg.fn_layer]).into();
+
+        DeviceOld {
+            KeyConfigs: key_configs,
+            KeyMap: map,
+            HighReportRate: cfg.high_reportrate,
+            KeyProof: cfg.key_proof,
+            AutoCalibration: cfg.auto_calibration,
+            JittersEliminationTime: cfg.jitters_elimination_time,
+            HallFilter: cfg.hall_filter,
+            MaxBrightness: cfg.max_brightness,
+            led_color: cfg.led_color.into_u32::<Argb>(),
+        }
+    }
+}
+
+
+impl Default for DeviceOld {
+    fn default() -> Self {
+        let key_configs = [KeyRTConfig::default(); 64];
+        let key_maps = keymap::KeyMap::default();
+        // socd_pairs[0].key1 = 29;
+        // socd_pairs[0].key2 = 31;
+        Self {
+            KeyConfigs: key_configs,
+            KeyMap: key_maps.into(),
+            HighReportRate: true,
+            KeyProof: true,
+            AutoCalibration: true,
+            JittersEliminationTime: 15 * 8,
+            HallFilter: 1,
+            MaxBrightness: 50,
+            led_color: Srgb::new(255, 255, 255).into_u32::<Argb>(),
         }
     }
 }

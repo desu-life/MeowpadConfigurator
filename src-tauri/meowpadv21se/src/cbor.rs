@@ -169,7 +169,7 @@ impl Default for Keyboard {
             SideBtnKeyConfigs: side_btn_key_configs,
             ContinuousReport: false,
             KalmanFilter: true,
-            JittersEliminationTime: 15,
+            JittersEliminationTime: 15 * 8,
         }
     }
 }

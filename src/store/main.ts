@@ -24,7 +24,7 @@ export const useStore = defineStore("main", () => {
   const need_check = ref(false);
   const bottom_dz_available = ref(Toggle.Off);
   const device_list = ref<IHidDeviceInfo[]>([]);
-  const firmware_versions = ref<Map<DeviceName, string>>(new Map());
+  const firmware_versions = ref<Map<DeviceName, string[]>>(new Map());
   const presets = ref<IDevicePreset[]>([]);
   const current_preset = ref<IDevicePreset | null>(null);
 

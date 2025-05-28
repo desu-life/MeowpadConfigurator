@@ -27,7 +27,6 @@ pub enum LightingMode {
 
     RainDropMode,
     TapToGlowMode,
-    SpeedLightMode
 }
 
 

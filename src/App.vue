@@ -38,6 +38,7 @@ async function get_firmware_versions() {
   store.firmware_versions.set("Meowpad SE v2", await apiv2se.get_firmware_version())
   store.firmware_versions.set("Meowpad SE v2.1", await apiv21se.get_firmware_version())
   store.firmware_versions.set("Pure64", await apip64.get_firmware_version())
+  console.log(store.firmware_versions)
 }
 
 onMounted(async () => {

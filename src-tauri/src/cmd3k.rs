@@ -23,7 +23,7 @@ struct Config {
 }
 
 #[tauri::command]
-pub fn get_firmware_3k_version(_app: tauri::AppHandle) -> &'static str {
+pub fn get_firmware_3k_version(_app: tauri::AppHandle) -> &'static [&'static str] {
     FIRMWARE_VERSION_V2SE
 }
 

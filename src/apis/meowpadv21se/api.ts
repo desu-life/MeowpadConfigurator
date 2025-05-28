@@ -60,7 +60,7 @@ export async function get_device_status() {
   return (await invoke("get_device_status_21se")) as IDeviceStatus;
 }
 export async function get_firmware_version() {
-  return (await invoke("get_firmware_21se_version")) as string;
+  return (await invoke("get_firmware_21se_version")) as string[];
 }
 export async function reset_middle_point() {
   return (await invoke("reset_middle_point_21se")) as void;
