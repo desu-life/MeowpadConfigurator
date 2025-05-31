@@ -380,6 +380,9 @@ fn main() -> AnyResult<()> {
     let log_level = LevelFilter::from_str(&std::env::var("LOG_LEVEL").unwrap_or_default())
         .unwrap_or(LevelFilter::Info);
 
+    #[cfg(target_os = "linux")]
+    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+
     let mut builder = tauri::Builder::default();
     
     builder = builder.setup(|app| {
