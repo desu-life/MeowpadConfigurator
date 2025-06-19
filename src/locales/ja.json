@@ -196,5 +196,14 @@
   "open_updater": "アップデーターを開く",
   "unsupported_platform": "このプラットフォームはサポートされていません",
   "light_setting": "照明設定",
-  "click_again_to_bind_key": "もう一度クリックしてキーをバインドします"
+  "click_again_to_bind_key": "もう一度クリックしてキーをバインドします",
+  "socd_setting": "SOCD設定",
+  "socd_desc": "Aキーがトリガーされた時にBキーのトリガーを停止",
+  "socd_pair": "SOCDペア",
+  "socd_pair_desc": "SOCDペアリング用に2つのキーを選択",
+  "socd_apply": "SOCD設定を適用",
+  "socd_clear": "SOCD設定をクリア",
+  "socd_max_select": "最大2つのキーまで選択可能",
+  "socd_pair_created": "SOCDペアが作成されました",
+  "socd_pair_removed": "SOCDペアが削除されました"
 }

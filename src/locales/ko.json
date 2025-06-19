@@ -196,5 +196,14 @@
   "open_updater": "업데이트 프로그램을 열다",
   "unsupported_platform": "이 플랫폼은 지원되지 않습니다",
   "light_setting": "조명 설정",
-  "click_again_to_bind_key": "키를 바인딩하려면 다시 클릭하십시오"
+  "click_again_to_bind_key": "키를 바인딩하려면 다시 클릭하십시오",
+  "socd_setting": "SOCD 설정",
+  "socd_desc": "A 키가 트리거될 때 B 키의 트리거를 중지",
+  "socd_pair": "SOCD 페어",
+  "socd_pair_desc": "SOCD 페어링을 위해 두 개의 키를 선택",
+  "socd_apply": "SOCD 설정 적용",
+  "socd_clear": "SOCD 설정 지우기",
+  "socd_max_select": "최대 두 개의 키만 선택 가능",
+  "socd_pair_created": "SOCD 페어가 생성되었습니다",
+  "socd_pair_removed": "SOCD 페어가 제거되었습니다"
 }

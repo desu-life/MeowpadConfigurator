@@ -30,6 +30,7 @@ declare module 'vue' {
     KeyModify: typeof import('./src/components/pure64/Keyboard/KeyModify.vue')['default']
     KeyModifyOption: typeof import('./src/components/pure64/Keyboard/KeyModifyOption.vue')['default']
     KeyShow: typeof import('./src/components/KeyComponents/KeyShow.vue')['default']
+    KeySocd: typeof import('./src/components/pure64/Keyboard/KeySocd.vue')['default']
     Main: typeof import('./src/components/Main.vue')['default']
     ModifyKeys: typeof import('./src/components/pure64/ModifyKeys.vue')['default']
     NA: typeof import('naive-ui')['NA']
@@ -81,5 +82,6 @@ declare module 'vue' {
     NUpload: typeof import('naive-ui')['NUpload']
     NUploadDragger: typeof import('naive-ui')['NUploadDragger']
     Settings: typeof import('./src/components/meowpadv2/Settings.vue')['default']
+    SocdBind: typeof import('./src/components/pure64/SocdBind.vue')['default']
   }
 }

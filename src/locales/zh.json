@@ -196,5 +196,14 @@
   "open_updater": "打开更新器",
   "unsupported_platform": "不支持此平台",
   "light_setting": "灯光设置",
-  "click_again_to_bind_key": "再次点击以绑定按键"
+  "click_again_to_bind_key": "再次点击以绑定按键",
+  "socd_setting": "SOCD设置",
+  "socd_desc": "当A按键触发时停止B按键的触发",
+  "socd_pair": "SOCD配对",
+  "socd_pair_desc": "选择两个按键进行SOCD配对",
+  "socd_apply": "应用SOCD设置",
+  "socd_clear": "清除SOCD设置",
+  "socd_max_select": "最多只能选择两个按键",
+  "socd_pair_created": "SOCD配对已创建",
+  "socd_pair_removed": "SOCD配对已移除"
 }

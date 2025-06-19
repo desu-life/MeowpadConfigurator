@@ -23,14 +23,18 @@ interface KeyVars {
   isSelected: boolean;
 }
 
+interface SocdVars {
+  isSelected: boolean;
+  isSocdEnabled: boolean;
+}
 
 export const useKeyboard = defineStore("keyboard", () => {
   const mode = ref(0);
   const keyCalibrateRefs = ref<CalibrateVars[]>(new Array(64));
   const keyDebugRefs = ref<DebugVars[]>(new Array(64));
   const keyVarsRefs = ref<KeyVars[]>(new Array(64));
+  const keySocdRefs = ref<SocdVars[]>(new Array(64));
   const showkeys = ref<IMixedKey[]>(new Array(64));
-  
   
   for (let i = 0; i < 64; i++) {
     keyCalibrateRefs.value[i] = {
@@ -44,6 +48,10 @@ export const useKeyboard = defineStore("keyboard", () => {
     }
     keyVarsRefs.value[i] = {
       isSelected: false,
+    }
+    keySocdRefs.value[i] = {
+      isSelected: false,
+      isSocdEnabled: false,
     }
     showkeys.value[i] = {
       t: "None",
@@ -59,6 +67,21 @@ export const useKeyboard = defineStore("keyboard", () => {
   }
   function selectReverse() {
     keyVarsRefs.value.forEach((key) => {
+      key.isSelected = !key.isSelected;
+    })
+
+    emitter.emit('key-select')
+  }
+
+  function selectAllSocdKey(on: boolean) {
+    keySocdRefs.value.forEach((key) => {
+      key.isSelected = on;
+    })
+
+    emitter.emit('key-select')
+  }
+  function selectReverseSocd() {
+    keySocdRefs.value.forEach((key) => {
       key.isSelected = !key.isSelected;
     })
 
@@ -91,23 +114,31 @@ export const useKeyboard = defineStore("keyboard", () => {
     return false
   }
 
+  function isSocdSelectAble() {
+    if (mode.value == 5) {
+      return true
+    }
+    return false
+  }
+
   function getKeyShow(index: number) {
     let key = showkeys.value[index];
     return formatKey(key);
   }
   
-  
-  
-
   return {
     mode,
     keyCalibrateRefs,
     keyDebugRefs,
     keyVarsRefs,
+    keySocdRefs,
     selectAllKey,
     selectReverse,
+    selectAllSocdKey,
+    selectReverseSocd,
     updateKey,
     isSelectAble,
+    isSocdSelectAble,
     showkeys,
     getKeyShow
   };

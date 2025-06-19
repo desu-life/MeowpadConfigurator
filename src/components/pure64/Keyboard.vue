@@ -20,6 +20,7 @@ import KeyCalibrate from "@/components/pure64/Keyboard/KeyCalibrate.vue";
 import KeyHall from "@/components/pure64/Keyboard/KeyHall.vue";
 import KeyModify from "@/components/pure64/Keyboard/KeyModify.vue";
 import KeyModifyOption from "@/components/pure64/Keyboard/KeyModifyOption.vue";
+import KeySocd from "@/components/pure64/Keyboard/KeySocd.vue";
 import { ComponentPublicInstance, createVNode } from "vue";
 
 import * as apib from "@/apis/pure64/api";
@@ -122,6 +123,10 @@ const menuOptions: MenuMixedOption[] = [
       {
         label: t('more_settings'),
         key: 4,
+      },
+      {
+        label: t('socd_setting'),
+        key: 5,
       },
     ],
   },
@@ -504,6 +509,50 @@ async function onPresetImport() {
     await store.save();
   }
 }
+
+// SOCD相关变量
+const socdPairs = ref<Array<[number, number]>>([]);
+
+// SOCD处理函数
+function applySocdSetting() {
+  if (socdPairs.value.length >= 5) {
+    message.warning(t('最多只能有5组SOCD配对'));
+    return;
+  }
+  const selectedKeys: number[] = [];
+  for (let i = 0; i < 64; i++) {
+    if (kb.keySocdRefs[i].isSelected) {
+      selectedKeys.push(i);
+    }
+  }
+  
+  if (selectedKeys.length !== 2) {
+    message.warning(t('socd_max_select'));
+    return;
+  }
+  
+  // 添加新的SOCD配对
+  socdPairs.value.push([selectedKeys[0], selectedKeys[1]]);
+  
+  // 清除选择状态
+  selectedKeys.forEach(index => {
+    kb.keySocdRefs[index].isSelected = false;
+    kb.keySocdRefs[index].isSocdEnabled = true;
+  });
+  
+  message.success(t('socd_pair_created'));
+}
+
+function clearSocdSetting() {
+  // 清除所有SOCD配对
+  socdPairs.value.forEach(([key1, key2]) => {
+    kb.keySocdRefs[key1].isSocdEnabled = false;
+    kb.keySocdRefs[key2].isSocdEnabled = false;
+  });
+  
+  socdPairs.value = [];
+  message.success(t('socd_pair_removed'));
+}
 </script>
 
 <template>
@@ -714,6 +763,13 @@ async function onPresetImport() {
                       v-model:keyShowMode="keyShowMode"
                       v-model:totalDistance="totalDistance"
                     />
+
+                    <KeySocd
+                      v-if="kb.mode === 5"
+                      :key-show="kb.showkeys[i]"
+                      v-model:isSelected="kb.keySocdRefs[i].isSelected"
+                      v-model:isSocdEnabled="kb.keySocdRefs[i].isSocdEnabled"
+                    />
                   </KeyFrame>
                 </div>
               </div>
@@ -728,6 +784,18 @@ async function onPresetImport() {
                 {{ $t("unselect_all") }}
               </n-button>
               <n-button @click="() => kb.selectReverse()">
+                {{ $t("reverse_select") }}
+              </n-button>
+            </n-button-group>
+
+            <n-button-group v-if="kb.isSocdSelectAble()">
+              <n-button @click="() => kb.selectAllSocdKey(true)">
+                {{ $t("select_all") }}
+              </n-button>
+              <n-button @click="() => kb.selectAllSocdKey(false)">
+                {{ $t("unselect_all") }}
+              </n-button>
+              <n-button @click="() => kb.selectReverseSocd()">
                 {{ $t("reverse_select") }}
               </n-button>
             </n-button-group>
@@ -760,6 +828,18 @@ async function onPresetImport() {
               <n-button v-if="kb.mode === 1" @click="onLayerChange">
                 {{ $t("switch_layer") }}
               </n-button>
+              <n-button
+                v-if="kb.mode === 5"
+                @click="() => applySocdSetting()"
+              >
+                {{ $t("socd_apply") }}
+              </n-button>
+              <n-button
+                v-if="kb.mode === 5"
+                @click="() => clearSocdSetting()"
+              >
+                {{ $t("socd_clear") }}
+              </n-button>
             </div>
           </div>
         </div>
@@ -783,6 +863,27 @@ async function onPresetImport() {
 
         <div v-if="device.device_config != null && kb.mode === 4">
           <ConfigKb></ConfigKb>
+        </div>
+
+        <div v-if="kb.mode === 5" class="socd-info">
+          <n-card :bordered="false" class="socd-info-card">
+            <template #header>
+              {{ $t("socd_pair") }}
+            </template>
+            <div class="socd-description">
+              {{ $t("socd_pair_desc") }}
+            </div>
+            <div v-if="socdPairs.length > 0" class="socd-pairs-grid">
+              <div v-for="(pair, index) in socdPairs" :key="index" class="socd-pair-grid-item">
+                <n-tag :bordered="false" size="small">
+                  按键 {{ pair[0] }} ↔ 按键 {{ pair[1] }}
+                </n-tag>
+              </div>
+            </div>
+            <div v-else class="socd-no-pairs">
+              {{ $t("none") }}
+            </div>
+          </n-card>
         </div>
       </div>
     </n-layout>
@@ -887,6 +988,40 @@ async function onPresetImport() {
   align-items: flex-start;
   justify-content: center;
 }
+
+.socd-info {
+  margin-top: 20px;
+}
+
+.socd-info-card {
+  width: 400px;
+  border-radius: 10px;
+  border-color: var(--color-border);
+}
+
+.socd-description {
+  margin-bottom: 15px;
+  color: var(--color-text-2);
+  font-size: 14px;
+}
+
+.socd-pairs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.socd-pair {
+  display: flex;
+  justify-content: center;
+}
+
+.socd-no-pairs {
+  text-align: center;
+  color: var(--color-text-3);
+  font-style: italic;
+  padding: 20px;
+}
 </style>
 
 <style lang="scss">
@@ -925,5 +1060,19 @@ async function onPresetImport() {
   height: -webkit-fill-available;
   display: grid;
   justify-content: center;
+}
+</style>
+
+<style lang="scss" scoped>
+.socd-pairs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+.socd-pair-grid-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

@@ -62,7 +62,7 @@
   "sleep_lighting_mode_btm": "Sleep Lighting Mode (Bottom)",
   "force_key_switch": "Force Dual Mode",
   "sec": "Seconds",
-  "developer_warning_2": "Here, any operation could result in device errors or damage. If you don’t know what you are doing, do not perform any operations.",
+  "developer_warning_2": "Here, any operation could result in device errors or damage. If you don't know what you are doing, do not perform any operations.",
   "light_config": "Lighting Configuration",
   "switch_tab": "Switch Tab",
   "key_modal_title": "Press the key you want to set on the keyboard (set to empty if it's the original key)",
@@ -196,5 +196,14 @@
   "open_updater": "Open updater",
   "unsupported_platform": "This platform is not supported",
   "light_setting": "Light settings",
-  "click_again_to_bind_key": "Click again to bind the key"
+  "click_again_to_bind_key": "Click again to bind the key",
+  "socd_setting": "SOCD Setting",
+  "socd_desc": "Stop B key trigger when A key is triggered",
+  "socd_pair": "SOCD Pair",
+  "socd_pair_desc": "Select two keys for SOCD pairing",
+  "socd_apply": "Apply SOCD Setting",
+  "socd_clear": "Clear SOCD Setting",
+  "socd_max_select": "Maximum two keys can be selected",
+  "socd_pair_created": "SOCD pair created",
+  "socd_pair_removed": "SOCD pair removed"
 }
