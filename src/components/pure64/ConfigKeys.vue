@@ -189,7 +189,7 @@ let key_config_style = computed(() => {
   --item-padding: 16px;
 
   background-color: var(--color-background-soft);
-  border-radius: 8px;
+  border-radius: var(--n-border-radius);
   width: fit-content;
 
   .single-key-config {
@@ -198,7 +198,7 @@ let key_config_style = computed(() => {
   
   .device-config-card {
     background-color: var(--color-background-soft);
-    border-radius: 8px;
+    border-radius: var(--n-border-radius);
     border: 1px solid var(--color-border);
     height: 100%;
   

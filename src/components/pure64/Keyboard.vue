@@ -182,9 +182,19 @@ function selectKeyCalibrate() {
   }, 100);
 }
 
+function reloadKeyboard() {
+  loadSocdPairs();
+  onLayerUpdate();
+  kb.selectAllKey(false);
+  keyconfig.value = null;
+}
+
 onMounted(async () => {
   keyLayer.value = 0;
   setLayer(keyLayer.value);
+  if (device.connected) {
+    reloadKeyboard();
+  }
 
   const interval = setInterval(async () => {
     try {
@@ -350,9 +360,7 @@ emitter.on("get-default-config", async () => {
       device.device_config = await apib.get_default_key_config();
       device.extract_key_config_pure64();
 
-      onLayerUpdate();
-      kb.selectAllKey(false);
-      keyconfig.value = null;
+      reloadKeyboard();
 
       emitter.emit("header-msg-update", {
         status: "success",
@@ -416,9 +424,7 @@ emitter.on("sync-config", async () => {
         emitter.emit("save-config");
       }
 
-      onLayerUpdate();
-      kb.selectAllKey(false);
-      keyconfig.value = null;
+      reloadKeyboard();
     } catch (e) {
       emitter.emit("connection-broke", { e: e as IError });
       emitter.emit("header-msg-update", {
@@ -510,33 +516,60 @@ async function onPresetImport() {
   }
 }
 
+function loadSocdPairs() {
+  device.scod_pairs.forEach(p => {
+    kb.keySocdRefs[p.key1].isSocdEnabled = true;
+    kb.keySocdRefs[p.key2].isSocdEnabled = true;
+  });
+}
+
 // SOCD相关变量
-const socdPairs = ref<Array<[number, number]>>([]);
+function removeSocdPair(index: number) {
+  // 移除SOCD配对
+  const p = device.scod_pairs[index];
+  
+  // 恢复按键的SOCD状态
+  kb.keySocdRefs[p.key1].isSocdEnabled = false;
+  kb.keySocdRefs[p.key2].isSocdEnabled = false;
+  
+  // 从配对列表中移除
+  device.scod_pairs.splice(index, 1);
+  
+  message.success(t('socd_pair_removed'));
+}
 
 // SOCD处理函数
 function applySocdSetting() {
-  if (socdPairs.value.length >= 5) {
+  if (device.scod_pairs.length >= 5) {
     message.warning(t('最多只能有5组SOCD配对'));
     return;
   }
   const selectedKeys: number[] = [];
   for (let i = 0; i < 64; i++) {
-    if (kb.keySocdRefs[i].isSelected) {
+    if (kb.keyVarsRefs[i].isSelected) {
       selectedKeys.push(i);
     }
   }
   
-  if (selectedKeys.length !== 2) {
+  if (selectedKeys.length > 2) {
     message.warning(t('socd_max_select'));
+    return;
+  }
+
+  if (selectedKeys.length < 2) {
+    message.warning(t('socd_min_select'));
     return;
   }
   
   // 添加新的SOCD配对
-  socdPairs.value.push([selectedKeys[0], selectedKeys[1]]);
+  device.scod_pairs.push({
+    key1: selectedKeys[0],
+    key2: selectedKeys[1],
+  });
   
   // 清除选择状态
   selectedKeys.forEach(index => {
-    kb.keySocdRefs[index].isSelected = false;
+    kb.keyVarsRefs[index].isSelected = false;
     kb.keySocdRefs[index].isSocdEnabled = true;
   });
   
@@ -545,12 +578,12 @@ function applySocdSetting() {
 
 function clearSocdSetting() {
   // 清除所有SOCD配对
-  socdPairs.value.forEach(([key1, key2]) => {
-    kb.keySocdRefs[key1].isSocdEnabled = false;
-    kb.keySocdRefs[key2].isSocdEnabled = false;
+  device.scod_pairs.forEach(p => {
+    kb.keySocdRefs[p.key1].isSocdEnabled = false;
+    kb.keySocdRefs[p.key2].isSocdEnabled = false;
   });
-  
-  socdPairs.value = [];
+
+  device.scod_pairs = [];
   message.success(t('socd_pair_removed'));
 }
 </script>
@@ -767,7 +800,7 @@ function clearSocdSetting() {
                     <KeySocd
                       v-if="kb.mode === 5"
                       :key-show="kb.showkeys[i]"
-                      v-model:isSelected="kb.keySocdRefs[i].isSelected"
+                      v-model:isSelected="kb.keyVarsRefs[i].isSelected"
                       v-model:isSocdEnabled="kb.keySocdRefs[i].isSocdEnabled"
                     />
                   </KeyFrame>
@@ -784,18 +817,6 @@ function clearSocdSetting() {
                 {{ $t("unselect_all") }}
               </n-button>
               <n-button @click="() => kb.selectReverse()">
-                {{ $t("reverse_select") }}
-              </n-button>
-            </n-button-group>
-
-            <n-button-group v-if="kb.isSocdSelectAble()">
-              <n-button @click="() => kb.selectAllSocdKey(true)">
-                {{ $t("select_all") }}
-              </n-button>
-              <n-button @click="() => kb.selectAllSocdKey(false)">
-                {{ $t("unselect_all") }}
-              </n-button>
-              <n-button @click="() => kb.selectReverseSocd()">
                 {{ $t("reverse_select") }}
               </n-button>
             </n-button-group>
@@ -832,7 +853,7 @@ function clearSocdSetting() {
                 v-if="kb.mode === 5"
                 @click="() => applySocdSetting()"
               >
-                {{ $t("socd_apply") }}
+                {{ $t("socd_add") }}
               </n-button>
               <n-button
                 v-if="kb.mode === 5"
@@ -867,16 +888,13 @@ function clearSocdSetting() {
 
         <div v-if="kb.mode === 5" class="socd-info">
           <n-card :bordered="false" class="socd-info-card">
-            <template #header>
-              {{ $t("socd_pair") }}
-            </template>
             <div class="socd-description">
               {{ $t("socd_pair_desc") }}
             </div>
-            <div v-if="socdPairs.length > 0" class="socd-pairs-grid">
-              <div v-for="(pair, index) in socdPairs" :key="index" class="socd-pair-grid-item">
-                <n-tag :bordered="false" size="small">
-                  按键 {{ pair[0] }} ↔ 按键 {{ pair[1] }}
+            <div v-if="device.scod_pairs.length > 0" class="socd-pairs-grid">
+              <div v-for="(pair, index) in device.scod_pairs" :key="index" class="socd-pair-grid-item">
+                <n-tag :bordered="false" size="small" closable @close="removeSocdPair(index)">
+                  按键 {{ pair.key1 }} ↔ 按键 {{ pair.key2 }}
                 </n-tag>
               </div>
             </div>
@@ -896,7 +914,7 @@ function clearSocdSetting() {
   left: 20px;
   margin-bottom: 20px;
 
-  border-radius: 2px;
+  border-radius: var(--n-border-radius);
   border-color: var(--color-border);
   cursor: pointer;
   text-align: center;
@@ -907,8 +925,6 @@ function clearSocdSetting() {
 }
 
 .preset-list {
-  --n-border-radius: 10px !important;
-
   border-radius: var(--n-border-radius);
   border-color: var(--color-border);
   background-color: var(--color-background-soft);
@@ -924,7 +940,7 @@ function clearSocdSetting() {
 }
 
 .preset-setting-card {
-  border-radius: 10px;
+  border-radius: var(--n-border-radius);
   border-color: var(--color-border);
   width: 600px;
 }
@@ -937,8 +953,8 @@ function clearSocdSetting() {
 .keyboard-frame {
   background-color: var(--color-background-soft);
   padding: 8px 8px;
-  border: 8px solid var(--color-border);
-  border-radius: 16px;
+  border: 6px solid var(--color-border);
+  border-radius: 6px;
   width: fit-content;
   height: fit-content;
 
@@ -994,8 +1010,8 @@ function clearSocdSetting() {
 }
 
 .socd-info-card {
-  width: 400px;
-  border-radius: 10px;
+  width: 470rpx;
+  border-radius: var(--n-border-radius);
   border-color: var(--color-border);
 }
 
@@ -1027,8 +1043,6 @@ function clearSocdSetting() {
 <style lang="scss">
 // layout
 .preset-list-scrollbar {
-  --n-border-radius: 10px !important;
-
   border-radius: var(--n-border-radius);
   border-color: var(--color-border);
   background-color: var(--color-background-soft);
@@ -1067,7 +1081,7 @@ function clearSocdSetting() {
 .socd-pairs-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 5px;
   margin-top: 10px;
 }
 .socd-pair-grid-item {

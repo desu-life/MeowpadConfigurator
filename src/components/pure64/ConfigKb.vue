@@ -90,7 +90,7 @@ function bottom_dz_available_change() {
   --item-padding: 16px;
 
   background-color: var(--color-background-soft);
-  border-radius: 8px;
+  border-radius: var(--n-border-radius);
   width: fit-content;
 
   .single-key-config {

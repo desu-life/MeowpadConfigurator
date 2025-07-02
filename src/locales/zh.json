@@ -178,7 +178,7 @@
   "delete": "删除",
   "load_preset": "加载预设",
   "select_all": "全选",
-  "unselect_all": "取消全选",
+  "unselect_all": "取消选择",
   "reverse_select": "反选",
   "cali_selected_keys": "校准选中的键",
   "switch_layer": "切换Fn层",
@@ -205,5 +205,7 @@
   "socd_clear": "清除SOCD设置",
   "socd_max_select": "最多只能选择两个按键",
   "socd_pair_created": "SOCD配对已创建",
-  "socd_pair_removed": "SOCD配对已移除"
+  "socd_pair_removed": "SOCD配对已移除",
+  "socd_add": "添加配对",
+  "socd_min_select": "至少需要选择两个键"
 }

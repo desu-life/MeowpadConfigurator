@@ -8,14 +8,16 @@ const store = useStore()
 const props = defineProps<{
   show: boolean,
   pressedkeycodes: KeyCode[],
-  leaveFunc: () => void
+  leaveFunc?: () => void
 }>()
 
 const emits = defineEmits(['update:show'])
 
 function leaveFunc() {
   emits('update:show', false)
-  props.leaveFunc()
+  if (props.leaveFunc != undefined) {
+    props.leaveFunc()
+  }
 }
 
 </script>
@@ -77,4 +79,3 @@ function leaveFunc() {
   opacity: 0;
 }
 </style>
-@/apis/interface@/store/store

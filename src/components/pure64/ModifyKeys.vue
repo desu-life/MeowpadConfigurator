@@ -121,7 +121,7 @@ function startDragKey(key: IMixedKey) {
 
 .key-modify-config-card {
   background-color: var(--color-background-soft);
-  border-radius: 8px;
+  border-radius: var(--n-border-radius);
   width: fit-content;
 }
 </style>

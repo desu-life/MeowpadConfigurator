@@ -205,5 +205,7 @@
   "socd_clear": "Clear SOCD Setting",
   "socd_max_select": "Maximum two keys can be selected",
   "socd_pair_created": "SOCD pair created",
-  "socd_pair_removed": "SOCD pair removed"
+  "socd_pair_removed": "SOCD pair removed",
+  "socd_add": "Add Socd Pair",
+  "socd_min_select": "Minimum two keys need to be selected"
 }

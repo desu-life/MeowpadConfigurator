@@ -205,5 +205,7 @@
   "socd_clear": "SOCD設定をクリア",
   "socd_max_select": "最大2つのキーまで選択可能",
   "socd_pair_created": "SOCDペアが作成されました",
-  "socd_pair_removed": "SOCDペアが削除されました"
+  "socd_pair_removed": "SOCDペアが削除されました",
+  "socd_add": "Socdペアを追加します",
+  "socd_min_select": "最小2つのキーを選択する必要があります"
 }

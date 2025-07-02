@@ -3,7 +3,7 @@ import { defineStore, acceptHMRUpdate } from "pinia";
 import { IKeyboard as IKBV2, ILighting as ILTV2 } from "@/apis/meowpadv2/config";
 import { IKeyboard as IKBV2SE, ILighting as ILTV2SE, LightingMode as LMV2SE } from "@/apis/meowpadv2se/config";
 import { IKeyboard as IKBV21SE, ILighting as ILTV21SE, LightingMode as LMV21SE } from "@/apis/meowpadv21se/config";
-import { IKeyboard as IKBP64 } from "@/apis/pure64/config";
+import { IKeyboard as IKBP64, ISOCDKeyPairs } from "@/apis/pure64/config";
 import { Toggle } from "../interface";
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
@@ -39,6 +39,7 @@ export const useDeviceStore = defineStore("device", () => {
   const key_proof = ref<Toggle>(Toggle.Off);
   const auto_calibration = ref<Toggle>(Toggle.Off);
   const hall_filter = ref<number>(0);
+  const scod_pairs = ref<ISOCDKeyPairs[]>([]);
 
   function is_v2() {
     return device_hid_info.value?.device_name == 'Meowpad'
@@ -155,11 +156,31 @@ export const useDeviceStore = defineStore("device", () => {
       config.value!.keys[i].release_percentage = Math.floor(config.value!.keys[i].release_percentage * 2)
       config.value!.keys[i].dead_zone = Math.floor(config.value!.keys[i].dead_zone * 2)
     }
+
+    if (config.value!.socd_key_pairs) {
+      config.value!.socd_key_pairs = []
+      const len = Math.min(5, scod_pairs.value!.length);
+      for (let i = 0; i < len; i++) {
+        if (scod_pairs.value![i].key1 < 0 || scod_pairs.value![i].key1 > 63 ||
+            scod_pairs.value![i].key2 < 0 || scod_pairs.value![i].key2 > 63) {
+          // 如果有不合法的按键对，清空所有配对
+          config.value!.socd_key_pairs = []
+          break;
+        }
+  
+        config.value!.socd_key_pairs.push({
+          key1: scod_pairs.value![i].key1,
+          key2: scod_pairs.value![i].key2,
+        })
+      }
+    }
+
   }
 
 
   function extract_key_config_pure64() {
     let config = device_config as Ref<IKBP64>;
+
     jitters_elimination_time.value = config.value!.jitters_elimination_time / 8
     enable_hs.value = config.value!.high_reportrate == true ? Toggle.On : Toggle.Off
     key_proof.value = config.value!.key_proof == true ? Toggle.On : Toggle.Off
@@ -175,6 +196,16 @@ export const useDeviceStore = defineStore("device", () => {
       config.value!.keys[i].release_percentage = config.value!.keys[i].release_percentage / 2
       config.value!.keys[i].dead_zone = config.value!.keys[i].dead_zone / 2
       config.value!.keys[i].release_dead_zone = config.value!.keys[i].release_dead_zone / 2
+    }
+
+    scod_pairs.value = []
+    if (config.value!.socd_key_pairs) {
+      for (let i = 0; i < config.value!.socd_key_pairs.length; i++) {
+        scod_pairs.value.push({
+          key1: config.value!.socd_key_pairs[i].key1,
+          key2: config.value!.socd_key_pairs[i].key2,
+        })
+      }
     }
   }
   
@@ -380,6 +411,7 @@ export const useDeviceStore = defineStore("device", () => {
     key_proof,
     auto_calibration,
     device_config,
+    scod_pairs,
     is_v2,
     is_v2se,
     is_v21se,

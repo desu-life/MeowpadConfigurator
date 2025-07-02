@@ -28,7 +28,6 @@ const props = withDefaults(defineProps<{
 </template>
 
 <style scoped lang="scss">
-
 // .frame.selected {
 //   position: absolute;
 //   width: calc(var(--unit-width) * var(--default-key-width) - (var(--default-key-margin) * 2) - 0.15em);
@@ -42,10 +41,14 @@ const props = withDefaults(defineProps<{
 //   cursor: inherit;
 // }
 
+
+
 .frame {
+  --key-border-radius: 4px;
+
   display: flex;
   background-color: var(--color-background-l2);
-  border-radius: 8px;
+  border-radius: var(--key-border-radius);
   width: calc(var(--unit-width) * var(--default-key-width) - (var(--default-key-margin) * 2));
   height: calc(var(--unit-height) * var(--default-key-height) - (var(--default-key-margin) * 2));
   margin: var(--default-key-margin);
@@ -68,7 +71,7 @@ const props = withDefaults(defineProps<{
   align-items: center;
   justify-content: center;
   user-select: none;
-  border-radius: 8px;
+  border-radius: var(--key-border-radius);
   flex-wrap: wrap;
   overflow-wrap: break-word;
   color: var(--color-text);

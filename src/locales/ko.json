@@ -205,5 +205,7 @@
   "socd_clear": "SOCD 설정 지우기",
   "socd_max_select": "최대 두 개의 키만 선택 가능",
   "socd_pair_created": "SOCD 페어가 생성되었습니다",
-  "socd_pair_removed": "SOCD 페어가 제거되었습니다"
+  "socd_pair_removed": "SOCD 페어가 제거되었습니다",
+  "socd_add": "SOCD 쌍을 추가하십시오",
+  "socd_min_select": "최소 두 키를 선택해야합니다"
 }

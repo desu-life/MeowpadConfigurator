@@ -6,6 +6,7 @@ import { LOCALES, setI18nLanguage } from "@/locales";
 import { LazyStore } from "@tauri-apps/plugin-store";
 
 export const useStore = defineStore("main", () => {
+  const key_detection_status = ref(false)
   const app_store = new LazyStore(".settings.dat");
   const device_presets_store = new LazyStore(".device.presets.dat");
   const status = ref<Type | undefined>(undefined);
@@ -74,6 +75,7 @@ export const useStore = defineStore("main", () => {
   }
 
   return {
+    key_detection_status,
     status,
     status_str,
     iap_connected,

@@ -53,7 +53,7 @@ impl Default for Device {
 impl TryFrom<cbor::Device> for Device {
     type Error = Error;
     fn try_from(cfg: cbor::Device) -> Result<Self, Self::Error> {
-        let mut keys = [KeyConfig::default(); 4];
+        let mut keys: [KeyConfig; 4] = [KeyConfig::default(); 4];
         for i in 0..4 {
             keys[i] = KeyConfig::from(cfg.KeyConfigs[i]);
         }

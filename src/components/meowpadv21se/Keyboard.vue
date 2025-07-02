@@ -7,7 +7,7 @@ import KeyShow from '@/components/KeyComponents/KeyShow.vue'
 import KeyModal from '@/components/KeyComponents/KeyModal.vue'
 import type { IKeymap } from '@/interface';
 import { ref } from 'vue';
-import { formatKeys, IsModifierKey, compareArray } from '@/utils'
+import { formatKeys, IsModifierKey, compareArray, detectKeys } from '@/utils'
 
 import { IKeyboard } from "@/apis/meowpadv21se/config";
 import { storeToRefs } from 'pinia';
@@ -41,82 +41,35 @@ const selectedKey = ref<number | null>(null)
 const isSelectHallKey = ref<boolean>(true)
 const showModal = ref(false)
 const pressedkeycodes = ref<KeyCode[]>([])
-const presskeycodes = ref<KeyCode[]>([])
 
 
-function needkey(key: KeyCode) {
-  if (!presskeycodes.value.includes(key)) {
-    if (IsModifierKey(key)) {
+function setKeys(keyNum: number, isHallKeys: boolean) {
+  detectKeys(showModal, (ks, k) => {
+    if (ks.includes(k)) { return false }
+    if (IsModifierKey(k)) { return true }
+    if (ks.filter((k) => !IsModifierKey(k)).length < 3) {
       return true
     } else {
-      if (presskeycodes.value.filter((k) => !IsModifierKey(k)).length < 3) {
-        return true
+      message.error(t('most_3_key_error'))
+      return false
+    }
+  }, ks => {
+    // clone数组以更新dom
+    pressedkeycodes.value = [...ks]
+  }, ks => {
+    // 先排序
+    let keycodes = ks.sort((l, r) => r - l)
+    // 对比新的按键和旧的是否相同
+    if (keycodes.length > 0) {
+      if (isHallKeys) {
+        compareArray(key_cfg.value!.hall_keys[keyNum].key_data, keycodes) ? key_cfg.value!.hall_keys[keyNum].key_data = [] : key_cfg.value!.hall_keys[keyNum].key_data = keycodes
       } else {
-        message.error(t('most_3_key_error'))
+        compareArray(key_cfg.value!.normal_keys[keyNum].key_data, keycodes) ? key_cfg.value!.normal_keys[keyNum].key_data = [] : key_cfg.value!.normal_keys[keyNum].key_data = keycodes
       }
     }
-  }
-  return false
+  })
 }
 
-let keynum = 0;
-let isHallKeys = true;
-
-function clearset() {
-  let keycodes = pressedkeycodes.value.sort((l, r) => r - l)
-  if (keycodes.length > 0) {
-    if (isHallKeys) {
-      compareArray(key_cfg.value!.hall_keys[keynum].key_data, keycodes) ? key_cfg.value!.hall_keys[keynum].key_data = [] : key_cfg.value!.hall_keys[keynum].key_data = keycodes
-    } else {
-      compareArray(key_cfg.value!.normal_keys[keynum].key_data, keycodes) ? key_cfg.value!.normal_keys[keynum].key_data = [] : key_cfg.value!.normal_keys[keynum].key_data = keycodes
-    }
-  }
-
-  pressedkeycodes.value = []
-  presskeycodes.value = []
-  document.onkeydown = null
-  document.onkeyup = null
-}
-
-function setKeys(_keyNum: number, _isHallKeys: boolean) {
-  keynum = _keyNum;
-  isHallKeys = _isHallKeys;
-  pressedkeycodes.value = []
-  let keycodes: KeyCode[] = []
-  showModal.value = true
-  document.onkeydown = (e) => {
-    if (showModal.value === false) { return }
-    e.preventDefault()
-    const HidCodeDown: KeyCode = jsToHid[e.code] || undefined
-    if (HidCodeDown in KeyCode && needkey(HidCodeDown)) {
-      console.log("pressed " + e.code)
-      pressedkeycodes.value.push(HidCodeDown)
-      presskeycodes.value.push(HidCodeDown)
-      document.onkeyup = (e) => {
-        e.preventDefault()
-        document.onkeydown = null // 当有键松开时，清除按下键盘的监听函数
-        console.log("released " + e.code)
-        const HidCodeUP: KeyCode = jsToHid[e.code] || undefined
-        if (presskeycodes.value.includes(HidCodeUP)) {
-          presskeycodes.value.splice(presskeycodes.value.indexOf(HidCodeUP), 1)
-          keycodes.push(HidCodeUP)
-          if (presskeycodes.value.length === 0) {
-            keycodes = keycodes.sort((l, r) => r - l)
-            if (isHallKeys) {
-              compareArray(key_cfg.value!.hall_keys[keynum].key_data, keycodes) ? key_cfg.value!.hall_keys[keynum].key_data = [] : key_cfg.value!.hall_keys[keynum].key_data = keycodes
-            } else {
-              compareArray(key_cfg.value!.normal_keys[keynum].key_data, keycodes) ? key_cfg.value!.normal_keys[keynum].key_data = [] : key_cfg.value!.normal_keys[keynum].key_data = keycodes
-            }
-            showModal.value = false
-            document.onkeyup = null
-          }
-        }
-      }
-    } else {
-      // message.error('未知按键：' + e.code)
-    }
-  }
-}
 
 
 function selectKey(keyNum: number, isHallKeys: boolean) {
@@ -170,7 +123,7 @@ function getKeyText(index: number, isHallKeys: boolean) {
 
 
 <template>
-  <KeyModal v-model:show="showModal" :pressedkeycodes="pressedkeycodes" :leave-func="clearset"></KeyModal>
+  <KeyModal v-model:show="showModal" :pressedkeycodes="pressedkeycodes"></KeyModal>
   <div class="key-settings">
     <div class="keyboard" :style="keymapStyle">
       <div v-for="line in keymap" class="line">
@@ -274,7 +227,7 @@ function getKeyText(index: number, isHallKeys: boolean) {
   top: 20px;
   left: 75px;
   padding: 20px;
-  border-radius: 6px;
+  border-radius: var(--n-border-radius);
   border: 1px solid var(--color-border);
 }
 
@@ -301,14 +254,14 @@ function getKeyText(index: number, isHallKeys: boolean) {
 .keyboard {
   position: relative;
   background: var(--color-background-soft);
-  border-radius: 6px;
+  border-radius: var(--n-border-radius);
   /* border: 5px solid var(--color-border); */
   display: flex;
   flex-direction: column;
   height: fit-content;
   padding: 10px;
   width: fit-content;
-  outline: 6px solid var(--color-border);
+  outline: var(--n-border-radius) solid var(--color-border);
 }
 
 .line {

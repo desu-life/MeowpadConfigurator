@@ -30,6 +30,23 @@ const { t } = useI18n();
 const store = useStore()
 const theme = ref<string>()
 
+document.addEventListener('keydown', function (event) {
+  if (store.key_detection_status === false) {
+    if (event.code === "F5") {
+      event.preventDefault();
+      location.reload();
+    }
+  
+    if (event.code === "Escape") {
+      event.preventDefault();
+      emitter.emit('connection-broke', { e: null })
+      store.status_str = t("device_disconnected")
+      store.status = undefined
+    }
+  }
+
+});
+
 // 禁用webkit右键菜单
 document.body.onselectstart = document.body.oncontextmenu = () => false
 
@@ -62,7 +79,7 @@ onMounted(async () => {
   await appWindow.onThemeChanged(async ({ payload: t }) => {
     theme.value = await get_theme();
   })
-  
+
   appWindow.setSize(new LogicalSize(800, 600))
   await appWindow.show()
 
@@ -105,7 +122,6 @@ onMounted(async () => {
 </template>
 
 <style lang="scss" scoped>
-
 .header {
   height: var(--header-height);
   background-color: var(--color-background) !important;
@@ -121,5 +137,4 @@ onMounted(async () => {
 
 
 }
-
 </style>

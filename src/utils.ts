@@ -1,9 +1,9 @@
 import { useI18n } from "vue-i18n";
 import { IError } from "./apis";
-import { KeyCode, mapping } from "./keycode";
 import { IRgb } from "./interface";
 import { IMixedKey } from "@/apis";
 import { mapping as keymap } from "@/keymap";
+import { KeyCode, jsToHid, mapping } from '@/keycode';
 
 function pad2(c) {
   return c.length == 1 ? "0" + c : "" + c;
@@ -114,4 +114,55 @@ export function time_2_str() {
 
   const dateString = `${year}-${month}-${day}-${hours}-${minutes}`
   return dateString
+}
+
+
+export function detectKeys(
+  activeStatus: Ref<boolean>,
+  keycodeFilter: (ks: KeyCode[], newKey: KeyCode) => boolean,
+  onUpdate: (ks: KeyCode[]) => void,
+  onDone: (ks: KeyCode[]) => void,
+) {
+  let pressedkeycodes: KeyCode[] = []
+  onUpdate(pressedkeycodes)
+  let presskeycodes: KeyCode[] = []
+  let keycodes: KeyCode[] = []
+  activeStatus.value = true
+  document.onkeydown = (e) => {
+    if (activeStatus.value === false) {
+      document.onkeydown = null
+      document.onkeyup = null
+      onDone(pressedkeycodes)
+      return
+    }
+    e.preventDefault()
+    const HidCodeDown: KeyCode = jsToHid[e.code] || undefined
+    if (HidCodeDown in KeyCode && keycodeFilter(presskeycodes, HidCodeDown)) {
+      console.log("pressed " + e.code)
+      pressedkeycodes.push(HidCodeDown)
+      presskeycodes.push(HidCodeDown)
+      onUpdate(pressedkeycodes)
+      document.onkeyup = (e) => {
+        if (activeStatus.value === false) {
+          document.onkeydown = null
+          document.onkeyup = null
+          onDone(pressedkeycodes)
+          return
+        }
+        e.preventDefault()
+        document.onkeydown = null // 当有键松开时，清除按下键盘的监听函数
+        console.log("released " + e.code)
+        const HidCodeUP: KeyCode = jsToHid[e.code] || undefined
+        if (presskeycodes.includes(HidCodeUP)) {
+          presskeycodes.splice(presskeycodes.indexOf(HidCodeUP), 1)
+          keycodes.push(HidCodeUP)
+          if (presskeycodes.length === 0) {
+            document.onkeyup = null
+            activeStatus.value = false
+            onDone(keycodes)
+          }
+        }
+      }
+    }
+  }
 }

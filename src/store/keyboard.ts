@@ -24,7 +24,6 @@ interface KeyVars {
 }
 
 interface SocdVars {
-  isSelected: boolean;
   isSocdEnabled: boolean;
 }
 
@@ -50,7 +49,6 @@ export const useKeyboard = defineStore("keyboard", () => {
       isSelected: false,
     }
     keySocdRefs.value[i] = {
-      isSelected: false,
       isSocdEnabled: false,
     }
     showkeys.value[i] = {
@@ -67,21 +65,6 @@ export const useKeyboard = defineStore("keyboard", () => {
   }
   function selectReverse() {
     keyVarsRefs.value.forEach((key) => {
-      key.isSelected = !key.isSelected;
-    })
-
-    emitter.emit('key-select')
-  }
-
-  function selectAllSocdKey(on: boolean) {
-    keySocdRefs.value.forEach((key) => {
-      key.isSelected = on;
-    })
-
-    emitter.emit('key-select')
-  }
-  function selectReverseSocd() {
-    keySocdRefs.value.forEach((key) => {
       key.isSelected = !key.isSelected;
     })
 
@@ -108,14 +91,7 @@ export const useKeyboard = defineStore("keyboard", () => {
   }
 
   function isSelectAble() {
-    if (mode.value == 0 || mode.value == 2) {
-      return true
-    }
-    return false
-  }
-
-  function isSocdSelectAble() {
-    if (mode.value == 5) {
+    if (mode.value == 0 || mode.value == 2 || mode.value == 5) {
       return true
     }
     return false
@@ -134,11 +110,8 @@ export const useKeyboard = defineStore("keyboard", () => {
     keySocdRefs,
     selectAllKey,
     selectReverse,
-    selectAllSocdKey,
-    selectReverseSocd,
     updateKey,
     isSelectAble,
-    isSocdSelectAble,
     showkeys,
     getKeyShow
   };

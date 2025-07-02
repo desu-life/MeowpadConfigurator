@@ -139,17 +139,17 @@ async function device_update(d: IHidDeviceInfo) {
         {{ t("developer_mode") }}
     </n-float-button> -->
 
-    <n-card class="device-list-card" content-class="device-list-card-content">
+    <n-card class="device-list-card" header-class="device-list-card-header" content-class="device-list-card-content">
         <template #header>
             {{ $t('select-device') }}
         </template>
         <n-scrollbar style="max-height: 360px">
-            <n-list hoverable :show-divider="false" class="device-list">
-                <n-list-item v-for="(device, index) in store.device_list" :key="device.device_name">
+            <n-list :show-divider="false" class="device-list">
+                <n-list-item v-for="(device, index) in store.device_list" :key="device.device_name" class="device-list-item">
                     <n-thing :title="device.device_name">
                         <template #description>
                             <n-space size="small" style="margin-top: 4px">
-                                <n-tag :bordered="false" :type="fv_tag_type(device)" size="small">
+                                <n-tag :bordered="true" :type="fv_tag_type(device)" size="small">
                                     <template v-if="device.firmware_version == 'IAP'">
                                         IAP    
                                     </template>
@@ -157,23 +157,22 @@ async function device_update(d: IHidDeviceInfo) {
                                         v{{ device.firmware_version }}
                                     </template>
                                 </n-tag>
-                                <n-tag :bordered="false" type="info" size="small"
+                                <n-tag :bordered="true" type="info" size="small"
                                     v-if="device.serial_number != undefined">
                                     {{ device.serial_number }}
                                 </n-tag>
                             </n-space>
                         </template>
-                        <!-- 这里是主体部分，还不知道写啥 -->
                     </n-thing>
                     <template #suffix>
                         <div v-if="check_firmware_version(device)">
                             <n-button-group>
-                                <n-button strong secondary round :disabled="store.loading" @click="developer_mode(device)">
+                                <n-button strong secondary :disabled="store.loading" @click="developer_mode(device)">
                                     <template #icon>
                                         <n-icon><EllipsisHorizontal /></n-icon>
                                     </template>
                                 </n-button>
-                                <n-button strong secondary round :disabled="store.loading" @click="connect(device)">
+                                <n-button strong secondary :disabled="store.loading" @click="connect(device)">
                                     <template #icon>
                                         <n-icon>
                                             <ArrowForward />
@@ -184,19 +183,19 @@ async function device_update(d: IHidDeviceInfo) {
                         </div>
                         <div v-else>
                             <template v-if="device.firmware_version == 'IAP'">
-                                <n-button strong round secondary type="warning" :disabled="store.loading"
+                                <n-button strong secondary type="warning" :disabled="store.loading"
                                     @click="continue_device_upgrade(device)">
                                     {{ t("device_continue_upgrade") }}
                                 </n-button>
                             </template>
                             <template v-else-if="device.device_name == 'Meowpad'">
-                                <n-button strong round secondary type="warning" :disabled="store.loading"
+                                <n-button strong secondary type="warning" :disabled="store.loading"
                                     @click="device_update(device)">
                                     {{ t("device_update") }}
                                 </n-button>
                             </template>
                             <template v-else>
-                                <n-button strong round secondary type="warning" :disabled="store.loading"
+                                <n-button strong secondary type="warning" :disabled="store.loading"
                                     @click="developer_mode(device)">
                                     {{ t("developer_mode") }}
                                 </n-button>
@@ -211,18 +210,26 @@ async function device_update(d: IHidDeviceInfo) {
 
 </template>
 
+<style lang="scss">
+.device-list-card-header {}
+
+
+</style>
+
 <style scoped lang="scss">
-.device-list {
-    --n-border-radius: 10px !important;
-    
-    border-radius: var(--n-border-radius);
-    border-color: var(--color-border);
-    background-color: var(--color-background-soft)
-}
 
 .device-list-card {
-    border-radius: 10px;
+    border-radius: var(--n-border-radius);
     border-color: var(--color-border);
+}
+
+.device-list {
+    border-radius: var(--n-border-radius);
+    background-color: var(--color-background-soft);
+}
+
+.device-list-item {
+    padding: 12px 18px;
 }
 
 </style>

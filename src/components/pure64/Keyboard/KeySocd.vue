@@ -11,6 +11,10 @@ const isSelected = defineModel("isSelected", { type: Boolean, default: false });
 const isSocdEnabled = defineModel("isSocdEnabled", { type: Boolean, default: false });
 
 function handleClick() {
+  if (isSocdEnabled.value === true) {
+    isSelected.value = false // Disable selection if SOCD is enabled
+    return
+  }
   isSelected.value = !isSelected.value;
 }
 
