@@ -2,9 +2,9 @@
 import { ref } from 'vue'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
-import { FormValidationStatus } from 'naive-ui/es/form/src/interface';
 import IAP from '@/components/DeveloperSetting/IAP.vue'
 import { useI18n } from "vue-i18n";
+import { FormValidationStatus } from 'naive-ui';
 
 const { t } = useI18n();
 const store = useStore()
