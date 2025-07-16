@@ -263,7 +263,7 @@ fn find_device() -> Option<Meowpad<HidDevice>> {
         })
 }
 
-pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
+pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened<'_>> {
     // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
     const PID: u16 = 0xFE17;

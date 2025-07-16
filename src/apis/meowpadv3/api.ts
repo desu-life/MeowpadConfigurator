@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { IDeviceInfo, IDeviceStatus, IKeyHallConfig, IKeyRTStatus, KeyState } from "..";
 import { IKeyboard } from "./config";
 
-export async function calibration_key(keyIndexs: number[]) {
+export async function calibration_key(keyIndexs: number[] | null) {
   return (await invoke("calibration_key_v3", { keyIndexs })) as void;
 }
 export async function get_debug_value() {
@@ -31,9 +31,6 @@ export async function set_key_config(config: IKeyboard) {
 }
 export async function save_key_config() {
   return (await invoke("save_key_config_v3")) as void;
-}
-export async function save_light_config() {
-  return (await invoke("save_light_config_v3")) as void;
 }
 export async function clear_config() {
   return (await invoke("clear_config_v3")) as void;

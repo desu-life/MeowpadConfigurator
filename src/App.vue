@@ -17,6 +17,7 @@ import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv21se/api'
 import * as apip64 from '@/apis/pure64/api'
+import * as apiv3 from '@/apis/meowpadv3/api'
 
 
 const lightThemeOverrides: GlobalThemeOverrides = {
@@ -30,22 +31,6 @@ const { t } = useI18n();
 const store = useStore()
 const theme = ref<string>()
 
-document.addEventListener('keydown', function (event) {
-  if (store.key_detection_status === false) {
-    if (event.code === "F5") {
-      event.preventDefault();
-      location.reload();
-    }
-  
-    if (event.code === "Escape") {
-      event.preventDefault();
-      emitter.emit('connection-broke', { e: null })
-      store.status_str = t("device_disconnected")
-      store.status = undefined
-    }
-  }
-
-});
 
 // 禁用webkit右键菜单
 document.body.onselectstart = document.body.oncontextmenu = () => false
@@ -55,11 +40,12 @@ async function get_firmware_versions() {
   store.firmware_versions.set("Meowpad SE v2", await apiv2se.get_firmware_version())
   store.firmware_versions.set("Meowpad SE v2.1", await apiv21se.get_firmware_version())
   store.firmware_versions.set("Pure64", await apip64.get_firmware_version())
+  store.firmware_versions.set("MeowpadV3", await apiv3.get_firmware_version())
   console.log(store.firmware_versions)
 }
 
 onMounted(async () => {
-  const appWindow = await getCurrentWebviewWindow()
+  const appWindow = getCurrentWebviewWindow()
   await store.load()
   await store.save()
   store.status_str = t("device_disconnected")
@@ -101,6 +87,24 @@ onMounted(async () => {
     }
   }, 1000)
 })
+
+store.key_detection_status = false
+document.addEventListener('keydown', function (event) {
+  if (store.key_detection_status === false) {
+    if (event.code === "F5") {
+      event.preventDefault();
+      location.reload();
+    }
+  
+    if (event.code === "Escape") {
+      event.preventDefault();
+      emitter.emit('connection-broke', { e: null })
+      store.status_str = t("device_disconnected")
+      store.status = undefined
+    }
+  }
+});
+
 </script>
 
 <template>

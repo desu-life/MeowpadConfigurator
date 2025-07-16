@@ -1,5 +1,8 @@
 use crate::config;
 use crate::keymap;
+use crate::keymap::KEYMAP_SIZE;
+use crate::HALL_KEY_NUMS;
+use crate::MAX_SOCD_PAIRS;
 use meowpad::{KeyCode, KbReport};
 use palette::{rgb::channels::Argb, WithAlpha};
 use palette::Srgb;
@@ -44,11 +47,11 @@ pub struct KeyRTConfig {
 #[allow(non_snake_case)]
 pub struct Device {
     #[serde(rename = "ks")]
-    #[serde_as(as = "[_; 4]")]
-    pub KeyConfigs: [KeyRTConfig; 4],
+    #[serde_as(as = "[_; HALL_KEY_NUMS]")]
+    pub KeyConfigs: [KeyRTConfig; HALL_KEY_NUMS],
     #[serde(rename = "km")]
-    #[serde_as(as = "[_; 42]")]
-    pub KeyMap: [u8; 42],
+    #[serde_as(as = "[_; KEYMAP_SIZE]")]
+    pub KeyMap: [u8; KEYMAP_SIZE],
     #[serde(rename = "jet")]
     pub JittersEliminationTime: u16,
     #[serde(rename = "hr")]
@@ -66,8 +69,12 @@ pub struct Device {
     #[serde(rename = "spc")]
     pub socd_pair_count: u8,
     #[serde(rename = "so")]
-    #[serde_as(as = "[_; 5]")]
-    pub socd_pairs: [SOCDPairConfig; 5],
+    #[serde_as(as = "[_; MAX_SOCD_PAIRS]")]
+    pub socd_pairs: [SOCDPairConfig; MAX_SOCD_PAIRS],
+    #[serde(rename = "lm")]
+    pub led_mode: u8,
+    #[serde(rename = "st")]
+    pub sleep_timeout: u16,
 }
 
 pub trait CborConvertor
@@ -91,10 +98,10 @@ impl CborConvertor for Device {}
 impl From<config::KeyConfig> for KeyRTConfig {
     fn from(cfg: config::KeyConfig) -> Self {
         Self {
-            PressPercentage: cfg.press_percentage,
-            ReleasePercentage: cfg.release_percentage,
-            DeadZone: cfg.dead_zone,
-            ReleaseDeadZone: cfg.release_dead_zone,
+            PressPercentage: cfg.press_percentage * 2,
+            ReleasePercentage: cfg.release_percentage * 2,
+            DeadZone: cfg.dead_zone * 2,
+            ReleaseDeadZone: cfg.release_dead_zone * 2,
             RtEnabled: cfg.rt_enabled,
         }
     }
@@ -111,14 +118,14 @@ impl From<config::SOCDKeyPairs> for SOCDPairConfig {
 
 impl From<config::Device> for Device {
     fn from(cfg: config::Device) -> Self {
-        let mut key_configs = [KeyRTConfig::default(); 4];
-        for i in 0..4 {
+        let mut key_configs = [KeyRTConfig::default(); HALL_KEY_NUMS];
+        for i in 0..HALL_KEY_NUMS {
             key_configs[i] = cfg.keys[i].into();
         }
         let map = keymap::KeyMap::from(cfg.layer).into();
 
-        let mut socd_pairs = [SOCDPairConfig::default(); 5];
-        let socd_pair_count = cfg.socd_key_pairs.len().min(5) as u8;
+        let mut socd_pairs = [SOCDPairConfig::default(); MAX_SOCD_PAIRS];
+        let socd_pair_count = cfg.socd_key_pairs.len().min(MAX_SOCD_PAIRS) as u8;
         for i in 0..socd_pair_count as usize {
             socd_pairs[i] = cfg.socd_key_pairs[i].into();
         }
@@ -129,21 +136,23 @@ impl From<config::Device> for Device {
             HighReportRate: cfg.high_reportrate,
             KeyProof: cfg.key_proof,
             AutoCalibration: cfg.auto_calibration,
-            JittersEliminationTime: cfg.jitters_elimination_time,
+            JittersEliminationTime: cfg.jitters_elimination_time * 8,
             HallFilter: cfg.hall_filter,
             MaxBrightness: cfg.max_brightness,
             led_color: cfg.led_color.into_u32::<Argb>(),
             socd_pair_count,
-            socd_pairs
+            socd_pairs,
+            led_mode: cfg.led_mode as u8,
+            sleep_timeout: cfg.sleep_timeout
         }
     }
 }
 
 impl Default for Device {
     fn default() -> Self {
-        let key_configs = [KeyRTConfig::default(); 4];
+        let key_configs = [KeyRTConfig::default(); HALL_KEY_NUMS];
         let key_maps = keymap::KeyMap::default();
-        let mut socd_pairs = [SOCDPairConfig::default(); 5];
+        let socd_pairs = [SOCDPairConfig::default(); MAX_SOCD_PAIRS];
         // socd_pairs[0].key1 = 29;
         // socd_pairs[0].key2 = 31;
         Self {
@@ -154,10 +163,12 @@ impl Default for Device {
             AutoCalibration: true,
             JittersEliminationTime: 15 * 8,
             HallFilter: 1,
-            MaxBrightness: 50,
+            MaxBrightness: 30,
             led_color: Srgb::new(255, 255, 255).into_u32::<Argb>(),
-            socd_pair_count: 1,
-            socd_pairs
+            socd_pair_count: 0,
+            socd_pairs,
+            led_mode: 3,
+            sleep_timeout: 120,
         }
     }
 }

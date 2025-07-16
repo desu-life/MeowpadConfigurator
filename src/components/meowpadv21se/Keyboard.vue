@@ -16,6 +16,7 @@ const { t } = useI18n();
 const message = useMessage()
 const dialog = useDialog()
 const store = useDeviceStore()
+const s = useStore()
 const { key_config } = storeToRefs(store)
 const key_cfg = key_config as Ref<IKeyboard>;
 
@@ -44,6 +45,7 @@ const pressedkeycodes = ref<KeyCode[]>([])
 
 
 function setKeys(keyNum: number, isHallKeys: boolean) {
+  s.key_detection_status = true
   detectKeys(showModal, (ks, k) => {
     if (ks.includes(k)) { return false }
     if (IsModifierKey(k)) { return true }
@@ -67,6 +69,7 @@ function setKeys(keyNum: number, isHallKeys: boolean) {
         compareArray(key_cfg.value!.normal_keys[keyNum].key_data, keycodes) ? key_cfg.value!.normal_keys[keyNum].key_data = [] : key_cfg.value!.normal_keys[keyNum].key_data = keycodes
       }
     }
+    s.key_detection_status = false
   })
 }
 

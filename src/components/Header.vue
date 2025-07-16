@@ -132,7 +132,6 @@ async function sync_config_raw() {
   }
 }
 
-
 function exit_developer_mode() {
   store.developer_mode = false
   emitter.emit('connection-broke', { e: null })
@@ -257,7 +256,7 @@ async function clear_config() {
             <n-button class="ml" v-if="!store.debug_mode" :disabled="store.loading" @click="exit_iap_mode">{{ $t('exit') }}</n-button>
           </template>
           <template v-else>
-            <n-button class="ml" :disabled="store.loading" @click="device_update">{{ $t('device_update') }}</n-button>
+            <n-button class="ml" v-if="device.is_v2()" :disabled="store.loading" @click="device_update">{{ $t('device_update') }}</n-button>
             <n-button class="ml" :disabled="store.loading" @click="exit_developer_mode">{{ $t('exit') }}</n-button>
           </template>
         </template>

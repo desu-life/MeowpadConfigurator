@@ -19,7 +19,7 @@ const dialog = useDialog()
 
 
 function check_firmware_version(d: IHidDeviceInfo) {
-    return store.firmware_versions.get(d.device_name)!.includes(d.firmware_version)
+    return store.firmware_versions.get(d.device_name)?.includes(d.firmware_version)
 }
 
 function fv_tag_type(d: IHidDeviceInfo) {
@@ -55,34 +55,33 @@ function developer_mode(d: IHidDeviceInfo) {
 async function continue_device_upgrade(d: IHidDeviceInfo) {
     const ostype = type();
 
-    if (d.device_name == "Pure64") {
-        if (ostype == "windows") {
-            api.update_firmware_call()
+    if (d.firmware_version == "IAP") {
+        if (d.device_name == "Meowpad") {
+            emitter.emit('header-loading', { str: t('connecting') })
+            try {
+                if (!await api.connect_device(d)) {
+                    emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: t('device_not_found') }) })
+                    return
+                }
+
+                setTimeout(async () => {
+                    store.developer_mode = true
+                    store.iap_connected = true
+                    emitter.emit('header-msg-update', { status: "warning", str: t('iap_connected') })
+                }, 300);
+            } catch (e) {
+                emitter.emit('connection-broke', { e: e as IError })
+            }
         } else {
-            emitter.emit('header-msg-update', { status: "error", str: t('unsupported_platform') })
+            if (ostype == "windows") {
+                api.update_firmware_call()
+            } else {
+                emitter.emit('header-msg-update', { status: "error", str: t('unsupported_platform') })
+            
+            }
         }
-        return
-    }
-
-    if (d.device_name != "Meowpad") {
+    } else {
         emitter.emit('header-msg-update', { status: "error", str: t('device_not_support') })
-        return
-    }
-
-    emitter.emit('header-loading', { str: t('connecting') })
-    try {
-        if (!await api.connect_device(d)) {
-            emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: t('device_not_found') }) })
-            return
-        }
-
-        setTimeout(async () => {
-            store.developer_mode = true
-            store.iap_connected = true
-            emitter.emit('header-msg-update', { status: "warning", str: t('iap_connected') })
-        }, 300);
-    } catch (e) {
-        emitter.emit('connection-broke', { e: e as IError })
     }
 }
 
@@ -100,7 +99,7 @@ async function device_update(d: IHidDeviceInfo) {
             emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: t('device_not_found') }) })
             return
         }
-        
+
         dialog.warning({
             title: t('warning'),
             content: t('device_update_warn'),
@@ -145,13 +144,14 @@ async function device_update(d: IHidDeviceInfo) {
         </template>
         <n-scrollbar style="max-height: 360px">
             <n-list :show-divider="false" class="device-list">
-                <n-list-item v-for="(device, index) in store.device_list" :key="device.device_name" class="device-list-item">
+                <n-list-item v-for="(device, index) in store.device_list" :key="device.device_name"
+                    class="device-list-item">
                     <n-thing :title="device.device_name">
                         <template #description>
                             <n-space size="small" style="margin-top: 4px">
                                 <n-tag :bordered="true" :type="fv_tag_type(device)" size="small">
                                     <template v-if="device.firmware_version == 'IAP'">
-                                        IAP    
+                                        IAP
                                     </template>
                                     <template v-else>
                                         v{{ device.firmware_version }}
@@ -169,7 +169,9 @@ async function device_update(d: IHidDeviceInfo) {
                             <n-button-group>
                                 <n-button strong secondary :disabled="store.loading" @click="developer_mode(device)">
                                     <template #icon>
-                                        <n-icon><EllipsisHorizontal /></n-icon>
+                                        <n-icon>
+                                            <EllipsisHorizontal />
+                                        </n-icon>
                                     </template>
                                 </n-button>
                                 <n-button strong secondary :disabled="store.loading" @click="connect(device)">
@@ -212,12 +214,9 @@ async function device_update(d: IHidDeviceInfo) {
 
 <style lang="scss">
 .device-list-card-header {}
-
-
 </style>
 
 <style scoped lang="scss">
-
 .device-list-card {
     border-radius: var(--n-border-radius);
     border-color: var(--color-border);
@@ -231,5 +230,4 @@ async function device_update(d: IHidDeviceInfo) {
 .device-list-item {
     padding: 12px 18px;
 }
-
 </style>

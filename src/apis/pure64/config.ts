@@ -1,5 +1,5 @@
 import { IRgb } from "@/interface"
-import { IKeyConfig, IMixedKey } from ".."
+import { IKeyConfig, IMixedKey, ISOCDKeyPairs } from ".."
 import { KeyCode } from "@/keycode"
 
 
@@ -10,12 +10,6 @@ export interface IKeyConfigBoard {
     release_dead_zone: number
     rt_enabled: boolean
 }
-
-export interface ISOCDKeyPairs {
-    key1: number
-    key2: number
-}
-
 
 export interface IKeyboard {
     keys: IKeyConfigBoard[]

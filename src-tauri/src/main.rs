@@ -343,7 +343,7 @@ fn connect_device(
     };
 
     if let Some(d) = d {
-        info!("连接到设备");
+        info!("连接到设备 {}", device_info.device_name);
         if device_info.device_name == MEOWPAD_DEVICE_NAME {
             if device_info.firmware_version == "IAP" {
                 *device_handle_iap.lock().unwrap() = Some(IAP::new(d));

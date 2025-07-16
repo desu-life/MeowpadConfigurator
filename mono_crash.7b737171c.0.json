@@ -1,0 +1,813 @@
+{
+  "protocol_version" : "0.0.6",
+  "configuration" : {
+    "version" : "(6.12.0) (makepkg/0cbf0e290c3)",
+    "tlc" : "__thread",
+    "sigsgev" : "altstack",
+    "notifications" : "epoll",
+    "architecture" : "amd64",
+    "disabled_features" : "none",
+    "smallconfig" : "disabled",
+    "bigarrays" : "disabled",
+    "softdebug" : "enabled",
+    "interpreter" : "enabled",
+    "llvm_support" : "disabled",
+    "suspend" : "hybrid"
+  },
+  "memory" : {
+    "minor_gc_time" : "0",
+    "major_gc_time" : "0",
+    "minor_gc_count" : "0",
+    "major_gc_count" : "0",
+    "major_gc_time_concurrent" : "0"
+ },
+  "threads" : [
+ {
+    "is_managed" : true,
+    "offset_free_hash" : "0x6dc36abf3",
+    "offset_rich_hash" : "0x6dc36b077",
+    "crashed" : false,
+    "native_thread_id" : "0x7fa894684100",
+    "thread_info_addr" : "0x5591fbe90580",
+    "thread_name" : "mono",
+    "ctx" : {
+      "IP" : "0x7fa894717880",
+      "SP" : "0x7ffcda6b7558",
+      "BP" : "0x7ffcda6b7570"
+  },
+    "managed_frames" : [
+  {
+      "is_managed" : "false",
+      "native_address" : "unregistered"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x00000",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00028"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6003fd2",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x0008c"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6003fd1",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00042"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6003fb6",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00000"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6003fbb",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00032"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6004495",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00054"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x60040af",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00000"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x600066a",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x0005d"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x600074d",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x0002a"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6001776",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00016"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x600074c",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00000"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x600181a",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00183"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6000721",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00009"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x00000",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00032"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x600013b",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00059"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6000138",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00011"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+      "token" : "0x6000136",
+      "native_offset" : "0x0",
+      "filename" : "System.Windows.Forms.dll",
+      "sizeofimage" : "0x2ca000",
+      "timestamp" : "0xadad71bf",
+      "il_offset" : "0x00006"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "B61288A3-96BA-4233-BE51-D14368978A58",
+      "token" : "0x6000051",
+      "native_offset" : "0x0",
+      "filename" : "FirmwareUpdater.exe",
+      "sizeofimage" : "0x16000",
+      "timestamp" : "0x6706579e",
+      "il_offset" : "0x00013"
+   }
+,
+  {
+      "is_managed" : "true",
+      "guid" : "296872A6-734F-4439-9047-7E3ABD954B57",
+      "token" : "0x00000",
+      "native_offset" : "0x0",
+      "filename" : "mscorlib.dll",
+      "sizeofimage" : "0x472000",
+      "timestamp" : "0xccf80fcf",
+      "il_offset" : "0x0002a"
+   }
+
+  ],
+  "unmanaged_frames" : [
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebd8dd4e",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebf9f11d",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebfa1647",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebddcfaa",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa8946c2ef0",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa894717880",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa89471de61",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa892ee2a29",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa892ef1381",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa892f1f91c",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa892f2efd3",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa892f21b86",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa892f0ae9c",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x00000",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00000"
+  }
+
+ ]
+},
+{
+  "is_managed" : false,
+  "offset_free_hash" : "0x0",
+  "offset_rich_hash" : "0x0",
+  "crashed" : false,
+  "native_thread_id" : "0x7fa893f476c0",
+  "thread_info_addr" : "0x7fa88c000b70",
+  "thread_name" : "Finalizer",
+  "ctx" : {
+    "IP" : "0x7fa894722e22",
+    "SP" : "0x7fa893f46b48",
+    "BP" : "0x7fa893f46b80"
+ },
+  "unmanaged_frames" : [
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebd8dd4e",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebf9f11d",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebfa1647",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebddcfaa",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa8946c2ef0",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa894722e22",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa894716fda",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa89471764c",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa894722d28",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebfe96a6",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x5591ebf9db11",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa89471a7eb",
+    "native_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "false",
+    "native_address" : "0x7fa89479e18c",
+    "native_offset" : "0x00000"
+  }
+
+ ]
+},
+{
+  "is_managed" : true,
+  "offset_free_hash" : "0x7b737171c",
+  "offset_rich_hash" : "0x7b7372208",
+  "crashed" : true,
+  "native_thread_id" : "0x7fa8893ff6c0",
+  "thread_info_addr" : "0x7fa87c000b70",
+  "thread_name" : "mono",
+  "ctx" : {
+    "IP" : "0x7fa89471c74c",
+    "SP" : "0x7fa8893fdac0",
+    "BP" : "0x7fa8893fdb00"
+ },
+  "managed_frames" : [
+ {
+    "is_managed" : "false",
+    "native_address" : "unregistered"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x00000",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x0000b"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x600449f",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00053"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x60043fe",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x001ec"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x6004446",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x003c6"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x6004064",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x60023c2",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00009"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x6000788",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00031"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x6000745",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00039"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x00000",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00031"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x6000745",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00072"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x60007b8",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00057"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x600181a",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00065"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x6000721",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00009"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x00000",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00032"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x600013b",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00059"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x60017ee",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x001b7"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x60017ed",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00000"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x6004f42",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00039"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x00000",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x00031"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+    "token" : "0x600228f",
+    "native_offset" : "0x0",
+    "filename" : "System.Windows.Forms.dll",
+    "sizeofimage" : "0x2ca000",
+    "timestamp" : "0xadad71bf",
+    "il_offset" : "0x0000a"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "B61288A3-96BA-4233-BE51-D14368978A58",
+    "token" : "0x600000b",
+    "native_offset" : "0x0",
+    "filename" : "FirmwareUpdater.exe",
+    "sizeofimage" : "0x16000",
+    "timestamp" : "0x6706579e",
+    "il_offset" : "0x00021"
+  }
+,
+ {
+    "is_managed" : "true",
+    "guid" : "296872A6-734F-4439-9047-7E3ABD954B57",
+    "token" : "0x00000",
+    "native_offset" : "0x0",
+    "filename" : "mscorlib.dll",
+    "sizeofimage" : "0x472000",
+    "timestamp" : "0xccf80fcf",
+    "il_offset" : "0x0002a"
+  }
+
+ ],
+"unmanaged_frames" : [
+{
+  "is_managed" : "false",
+  "native_address" : "0x5591ebd8dd4e",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x5591ebf9f11d",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x5591ebfa1647",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x5591ebfa1d60",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x5591ebde5116",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x5591ebd8e437",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x5591ebddcd6c",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa8946c2ef0",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa89471c74c",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa8946c2dc0",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa8946aa57a",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa8946aa4e3",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa892ef9463",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa892f02923",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa892ee0ab6",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "false",
+  "native_address" : "0x7fa892ee14e9",
+  "native_offset" : "0x00000"
+ }
+,
+{
+  "is_managed" : "true",
+  "guid" : "C87C1B41-4E13-4A3B-85F7-57BEB69A2505",
+  "token" : "0x00000",
+  "native_offset" : "0x0",
+  "filename" : "System.Windows.Forms.dll",
+  "sizeofimage" : "0x2ca000",
+  "timestamp" : "0xadad71bf",
+  "il_offset" : "0x00000"
+ }
+
+]
+}
+]
+}

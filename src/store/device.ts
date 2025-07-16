@@ -1,13 +1,15 @@
-import { IDeviceInfo, IDeviceStatus, IHidDeviceInfo } from "@/apis";
+import { IDeviceInfo, IDeviceStatus, IHidDeviceInfo, ISOCDKeyPairs } from "@/apis";
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { IKeyboard as IKBV2, ILighting as ILTV2 } from "@/apis/meowpadv2/config";
 import { IKeyboard as IKBV2SE, ILighting as ILTV2SE, LightingMode as LMV2SE } from "@/apis/meowpadv2se/config";
 import { IKeyboard as IKBV21SE, ILighting as ILTV21SE, LightingMode as LMV21SE } from "@/apis/meowpadv21se/config";
-import { IKeyboard as IKBP64, ISOCDKeyPairs } from "@/apis/pure64/config";
+import { IKeyboard as IKBP64 } from "@/apis/pure64/config";
+import { IKeyboard as IKBV3 } from "@/apis/meowpadv3/config";
 import { Toggle } from "../interface";
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv21se/api'
+import * as apiv3 from '@/apis/meowpadv3/api'
 import * as apib from '@/apis/pure64/api'
 import { Hex2Rgb, Rgb2Hex } from "@/utils";
 import { KeyCode } from "@/keycode";
@@ -21,7 +23,7 @@ export const useDeviceStore = defineStore("device", () => {
   const raw_config = ref<string | undefined>(undefined);
 
   // configs
-  const device_config = ref<IKBP64 | undefined>(undefined);
+  const device_config = ref<any | undefined>(undefined);
   const key_config = ref<any | undefined>(undefined);
   const light_config = ref<any | undefined>(undefined);
   const led_colors = ref<string[] | null>(null);
@@ -50,11 +52,15 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   function is_pure() {
-    return device_hid_info.value?.device_name == 'Pure64'
+    return device_hid_info.value?.product_id == 0xFB01
   }
 
   function is_v21se() {
     return device_hid_info.value?.device_name == 'Meowpad SE v2.1'
+  }
+
+  function is_v3() {
+    return device_hid_info.value?.product_id == 0xFB02
   }
 
   async function try_connect() {
@@ -74,8 +80,31 @@ export const useDeviceStore = defineStore("device", () => {
       device_info.value = await apiv21se.get_device_info()
       return true
     }
+    if (await apiv3.connect()) {
+      device_info.value = await apiv3.get_device_info()
+      return true
+    }
     return false;
   }
+  
+  async function get_info() {
+    if (is_v2()) {
+      device_info.value = await apiv2.get_device_info()
+    }
+    if (is_v2se()) {
+      device_info.value = await apiv2se.get_device_info()
+    }
+    if (is_pure()) {
+      device_info.value = await apib.get_device_info()
+    }
+    if (is_v21se()) {
+      device_info.value = await apiv21se.get_device_info()
+    }
+    if (is_v3()) {
+      device_info.value = await apiv3.get_device_info()
+    }
+  }
+
   
   async function get_status() {
     if (is_v2()) {
@@ -89,6 +118,9 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (is_v21se()) {
       device_status.value = await apiv21se.get_device_status()
+    }
+    if (is_v3()) {
+      device_status.value = await apiv3.get_device_status()
     }
   }
 
@@ -105,6 +137,9 @@ export const useDeviceStore = defineStore("device", () => {
     if (is_v21se()) {
       raw_config.value = await apiv21se.get_raw_config()
     }
+    if (is_v3()) {
+      raw_config.value = await apiv3.get_raw_config()
+    }
   }
 
   async function save_config_raw() {
@@ -120,6 +155,9 @@ export const useDeviceStore = defineStore("device", () => {
     if (is_v21se()) {
       await apiv21se.save_raw_config(raw_config.value!)
     }
+    if (is_v3()) {
+      await apiv3.save_raw_config(raw_config.value!)
+    }
   }
 
   async function check_config_raw() {
@@ -134,6 +172,9 @@ export const useDeviceStore = defineStore("device", () => {
     }
     if (is_v21se()) {
       return await apiv21se.check_raw_config(raw_config.value!)
+    }
+    if (is_v3()) {
+      return await apiv3.check_raw_config(raw_config.value!)
     }
     // 无设备连接时不检查，永远通过
     return true
@@ -386,6 +427,60 @@ export const useDeviceStore = defineStore("device", () => {
     max_brightness.value = Math.floor(config.value!.max_brightness * 2)
   }
 
+  function store_key_config_v3() {
+    let config = device_config as Ref<IKBV3>;
+    config.value!.high_reportrate = enable_hs.value == Toggle.On ? true : false
+    config.value!.key_proof = key_proof.value == Toggle.On ? true : false
+    config.value!.auto_calibration = auto_calibration.value == Toggle.On ? true : false
+    config.value!.hall_filter = hall_filter.value
+    config.value!.max_brightness = Math.floor(max_brightness.value / 2)
+
+    config.value!.led_color = Hex2Rgb(led_colors.value![0])
+
+    if (config.value!.socd_key_pairs) {
+      config.value!.socd_key_pairs = []
+      const len = Math.min(5, scod_pairs.value!.length);
+      for (let i = 0; i < len; i++) {
+        if (scod_pairs.value![i].key1 < 0 || scod_pairs.value![i].key1 > 63 ||
+            scod_pairs.value![i].key2 < 0 || scod_pairs.value![i].key2 > 63) {
+          // 如果有不合法的按键对，清空所有配对
+          config.value!.socd_key_pairs = []
+          break;
+        }
+  
+        config.value!.socd_key_pairs.push({
+          key1: scod_pairs.value![i].key1,
+          key2: scod_pairs.value![i].key2,
+        })
+      }
+    }
+
+  }
+
+
+  function extract_key_config_v3() {
+    let config = device_config as Ref<IKBV3>;
+
+    enable_hs.value = config.value!.high_reportrate == true ? Toggle.On : Toggle.Off
+    key_proof.value = config.value!.key_proof == true ? Toggle.On : Toggle.Off
+    auto_calibration.value = config.value!.auto_calibration == true ? Toggle.On : Toggle.Off
+    hall_filter.value = config.value!.hall_filter
+    max_brightness.value = Math.floor(config.value!.max_brightness * 2)
+
+    led_colors.value = []
+    led_colors.value.push(Rgb2Hex(config.value!.led_color))
+
+    scod_pairs.value = []
+    if (config.value!.socd_key_pairs) {
+      for (let i = 0; i < config.value!.socd_key_pairs.length; i++) {
+        scod_pairs.value.push({
+          key1: config.value!.socd_key_pairs[i].key1,
+          key2: config.value!.socd_key_pairs[i].key2,
+        })
+      }
+    }
+  }
+
 
   return {
     device_hid_info,
@@ -415,8 +510,10 @@ export const useDeviceStore = defineStore("device", () => {
     is_v2,
     is_v2se,
     is_v21se,
+    is_v3,
     is_pure,
     try_connect,
+    get_info,
     get_status,
     get_config_raw,
     check_config_raw,
@@ -435,6 +532,8 @@ export const useDeviceStore = defineStore("device", () => {
     store_light_config_v2,
     store_key_config_pure64,
     extract_key_config_pure64,
+    store_key_config_v3,
+    extract_key_config_v3,
 
   };
 });

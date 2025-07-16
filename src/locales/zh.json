@@ -162,7 +162,7 @@
   "bottom_dz_available": "允许调整底部死区",
   "low": "低",
   "high": "高",
-  "latency_enjoyer": "延迟享受者",
+  "latency_enjoyer": "高延迟享受者",
   "select_key_please": "请先选中按键",
   "jitters_elimination_time_desc": "按键的去抖，不会增加按下时的延迟，osu玩家推荐开启",
   "filter_level": "滤波等级",

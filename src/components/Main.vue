@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FirmwareUpdate from '@/components/FirmwareUpdate.vue'
+import SettingsV3 from '@/components/meowpadv3/Settings.vue'
 import SettingsV2 from '@/components/meowpadv2/Settings.vue'
 import SettingsV2SE from '@/components/meowpadv2se/Settings.vue'
 import SettingsV21SE from '@/components/meowpadv21se/Settings.vue'
@@ -15,6 +16,7 @@ import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv21se/api'
 import * as apib from '@/apis/pure64/api'
+import * as apiv3 from '@/apis/meowpadv3/api'
 import { useDialog } from 'naive-ui'
 import { IError, IHidDeviceInfo } from '@/apis';
 import { compareArray, getErrorMsg } from '@/utils';
@@ -34,7 +36,7 @@ emitter.on('refresh-device-list', async (event: { e: IError }) => {
 
   try {
     store.device_list = await api.device_list();
-    console.table(store.device_list)
+    console.log(store.device_list)
 
     if (device.device_hid_info != undefined) {
       let has_device = false
@@ -92,31 +94,15 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 
     device.device_hid_info = device_hid_info;
 
-    let firmware_version = store.firmware_versions.get(device_hid_info.device_name);
-    if (firmware_version == undefined) {
+    
+    await device.get_info();
+    
+    if (device.device_info === undefined) {
       emitter.emit('header-msg-update', { status: "error", str: t('unknown_device') })
       return
     }
 
-    if (device.is_v2()) {
-      device.device_info = await apiv2.get_device_info()
-    } else if (device.is_v2se()) {
-      device.device_info = await apiv2se.get_device_info()
-    } else if (device.is_pure()) {
-      device.device_info = await apib.get_device_info()
-    } else if (device.is_v21se()) {
-      device.device_info = await apiv21se.get_device_info()
-    }
-
     console.table(device.device_info)
-
-    if (!firmware_version.includes(device.device_info!.version)) {
-      if (!store.developer_mode) {
-        store.need_update_firmware = true // 需要更新固件
-        emitter.emit('header-msg-update', { status: "error", str: t('bad_firmware_version', { version: device.device_info!.version }) })
-        return
-      }
-    }
 
     if (store.version_info) {
       store.latest_firmware_download_url = "https://desu.life/#device"
@@ -126,18 +112,7 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 
     if (store.developer_mode) {
       try {
-        if (device.is_v2()) {
-        device.raw_config = await apiv2.get_raw_config()
-        }
-        if (device.is_v2se()) {
-          device.raw_config = await apiv2se.get_raw_config()
-        }
-        if (device.is_pure()) {
-          device.raw_config = await apib.get_raw_config()
-        }
-        if (device.is_v21se()) {
-          device.raw_config = await apiv21se.get_raw_config()
-        }
+        await device.get_config_raw()
       } catch (e: IError | any) {
         if (e.type === 'meowpad' && e.data === 'config_cbor_parse_failed') {
           device.raw_config = t('unsupported_config')
@@ -147,6 +122,20 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       }
     } else {
       // 重置状态
+      let firmware_version = store.firmware_versions.get(device_hid_info.device_name);
+      if (firmware_version == undefined) {
+        emitter.emit('header-msg-update', { status: "error", str: t('unknown_device') })
+        return
+      }
+
+      if (!firmware_version.includes(device.device_info!.version)) {
+        if (!store.developer_mode) {
+          store.need_update_firmware = true // 需要更新固件
+          emitter.emit('header-msg-update', { status: "error", str: t('bad_firmware_version', { version: device.device_info!.version }) })
+          return
+        }
+      }
+
       if (device.device_status!.key === false) {
         if (device.is_v2()) {
           await apiv2.set_key_config(await apiv2.get_default_key_config())
@@ -163,6 +152,10 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
         if (device.is_v21se()) {
           await apiv21se.set_key_config(await apiv21se.get_default_key_config())
           await apiv21se.save_key_config()
+        }
+        if (device.is_v3()) {
+          await apiv3.set_key_config(await apiv3.get_default_key_config())
+          await apiv3.save_key_config()
         }
       }
 
@@ -204,6 +197,10 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
         device.extract_key_config_v21se()
         device.light_config = await apiv21se.get_light_config()
         device.extract_light_config_v21se()
+      }
+      if (device.is_v3()) {
+        device.device_config = await apiv3.get_key_config()
+        device.extract_key_config_v3()
       }
     }
 
@@ -264,6 +261,9 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
         </template>
         <template v-else-if="device.is_v21se()">
           <SettingsV21SE></SettingsV21SE>
+        </template>
+        <template v-else-if="device.is_v3()">
+          <SettingsV3></SettingsV3>
         </template>
       </template>
 

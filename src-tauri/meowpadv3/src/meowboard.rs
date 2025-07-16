@@ -9,6 +9,11 @@ use pretty_hex::*;
 use std::{io::Cursor, thread, time::Duration};
 use crate::cbor::CborConvertor;
 
+pub const HALL_KEY_NUMS: usize = 7;
+pub const NORMAL_KEY_NUMS: usize = 1;
+pub const TOTAL_KEYS: usize = HALL_KEY_NUMS + NORMAL_KEY_NUMS;
+pub const MAX_SOCD_PAIRS: usize = 5;
+
 pub struct MeowpadV3<D: Device> {
     pub key_config: Option<cbor::Device>,
     pub device_name: Option<String>,
@@ -36,6 +41,19 @@ impl<D: Device> MeowpadV3<D> {
             Ok(false)
         }
     }
+
+    pub fn toggle_keyboard(&self) -> Result<()> {
+        self.write(Packet::new(PacketID::ToggleKeyboard, []))?;
+        let packet = self.read()?;
+        if packet.id == PacketID::Ok as u8 {
+            Ok(())
+        } else {
+            dbg!(packet.id);
+            dbg!(packet.data.hex_dump());
+            Err(Error::UnexceptedResponse(packet))
+        }
+    }
+
 
     pub fn get_device_name(&mut self) -> Result<()> {
         self.write(Packet::new(PacketID::GetDeviceName, []))?;
@@ -82,12 +100,12 @@ impl<D: Device> MeowpadV3<D> {
     }
 
 
-    pub fn get_debug_value_part(&mut self, index: u8) -> Result<[KeyRTStatus; 7]> {
+    pub fn get_debug_value_part(&mut self, index: u8) -> Result<[KeyRTStatus; TOTAL_KEYS]> {
         let p = Packet::new(PacketID::Debug, [index]);
         self.write_no_delay(p)?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
-            let mut keys = [KeyRTStatus::default(); 7];
+            let mut keys = [KeyRTStatus::default(); TOTAL_KEYS];
             let mut cur = Cursor::new(packet.data);
             for key in keys.iter_mut() {
                 key.adc_value = cur.read_u16::<BigEndian>()?;
@@ -103,53 +121,52 @@ impl<D: Device> MeowpadV3<D> {
         }
     }
 
-    pub fn get_debug_value(&mut self) -> Result<[KeyRTStatus; 7]> {
+    pub fn get_debug_value(&mut self) -> Result<[KeyRTStatus; TOTAL_KEYS]> {
         let part = self.get_debug_value_part(0)?;
         Ok(part)
     }
 
-    pub fn get_keystates(&mut self) -> Result<[KeyState; 4]> {
+    pub fn get_keystates(&mut self) -> Result<[KeyState; TOTAL_KEYS]> {
         let mut index = 0;
-        let mut keys = [KeyState::default(); 4];
+        let mut keys = [KeyState::default(); TOTAL_KEYS];
         self.write(Packet::new(PacketID::DebugKeyState, [0]))?;
         let data = self.read()?.data;
-        for i in 0..4 {
-            
+        for i in 0..TOTAL_KEYS {
             keys[index] = KeyState::from_u8(*data.get(i).ok_or(Error::InvalidPacket)?).ok_or(Error::InvalidPacket)?;
             index += 1;
         }
         Ok(keys)
     }
     
-    pub fn get_key_calibrate_status(&mut self) -> Result<[bool; 4]> {
+    pub fn get_key_calibrate_status(&mut self) -> Result<[bool; HALL_KEY_NUMS]> {
         let mut index = 0;
-        let mut keys = [false; 4];
+        let mut keys = [false; HALL_KEY_NUMS];
         self.write(Packet::new(PacketID::CalibrateKeyStatus, [0]))?;
         let data = self.read()?.data;
-        for i in 0..4 {
+        for i in 0..HALL_KEY_NUMS {
             keys[index] = *data.get(i).ok_or(Error::InvalidPacket)? != 0;
             index += 1;
         }
         Ok(keys)
     }
 
-    pub fn get_keyvalues(&mut self) -> Result<[u16; 4]> {
+    pub fn get_keyvalues(&mut self) -> Result<[u16; HALL_KEY_NUMS]> {
         let mut index = 0;
-        let mut keys = [0u16; 4];
+        let mut keys = [0u16; HALL_KEY_NUMS];
         self.write(Packet::new(PacketID::DebugValue, [0]))?;
         let mut cur = Cursor::new(self.read()?.data);
-        for _ in 0..4 {
+        for _ in 0..HALL_KEY_NUMS {
             keys[index] = cur.read_u16::<BigEndian>()?;
             index += 1;
         }
         Ok(keys)
     }
 
-    pub fn get_hall_config_part(&mut self, index: u8) -> Result<[KeyHallConfig; 4]> {
+    pub fn get_hall_config_part(&mut self, index: u8) -> Result<[KeyHallConfig; HALL_KEY_NUMS]> {
         self.write(Packet::new(PacketID::GetHallConfig, [index]))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {
-            let mut keys = [KeyHallConfig::default(); 4];
+            let mut keys = [KeyHallConfig::default(); HALL_KEY_NUMS];
             let mut cur = Cursor::new(packet.data);
             for key in keys.iter_mut() {
                 key.adc_max = cur.read_u16::<BigEndian>()?;
@@ -164,7 +181,7 @@ impl<D: Device> MeowpadV3<D> {
         }
     }
 
-    pub fn get_hall_config(&mut self) -> Result<[KeyHallConfig; 4]> {
+    pub fn get_hall_config(&mut self) -> Result<[KeyHallConfig; HALL_KEY_NUMS]> {
         let part = self.get_hall_config_part(0)?;
         Ok(part)
     }
@@ -240,7 +257,8 @@ impl<D: Device> MeowpadV3<D> {
         }
     }
 
-    pub fn calibration_key(&self, key_indexs: &[u8]) -> Result<()> {
+    pub fn calibration_key(&self, key_indexs: Option<&[u8]>) -> Result<()> {
+        let key_indexs = key_indexs.map_or(Vec::new(), Into::into);
         self.write(Packet::new(PacketID::CalibrationKey, key_indexs))?;
         let packet = self.read()?; // 读取
         if packet.id == PacketID::Ok as u8 {

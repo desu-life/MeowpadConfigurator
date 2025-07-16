@@ -1,5 +1,5 @@
 import { IRgb } from "@/interface"
-import { IKeyConfig, IMixedKey } from ".."
+import { IKeyConfig, IMixedKey, ISOCDKeyPairs } from ".."
 import { KeyCode } from "@/keycode"
 
 
@@ -9,11 +9,6 @@ export interface IKeyConfigV3 {
     dead_zone: number
     release_dead_zone: number
     rt_enabled: boolean
-}
-
-export interface ISOCDKeyPairs {
-    key1: number
-    key2: number
 }
 
 
@@ -28,4 +23,24 @@ export interface IKeyboard {
     max_brightness: number
     led_color: IRgb
     socd_key_pairs: ISOCDKeyPairs[]
+    led_mode: LightingMode
+    sleep_timeout: number
+}
+
+
+export enum LightingMode {
+    Off = 0,
+    Calibration = 1,
+    Error = 2,
+
+    Solid = 3,
+    RainbowMode = 4,
+    RainbowFlowMode = 5,
+    PressRadianceMode = 6,
+
+    BreatheGlowMode = 7,
+    BreatheGlowAsyncMode = 8,
+
+    RainDropMode = 9,
+    TapToGlowMode = 10,
 }

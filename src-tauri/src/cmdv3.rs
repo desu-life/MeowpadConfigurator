@@ -62,7 +62,7 @@ pub fn calibration_key_v3(
 ) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.calibration_key(&key_indexs)?;
+    d.calibration_key(Some(&key_indexs))?;
     Ok(())
 }
 
@@ -252,7 +252,7 @@ fn find_device() -> Option<MeowpadV3<HidDevice>> {
         })
 }
 
-pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
+pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened<'_>> {
     // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
     const PID: u16 = 0xFB02;

@@ -12,6 +12,7 @@ const { t } = useI18n();
 const message = useMessage()
 const dialog = useDialog()
 const store = useDeviceStore()
+const s = useStore()
 
 import { KeyCode, jsToHid } from '@/keycode';
 
@@ -37,6 +38,7 @@ const pressedkeycodes = ref<KeyCode[]>([])
 
 
 function setKeys(keyNum: number) {
+  s.key_detection_status = true
   detectKeys(showModal, (ks, k) => {
     if (ks.includes(k)) { return false }
     if (IsModifierKey(k)) { return true }
@@ -59,6 +61,7 @@ function setKeys(keyNum: number) {
     } else {
       store.key_config!.keys[keyNum].key_data = keycodes
     }
+    s.key_detection_status = false
   })
 }
 

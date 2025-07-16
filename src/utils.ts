@@ -2,7 +2,7 @@ import { useI18n } from "vue-i18n";
 import { IError } from "./apis";
 import { IRgb } from "./interface";
 import { IMixedKey } from "@/apis";
-import { mapping as keymap } from "@/keymap";
+import { formatKey, mapping as keymap } from "@/keymap";
 import { KeyCode, jsToHid, mapping } from '@/keycode';
 
 function pad2(c) {
@@ -42,6 +42,15 @@ export function getErrorMsg(t, e: IError): string {
   console.error(e);
   return e.toString();
 }
+
+export function intersperse<T>(arr: T[], separator: T): T[] {
+  if (arr.length === 0) return [];
+  return arr.reduce((acc, item, index) => {
+    if (index === 0) return [item];
+    return [...acc, separator, item];
+  }, [] as T[]);
+}
+
 
 export function formatKeys(keycodes: KeyCode[]) {
   const keys = keycodes

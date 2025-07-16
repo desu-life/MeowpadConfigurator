@@ -5,7 +5,7 @@ import * as api3k from '@/apis/meowpadv2se/api'
 import * as api from '@/apis/api'
 
 export declare type Error = 'DeviceDisconnected' | 'DeviceNotFound' | 'Network' | 'Meowpad' | 'Iap';
-export declare type DeviceName = 'Meowpad' | 'Meowpad SE v2' | 'Pure64' | 'Meowpad SE v2.1';
+export declare type DeviceName = 'Meowpad' | 'Meowpad SE v2' | 'Pure64' | 'Meowpad SE v2.1' | "MeowpadV3";
 export declare type KeyType = 'None' | 'Keyboard' | 'Custom' | 'Mouse' | 'Media';
 
 export interface IError {
@@ -121,4 +121,10 @@ export interface IKeyPresetConfig {
     dead_zone: number
     release_dead_zone: number
     rt_enabled?: boolean
+}
+
+
+export interface ISOCDKeyPairs {
+    key1: number
+    key2: number
 }

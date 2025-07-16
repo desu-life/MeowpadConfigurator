@@ -1,6 +1,7 @@
 import { IMixedKey } from "@/apis";
 import { VolumeMute, VolumeHigh, VolumeLow, Play, PlayBack, PlayForward, Stop, ArrowUp, ArrowBack, ArrowDown, ArrowForward } from "@vicons/ionicons5";
 import { NIcon } from "naive-ui";
+import { intersperse } from "@/utils";
 export declare type KeyMapType =
   | "BasicKeys"
   | "ExtendedKeys"
@@ -168,7 +169,7 @@ export const mapping: IKeyMaps[] = [
 ];
 
 
-export function formatKey(key: IMixedKey) {
+export function formatKey(key: IMixedKey): JSX.Element {
   for (let i = 0; i < mapping.length; i++) {
     for (let j = 0; j < mapping[i].keys.length; j++) {
       if (mapping[i].keys[j].code.t == key.t && mapping[i].keys[j].code.c == key.c) {
@@ -213,4 +214,20 @@ export function formatKey(key: IMixedKey) {
   //   }
   // }
   return <span>{ '' }</span>
+}
+
+
+
+export function formatKeysJsx(keycodes: IMixedKey[]): JSX.Element {
+  const keys = keycodes
+    .filter((k) => k.t != "None")
+    .map((k) => formatKey(k));
+  
+  if (keys.length === 0) {
+    return <span>无</span>;
+  }
+  
+  const keysWithSeparators = intersperse(keys, <span> + </span>);
+  
+  return <>{keysWithSeparators}</>;
 }

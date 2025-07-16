@@ -1,16 +1,14 @@
 use std::{sync::Mutex, thread, time::Duration};
 
 use crate::{
-    device::DeviceInfoExtened,
-    error::{self, Error, Result},
-    MEOWPAD_DEVICE_NAME, PURE64_DEVICE_NAME,
+    consts::MEOWPAD_V3_DEVICE_NAME, device::DeviceInfoExtened, error::{self, Error, Result}, MEOWPAD_DEVICE_NAME, PURE64_DEVICE_NAME
 };
 use hid_iap::iap::{IAPState, IAP};
 use hidapi::HidApi;
 use log::*;
 use tauri::{Emitter, State};
 
-pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
+pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened<'_>> {
     // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
     const PID: u16 = 0xFE08;
@@ -35,7 +33,7 @@ pub fn find_devices(api: &HidApi) -> Vec<DeviceInfoExtened> {
         .collect()
 }
 
-pub fn find_devices_pure(api: &HidApi) -> Vec<DeviceInfoExtened> {
+pub fn find_devices_pure(api: &HidApi) -> Vec<DeviceInfoExtened<'_>> {
     // 期望的设备VID和PID
     const VID: u16 = 0x5D3E;
     const PID: u16 = 0xFA00;
@@ -49,11 +47,18 @@ pub fn find_devices_pure(api: &HidApi) -> Vec<DeviceInfoExtened> {
                 return None;
             }
 
+            let serial = d.serial_number();
+            let device_name = match serial.as_deref() {
+                Some(n) if n.ends_with("FB01") => PURE64_DEVICE_NAME,
+                Some(n) if n.ends_with("FB02") => MEOWPAD_V3_DEVICE_NAME,
+                _ => "Unknown",
+            };
+
             // 连接设备
             Some(DeviceInfoExtened {
-                device_name: PURE64_DEVICE_NAME.to_owned(),
+                device_name: device_name.to_owned(),
                 firmware_version: "IAP".to_owned(),
-                serial_number: None,
+                serial_number: serial.map(|s| s[..s.len().saturating_sub(4)].to_owned()),
                 inner: d,
             })
         })
