@@ -43,14 +43,16 @@ export function getErrorMsg(t, e: IError): string {
   return e.toString();
 }
 
-export function intersperse<T>(arr: T[], separator: T): T[] {
-  if (arr.length === 0) return [];
-  return arr.reduce((acc, item, index) => {
-    if (index === 0) return [item];
-    return [...acc, separator, item];
-  }, [] as T[]);
+export function intersperse<T>(arr: T[], separator: (index: number) => T): T[] {
+  const result: T[] = [];
+  arr.forEach((item, index) => {
+    result.push(item);
+    if (index < arr.length - 1) {
+      result.push(separator(index));
+    }
+  });
+  return result;
 }
-
 
 export function formatKeys(keycodes: KeyCode[]) {
   const keys = keycodes
@@ -92,6 +94,18 @@ export function Rgb2Hex(color: IRgb): string {
 export function IsModifierKey(key: KeyCode): boolean {
   return KeyCode.LCtrl <= key && key <= KeyCode.RGui;
 }
+
+export function compareKeys(a1: IMixedKey[], a2: IMixedKey[]): boolean {
+  if (a1 === a2) return true;
+  if ((!a1 && a2) || (a1 && !a2)) return false;
+  if (a1.length !== a2.length) return false;
+  for (var i = 0, n = a1.length; i < n; i++) {
+    if (a1[i].t !== a2[i].t) return false;
+    if (a1[i].c !== a2[i].c) return false;
+  }
+  return true;
+}
+
 
 export function compareArray<T>(a1: T[], a2: T[]): boolean {
   if (a1 === a2) return true;

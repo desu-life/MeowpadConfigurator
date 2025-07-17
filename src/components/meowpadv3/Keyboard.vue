@@ -7,7 +7,7 @@ import KeyShow from '@/components/KeyComponents/KeyShow.vue'
 import KeyModal from '@/components/KeyComponents/KeyModal.vue'
 import type { IKeymap } from '@/interface';
 import { ref } from 'vue';
-import { formatKeys, IsModifierKey, compareArray, detectKeys } from '@/utils'
+import { formatKeys, IsModifierKey, compareArray, detectKeys, compareKeys } from '@/utils'
 
 import { IKeyboard } from "@/apis/meowpadv3/config";
 import { storeToRefs } from 'pinia';
@@ -46,12 +46,14 @@ const showModal = ref(false)
 const pressedkeycodes = ref<KeyCode[]>([])
 
 
+
+
 function setKeys(keyNum: number, isHallKeys: boolean) {
   s.key_detection_status = true
   detectKeys(showModal, (ks, k) => {
     if (ks.includes(k)) { return false }
     if (IsModifierKey(k)) { return true }
-    if (ks.filter((k) => !IsModifierKey(k)).length < 3) {
+    if (ks.length < 3) {
       return true
     } else {
       message.error(t('most_3_key_error'))
@@ -62,22 +64,26 @@ function setKeys(keyNum: number, isHallKeys: boolean) {
     pressedkeycodes.value = [...ks]
   }, ks => {
     // 先排序
-    let keycodes: IMixedKey[] = ks.sort((l, r) => r - l).map(k => {
-      return {
+    let keycodes: IMixedKey[] = ks.slice().sort((l, r) => r - l).map(k => {
+      return Object.freeze({
         t: "Keyboard",
         c: k,
-      }
+      })
     })
 
-    
+    let keyIndex = isHallKeys ? keyNum : 7 + keyNum;
+    let originKeyCodes = cfg.value!.layer[keyIndex].filter(k => k.t != "None")
+
     // 对比新的按键和旧的是否相同
     if (keycodes.length > 0) {
-      if (isHallKeys) {
-        compareArray(cfg.value!.layer[keyNum], keycodes) ? cfg.value!.layer[keyNum] = [] : cfg.value!.layer[keyNum] = keycodes
-      } else {
-        compareArray(cfg.value!.layer[7 + keyNum], keycodes) ? cfg.value!.layer[7 + keyNum] = [] : cfg.value!.layer[7 + keyNum] = keycodes
-      }
+        compareKeys(originKeyCodes, keycodes) ? cfg.value!.layer[keyIndex] = [] : cfg.value!.layer[keyIndex] = keycodes
     }
+
+    // 补齐
+    while (cfg.value!.layer[keyIndex].length < 3) {
+      cfg.value!.layer[keyIndex].push({ t: "None" })
+    }
+
     s.key_detection_status = false
   })
 }
@@ -146,7 +152,7 @@ function getKeyText(index: number, isHallKeys: boolean) {
   <div class="key-settings">
     <div class="keyboard" :style="keymapStyle">
       <div v-for="line in keymap" class="line">
-        <div v-for="key in line" :class="key.index == undefined ? 'hidden' : ''">
+        <div v-for="(key, i) in line" :key="i" :class="key.index == undefined ? 'hidden' : ''">
           <template v-if="key.index != undefined">
             <template v-if="key.index >= 0">
               <Key :unit-width="key.width" :key-num="key.index" :on-click="k => clickKey(k, true)"
@@ -161,7 +167,7 @@ function getKeyText(index: number, isHallKeys: boolean) {
             </template>
             <template v-else>
               <Key :unit-width="key.width" :key-num="key.index" :on-click="k => clickKey(k, false)"
-                :selected="key.index == selectedKey && !isSelectHallKey"
+                :selected="(Math.abs(key.index) - 1) == selectedKey && !isSelectHallKey"
                 rounded
                 >
                 <div v-if="getKeyDataLen(key.index, false) <= 1">
@@ -195,7 +201,7 @@ function getKeyText(index: number, isHallKeys: boolean) {
       </div> -->
       <transition name="fade">
         <div class="line" v-if="selectedKey != null && getKeyDataLen(selectedKey, isSelectHallKey) > 1">
-          <KeyShow :unit-width="5.23" style="--default-key-font-size: 13px;--default-key-height: 45px;">
+          <KeyShow :unit-width="4.5" style="--default-key-font-size: 13px;--default-key-height: 45px;">
             <component :is="getKeyText(selectedKey, isSelectHallKey)" />
           </KeyShow>
         </div>

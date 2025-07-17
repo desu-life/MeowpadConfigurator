@@ -221,13 +221,21 @@ export function formatKey(key: IMixedKey): JSX.Element {
 export function formatKeysJsx(keycodes: IMixedKey[]): JSX.Element {
   const keys = keycodes
     .filter((k) => k.t != "None")
-    .map((k) => formatKey(k));
+    .map((k, index) => {
+      // 重新包装，确保唯一性
+      return <span key={`key-${k.c}-${index}-${Date.now()}`}>
+        {formatKey(k)}
+      </span>
+    });
   
   if (keys.length === 0) {
     return <span>无</span>;
   }
   
-  const keysWithSeparators = intersperse(keys, <span> + </span>);
+  const keysWithSeparators = intersperse(
+    keys, 
+    (index) => <span key={`sep-${index}-${Date.now()}`}> + </span>
+  );
   
   return <>{keysWithSeparators}</>;
 }

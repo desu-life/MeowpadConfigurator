@@ -433,7 +433,7 @@ export const useDeviceStore = defineStore("device", () => {
     config.value!.key_proof = key_proof.value == Toggle.On ? true : false
     config.value!.auto_calibration = auto_calibration.value == Toggle.On ? true : false
     config.value!.hall_filter = hall_filter.value
-    config.value!.max_brightness = Math.floor(max_brightness.value / 2)
+    config.value!.max_brightness = Math.round(max_brightness.value / 2)
 
     config.value!.led_color = Hex2Rgb(led_colors.value![0])
 
@@ -465,7 +465,7 @@ export const useDeviceStore = defineStore("device", () => {
     key_proof.value = config.value!.key_proof == true ? Toggle.On : Toggle.Off
     auto_calibration.value = config.value!.auto_calibration == true ? Toggle.On : Toggle.Off
     hall_filter.value = config.value!.hall_filter
-    max_brightness.value = Math.floor(config.value!.max_brightness * 2)
+    max_brightness.value = Math.round(config.value!.max_brightness * 2)
 
     led_colors.value = []
     led_colors.value.push(Rgb2Hex(config.value!.led_color))
