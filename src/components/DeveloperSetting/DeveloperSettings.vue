@@ -29,21 +29,26 @@ async function check_raw_config(value: string): Promise<void> {
   <div class="developer-config">
     <n-alert :title="$t('warning')" type="warning" style="margin-bottom: 10px;">
       {{ $t('developer_warning_2') }} </n-alert>
-    <div v-if="device.connected">
-      <div v-if="store.debug_mode">
-        <Debug></Debug>
-      </div>
-      <div v-else-if="device.raw_config != undefined">
+    <template v-if="device.connected">
+      <template v-if="store.debug_mode">
+        <template v-if="device.is_v3()">
+          <DebugForV3></DebugForV3>
+        </template>
+        <template v-else>
+          <Debug></Debug>
+        </template>
+      </template>
+      <template v-else-if="device.raw_config != undefined">
         <n-input type="textarea" v-model:value="device.raw_config" :on-input="check_raw_config" :status="input_status"
           :autosize="{
             minRows: 3,
             maxRows: 15
           }" />
-      </div>
-    </div>
-    <div v-else-if="store.iap_connected">
+      </template>
+    </template>
+    <template v-else-if="store.iap_connected">
       <IAP></IAP>
-    </div>
+    </template>
   </div>
 </template>
 

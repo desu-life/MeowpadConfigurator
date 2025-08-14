@@ -3,6 +3,7 @@ import { IError, IKeyRTStatus, KeyState } from '@/apis';
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv21se/api'
+import * as apiv3 from '@/apis/meowpadv3/api'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { getErrorMsg } from '@/utils';
@@ -79,6 +80,11 @@ onMounted(() => {
         let v = await apiv21se.get_debug_value();
         debug_data.value = v.keys;
         btn_state.value = v.btns;
+      }
+      if (device.is_v3()) {
+        let v = await apiv3.get_debug_value();
+        debug_data.value = v.slice(0, 7);
+        btn_state.value = [v[7].key_state];
       }
     } catch (e) {
       emitter.emit('connection-broke', {e: e as IError})

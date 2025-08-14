@@ -133,7 +133,7 @@ function GetToggleSel() {
             </n-gi>
             <n-gi>
               <n-form-item :label="$t('filter_level')" path="continuous_report">
-                <n-select v-model:value="device_cfg.hall_filter" :options="HallFilterSel" />
+                <n-select v-model:value="store.hall_filter" :options="HallFilterSel" />
               </n-form-item>
             </n-gi>
             <!-- 可以添加更多按键相关的配置在这里 -->

@@ -44,7 +44,7 @@ const pressedkeycodes = ref<KeyCode[]>([])
 
 function setKeys(keyNum: number) {
   s.key_detection_status = true
-  detectKeys(showModal, (ks, k) => {
+  detectKeys(showModal, null, (ks, k) => {
     if (ks.includes(k)) { return false }
     if (IsModifierKey(k)) { return true }
     if (ks.filter((k) => !IsModifierKey(k)).length < 3) {

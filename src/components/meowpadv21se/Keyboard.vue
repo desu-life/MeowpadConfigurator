@@ -46,7 +46,7 @@ const pressedkeycodes = ref<KeyCode[]>([])
 
 function setKeys(keyNum: number, isHallKeys: boolean) {
   s.key_detection_status = true
-  detectKeys(showModal, (ks, k) => {
+  detectKeys(showModal, null, (ks, k) => {
     if (ks.includes(k)) { return false }
     if (IsModifierKey(k)) { return true }
     if (ks.filter((k) => !IsModifierKey(k)).length < 3) {
@@ -258,13 +258,13 @@ function getKeyText(index: number, isHallKeys: boolean) {
   position: relative;
   background: var(--color-background-soft);
   border-radius: var(--n-border-radius);
-  /* border: 5px solid var(--color-border); */
+  border: 5px solid var(--color-border);
   display: flex;
   flex-direction: column;
   height: fit-content;
   padding: 10px;
   width: fit-content;
-  outline: var(--n-border-radius) solid var(--color-border);
+  /* outline: var(--n-border-radius) solid var(--color-border); */
 }
 
 .line {

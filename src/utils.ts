@@ -142,6 +142,7 @@ export function time_2_str() {
 
 export function detectKeys(
   activeStatus: Ref<boolean>,
+  cancelToken: Ref<boolean> | null,
   keycodeFilter: (ks: KeyCode[], newKey: KeyCode) => boolean,
   onUpdate: (ks: KeyCode[]) => void,
   onDone: (ks: KeyCode[]) => void,
@@ -152,6 +153,12 @@ export function detectKeys(
   let keycodes: KeyCode[] = []
   activeStatus.value = true
   document.onkeydown = (e) => {
+    if (cancelToken && !cancelToken.value) {
+      document.onkeydown = null
+      document.onkeyup = null
+      return
+    }
+
     if (activeStatus.value === false) {
       document.onkeydown = null
       document.onkeyup = null
@@ -166,6 +173,12 @@ export function detectKeys(
       presskeycodes.push(HidCodeDown)
       onUpdate(pressedkeycodes)
       document.onkeyup = (e) => {
+        if (cancelToken && !cancelToken.value) {
+          document.onkeydown = null
+          document.onkeyup = null
+          return
+        }
+
         if (activeStatus.value === false) {
           document.onkeydown = null
           document.onkeyup = null

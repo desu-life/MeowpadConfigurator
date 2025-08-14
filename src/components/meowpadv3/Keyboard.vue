@@ -4,7 +4,7 @@ import { useDeviceStore } from '@/store/device';
 import { useI18n } from "vue-i18n";
 import Key from '@/components/KeyComponents/Key.vue'
 import KeyShow from '@/components/KeyComponents/KeyShow.vue'
-import KeyModal from '@/components/KeyComponents/KeyModal.vue'
+import KeyModalV2 from '@/components/KeyComponents/KeyModalV2.vue'
 import type { IKeymap } from '@/interface';
 import { ref } from 'vue';
 import { formatKeys, IsModifierKey, compareArray, detectKeys, compareKeys } from '@/utils'
@@ -43,14 +43,29 @@ let keymapStyle = ref({
 const selectedKey = ref<number | null>(null)
 const isSelectHallKey = ref<boolean>(true)
 const showModal = ref(false)
+const isCapturingKeys = ref(false)
 const pressedkeycodes = ref<KeyCode[]>([])
+const currentKeyCode = ref<IMixedKey[]>([])
+const currKeyIndex = ref<number>(0)
 
+function cancelKeyCapture() {
+  isCapturingKeys.value = false
+}
 
-
+/// 自选按键退出时的处理
+function leaveFunc(k?: IMixedKey[]) {
+  if (k) {
+    cfg.value!.layer[currKeyIndex.value] = k
+  }
+}
 
 function setKeys(keyNum: number, isHallKeys: boolean) {
+  let keyIndex = isHallKeys ? keyNum : 7 + keyNum;
+  currKeyIndex.value = keyIndex
   s.key_detection_status = true
-  detectKeys(showModal, (ks, k) => {
+  isCapturingKeys.value = true
+  currentKeyCode.value = cfg.value!.layer[keyIndex]
+  detectKeys(showModal, isCapturingKeys, (ks, k) => {
     if (ks.includes(k)) { return false }
     if (IsModifierKey(k)) { return true }
     if (ks.length < 3) {
@@ -71,7 +86,6 @@ function setKeys(keyNum: number, isHallKeys: boolean) {
       })
     })
 
-    let keyIndex = isHallKeys ? keyNum : 7 + keyNum;
     let originKeyCodes = cfg.value!.layer[keyIndex].filter(k => k.t != "None")
 
     // 对比新的按键和旧的是否相同
@@ -79,12 +93,8 @@ function setKeys(keyNum: number, isHallKeys: boolean) {
         compareKeys(originKeyCodes, keycodes) ? cfg.value!.layer[keyIndex] = [] : cfg.value!.layer[keyIndex] = keycodes
     }
 
-    // 补齐
-    while (cfg.value!.layer[keyIndex].length < 3) {
-      cfg.value!.layer[keyIndex].push({ t: "None" })
-    }
-
     s.key_detection_status = false
+    isCapturingKeys.value = false
   })
 }
 
@@ -100,6 +110,7 @@ function clickKey(k: number, isHallKeys: boolean) {
   if (k < 0) {
       k = Math.abs(k) - 1
   }
+  
   if (k === selectedKey.value && isHallKeys === isSelectHallKey.value) {
     setKeys(k, isHallKeys)
   } else {
@@ -124,6 +135,10 @@ function applyKeySetting() {
 }
 
 function getKeyDataLen(index: number, isHallKeys: boolean) {
+  if (index < 0) {
+    index = Math.abs(index) - 1
+  }
+
   if (isHallKeys) {
     return cfg.value!.layer[index].filter(k => k.t != "None").length
   } else {
@@ -148,7 +163,7 @@ function getKeyText(index: number, isHallKeys: boolean) {
 
 
 <template>
-  <KeyModal v-model:show="showModal" :pressedkeycodes="pressedkeycodes"></KeyModal>
+  <KeyModalV2 v-model:show="showModal" :pressedkeycodes="pressedkeycodes" :currkey="currentKeyCode" :leave-func="leaveFunc" :enter-selection="cancelKeyCapture"></KeyModalV2>
   <div class="key-settings">
     <div class="keyboard" :style="keymapStyle">
       <div v-for="line in keymap" class="line">
@@ -212,8 +227,6 @@ function getKeyText(index: number, isHallKeys: boolean) {
       <transition name="fade">
         <template v-if="selectedKey != null && isSelectHallKey">
           <div class="hall-config">
-            <!-- <n-button type="error" class="badge" @click="set_auto_config">
-              {{ $t('need_help') }} </n-button> -->
             <n-form-item :label="$t('dead_zone')" path="dead_zone" label-placement="left" :show-feedback="false">
               <n-input-number v-model:value="cfg!.keys[selectedKey!].dead_zone" :min="1" :max="100"
                 :placeholder="$t('no_data')">

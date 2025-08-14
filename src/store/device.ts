@@ -437,6 +437,12 @@ export const useDeviceStore = defineStore("device", () => {
 
     config.value!.led_color = Hex2Rgb(led_colors.value![0])
 
+    for (let i = 0; i < config.value!.layer.length; i++) {
+      while (config.value!.layer[i].length < 3) {
+        config.value!.layer[i].push({ t: "None" })
+      }
+    }
+
     if (config.value!.socd_key_pairs) {
       config.value!.socd_key_pairs = []
       const len = Math.min(5, scod_pairs.value!.length);

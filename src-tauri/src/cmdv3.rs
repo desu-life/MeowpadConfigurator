@@ -58,11 +58,11 @@ pub fn get_device_status_v3(
 #[tauri::command]
 pub fn calibration_key_v3(
     device_handle: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
-    key_indexs: Vec<u8>,
+    key_indexs: Option<&[u8]>,
 ) -> Result<()> {
     let mut _d = device_handle.lock().unwrap();
     let d = _d.as_mut().ok_or(Error::DeviceDisconnected)?;
-    d.calibration_key(Some(&key_indexs))?;
+    d.calibration_key(key_indexs)?;
     Ok(())
 }
 

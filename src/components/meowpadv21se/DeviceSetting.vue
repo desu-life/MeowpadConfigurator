@@ -207,7 +207,8 @@ function GetToggleSel() {
 .key-settings {
   flex: 3;
   background: var(--color-background-soft);
-  border-radius: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--color-border);
   padding: 20px 20px 0px 20px;
   /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1); */
   position: relative;
@@ -217,7 +218,8 @@ function GetToggleSel() {
 .light-settings {
   flex: 7;
   background: var(--color-background-soft);
-  border-radius: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--color-border);
   padding: 20px 20px 0px 20px;
   /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1); */
   position: relative;

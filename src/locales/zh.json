@@ -207,5 +207,6 @@
   "socd_pair_created": "SOCD配对已创建",
   "socd_pair_removed": "SOCD配对已移除",
   "socd_add": "添加配对",
-  "socd_min_select": "至少需要选择两个键"
+  "socd_min_select": "至少需要选择两个键",
+  "key_modal_select_title": "请选择按键"
 }
