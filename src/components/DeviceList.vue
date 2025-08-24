@@ -12,6 +12,9 @@ import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import { type } from '@tauri-apps/plugin-os';
 import { useRouter } from "vue-router";
+import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
+import { message } from '@tauri-apps/plugin-dialog';
 
 const { t } = useI18n();
 const store = useStore()
@@ -75,13 +78,40 @@ async function continue_device_upgrade(d: IHidDeviceInfo) {
             } catch (e) {
                 emitter.emit('connection-broke', { e: e as IError })
             }
-        } else {
-            if (ostype == "windows") {
-                api.update_firmware_call()
-            } else {
-                emitter.emit('header-msg-update', { status: "error", str: t('unsupported_platform') })
-
+        } else if (d.product_id == 0xFA00) {
+            if (store.iap_connected === true) {
+                return
             }
+
+            emitter.emit('header-loading', { str: t('connecting') })
+
+            if (!await api.connect_device(d)) {
+                emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: t('device_not_found') }) })
+                return
+            }
+
+            store.iap_connected = true
+            emitter.emit('header-msg-update', { status: "warning", str: t('iap_connected') })
+
+            api.update_firmware_call().then(async (status: boolean) => {
+                emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
+                if (status) {
+                    await message('更新完成', { kind: 'info' });
+                } else {
+                    await message('更新取消', { kind: 'error' });
+                }
+
+            }).catch((e: IError) => {
+                emitter.emit('connection-broke', { e: e })
+            }).finally(() => {
+                emit("progress-close")
+                store.iap_connected = false
+            })
+            await invoke("open_modal_progress");
+                        
+
+            // emit("progress-update", 50);
+
         }
     } else {
         emitter.emit('header-msg-update', { status: "error", str: t('device_not_support') })

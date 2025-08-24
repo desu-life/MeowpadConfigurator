@@ -5,7 +5,7 @@ import Main from '@/components/Main.vue'
 import Application from './components/Application.vue';
 import { darkTheme } from "naive-ui";
 import { LogicalSize } from '@tauri-apps/api/dpi';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { getCurrentWebviewWindow, WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
@@ -18,13 +18,15 @@ import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv21se/api'
 import * as apip64 from '@/apis/pure64/api'
 import * as apiv3 from '@/apis/meowpadv3/api'
+import { emit } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
     color: '#F7F7F7',
     headerColor: '#F7F7F7',
-  }
+  } 
 }
 
 const { t } = useI18n();

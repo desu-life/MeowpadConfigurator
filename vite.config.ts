@@ -80,6 +80,12 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
       // produce sourcemaps for debug builds
       sourcemap: !!process.env.TAURI_DEBUG,
+      rollupOptions: {
+        input: {
+          main: pathResolve("index.html"),
+          progress: pathResolve("progress.html"),
+        },
+      },
     },
   };
 };

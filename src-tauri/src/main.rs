@@ -14,7 +14,10 @@ use meowpad3k::Meowpad as Meowpad3k;
 use meowpad4k::Meowpad as Meowpad4k;
 use meowpadv3::MeowpadV3;
 use reqwest::Client;
+use tauri::Emitter;
 use std::env;
+#[cfg(target_os = "windows")]
+use std::ffi::c_void;
 use std::ops::Deref;
 use std::panic;
 use std::str::FromStr;
@@ -124,35 +127,75 @@ async fn get_latest_version(client: State<'_, Client>) -> Result<Vec<Version>> {
 }
 
 #[tauri::command]
-fn update_firmware_call(handle: tauri::AppHandle) {
-    use std::process::Command;
+async fn update_firmware_call(handle: tauri::AppHandle, device: State<'_, Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>) -> Result<bool>{
+    use kagami_studio_iap::{CRC32, BinParser, HexParser, KagamiStudioIAP};
+    
+    let mut _iap = device.lock().unwrap();
+    let iap = _iap.as_mut().ok_or(crate::error::Error::DeviceDisconnected)?;
 
-    tauri::async_runtime::spawn(async move {
-        let file_path = handle
-            .dialog()
-            .file()
-            .add_filter("Firmware File", &["hex"])
-            .blocking_pick_file();
+    let file_path = handle
+        .dialog()
+        .file()
+        .add_filter("Firmware File", &["hex"])
+        .blocking_pick_file();
 
-        if let Some(FilePath::Path(file_path)) = file_path {
-            let resource_path = handle
-                .path()
-                .resolve(
-                    "resources/FirmwareUpdater.exe",
-                    tauri::path::BaseDirectory::Resource,
-                )
-                .expect("failed to resolve resource");
+    if let Some(FilePath::Path(file_path)) = file_path {
 
-            warn!("resource_path: {:#?}", resource_path);
+        let b = std::fs::read_to_string(file_path)?;
 
-            Command::new(resource_path)
-                .args([file_path])
-                .spawn()
-                .expect("failed to execute process")
-                .wait()
-                .expect("process failed");
+        let parser = HexParser::<2048>::new(&b);
+        let parts = parser.parse().map_err(|_| crate::error::Error::InvalidFile)?;
+
+        if parts.is_empty() {
+            return Err(crate::error::Error::InvalidFile);
         }
-    });
+        
+        let app_addr = iap.get_iap_address()?;
+        
+        if parts.first().unwrap().offset != app_addr {
+            return Err(crate::error::Error::InvalidFile);
+        }
+        
+        iap.enter_iap_mode()?;
+
+        let total_len = parts.len() as f32;
+
+        iap.begin_download_usb()?;
+        for (i, part) in parts.iter().enumerate() {
+            iap.download_file_part(part)?;
+            handle.emit("progress-update", 0.0 + (i as f32 + 1.0) * 1.0 / total_len * 90.0)?;
+        }
+        iap.end_download_usb()?;
+        
+        for (i, part) in parts.iter().enumerate() {
+            iap.crc_verify_part(part)?;
+            handle.emit("progress-update", 90.0 + (i as f32 + 1.0) * 1.0 / total_len * 10.0)?;
+        }
+
+        iap.jump_to_app()?;
+
+        // let resource_path = handle
+        //     .path()
+        //     .resolve(
+        //         "resources/FirmwareUpdater.exe",
+        //         tauri::path::BaseDirectory::Resource,
+        //     )
+        //     .expect("failed to resolve resource");
+
+        // warn!("resource_path: {resource_path:#?}");
+
+        // Command::new(resource_path)
+        //     .args([file_path])
+        //     .spawn()
+        //     .expect("failed to execute process")
+        //     .wait()
+        //     .expect("process failed");
+
+        Ok(true)
+    } else {
+        warn!("未选择固件文件");
+        Ok(false)
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -323,6 +366,7 @@ fn connect_device(
     device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
     device_handle_v3: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
     device_handle_v21se: State<'_, Mutex<Option<meowpadv21se::Meowpad<HidDevice>>>>,
+    device_handle_kgm_iap: State<'_, Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>,
     device_info: DeviceInfoSerdi,
 ) -> bool {
     let api = api_handle.lock().unwrap();
@@ -344,7 +388,9 @@ fn connect_device(
 
     if let Some(d) = d {
         info!("连接到设备 {}", device_info.device_name);
-        if device_info.device_name == MEOWPAD_DEVICE_NAME {
+        if device_info.product_id == 0xFA00 {
+            *device_handle_kgm_iap.lock().unwrap() = Some(kagami_studio_iap::KagamiStudioIAP::new(device::HidDevice { device: d }));
+        } else if device_info.device_name == MEOWPAD_DEVICE_NAME {
             if device_info.firmware_version == "IAP" {
                 *device_handle_iap.lock().unwrap() = Some(IAP::new(d));
             } else {
@@ -375,6 +421,39 @@ fn connect_device(
     true
 }
 
+#[tauri::command]
+async fn open_modal_progress(app: tauri::AppHandle, main_window: tauri::WebviewWindow) -> Result<()> {
+    let progress_window = tauri::WebviewWindowBuilder::new(
+        &app,
+        "progress", 
+        tauri::WebviewUrl::App("progress.html".into())
+    )
+    .title("Kagami Studio Firmware Updater - Operation Progress")
+    .inner_size(440.0, 65.0)
+    .center()
+    .resizable(false)
+    .minimizable(false)
+    .maximizable(false)
+    .closable(false)
+    .focus()
+    .visible(false)
+    .parent(&main_window)?
+    .build()?;
+
+    main_window.set_enabled(false)?;
+
+    
+    // 3. 监听关闭事件，重新启用父窗口
+    let main_window_clone = main_window.clone();
+    progress_window.on_window_event(move |event| {
+        if let tauri::WindowEvent::CloseRequested { .. } = event {
+            let _ = main_window_clone.set_enabled(true);
+        }
+    });
+
+    Ok(())
+}
+
 fn main() -> AnyResult<()> {
     // init_logger("INFO");
     let log_level = LevelFilter::from_str(&std::env::var("LOG_LEVEL").unwrap_or_default())
@@ -387,6 +466,7 @@ fn main() -> AnyResult<()> {
     
     builder = builder.setup(|app| {
         let handle = app.handle().clone();
+        
         panic::set_hook(Box::new(move |e| {
             use better_panic::Settings;
             use std::backtrace::Backtrace;
@@ -580,6 +660,7 @@ fn main() -> AnyResult<()> {
             cmd21se::check_raw_config_21se,
             cmd21se::save_raw_config_21se,
             cmd21se::connect_21se,
+            open_modal_progress
         ])
         .manage(
             Client::builder()

@@ -39,8 +39,8 @@ pub struct KagamiStudioIAP<D: Device> {
 }
 
 impl<D: Device> KagamiStudioIAP<D> {
-    pub fn new(device: D) -> IAPResult<Self> {
-        Ok(KagamiStudioIAP { device })
+    pub fn new(device: D) -> Self {
+        KagamiStudioIAP { device }
     }
 
     fn write(&self, report_id: u8, data: &[u8]) -> IAPResult<usize> {

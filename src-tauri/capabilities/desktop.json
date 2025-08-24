@@ -11,6 +11,8 @@
   "permissions": [
     "global-shortcut:default",
     "opener:allow-open-url",
-    "store:default"
+    "store:default",
+    "core:webview:allow-create-webview-window",
+    "core:window:allow-set-enabled"
   ]
 }

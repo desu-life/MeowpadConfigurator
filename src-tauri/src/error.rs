@@ -7,6 +7,12 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[serde(tag = "type", content = "data", rename_all = "snake_case")]
 pub enum Error {
     #[error(transparent)]
+    KagamiIap(
+        #[from]
+        #[serde_as(as = "DisplayFromStr")]
+        kagami_studio_iap::IAPError,
+    ),
+    #[error(transparent)]
     Iap(
         #[from]
         #[serde_as(as = "DisplayFromStr")]
@@ -34,4 +40,17 @@ pub enum Error {
     DeviceNotFound,
     #[error("设备未连接")]
     DeviceDisconnected,
+    #[error(transparent)]
+    Tauri(
+        #[from]
+        #[serde_as(as = "DisplayFromStr")]
+        tauri::Error,
+    ),
+    #[error("不支持的文件")]
+    InvalidFile,
+    #[error("CRC校验失败")]
+    CrcMismatch,
+    #[error("文件解析错误: {0}")]
+    FileParseError(String),
+
 }
