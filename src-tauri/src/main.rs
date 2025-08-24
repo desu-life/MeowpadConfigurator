@@ -187,7 +187,7 @@ async fn update_firmware_call(
             )?;
         }
 
-        // iap.jump_to_app()?;
+        iap.jump_to_app()?;
 
         // let resource_path = handle
         //     .path()
