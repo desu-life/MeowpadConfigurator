@@ -14,15 +14,13 @@ use meowpad3k::Meowpad as Meowpad3k;
 use meowpad4k::Meowpad as Meowpad4k;
 use meowpadv3::MeowpadV3;
 use reqwest::Client;
-use tauri::Emitter;
 use std::env;
-#[cfg(target_os = "windows")]
-use std::ffi::c_void;
 use std::ops::Deref;
 use std::panic;
 use std::str::FromStr;
 use std::sync::Mutex;
-use std::time::Duration;
+use std::time::Duration; 
+use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
 use tauri_plugin_dialog::DialogExt;
@@ -30,18 +28,18 @@ use tauri_plugin_fs::FilePath;
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 use tauri_plugin_opener::OpenerExt;
 
+mod cmd21se;
 mod cmd3k;
 mod cmd4k;
 mod cmdiap;
 mod cmdkbd;
 mod cmdpreset;
+mod cmdv3;
 mod consts;
 mod device;
 mod device_preset;
 mod error;
 mod utils;
-mod cmdv3;
-mod cmd21se;
 use cmd3k::*;
 use cmd4k::*;
 use cmdiap::*;
@@ -127,11 +125,18 @@ async fn get_latest_version(client: State<'_, Client>) -> Result<Vec<Version>> {
 }
 
 #[tauri::command]
-async fn update_firmware_call(handle: tauri::AppHandle, device: State<'_, Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>) -> Result<bool>{
-    use kagami_studio_iap::{CRC32, BinParser, HexParser, KagamiStudioIAP};
+async fn update_firmware_call(
+    handle: tauri::AppHandle,
+    device: State<'_, tauri::async_runtime::Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>,
+) -> Result<bool> {
+    use kagami_studio_iap::{BinParser, HexParser, KagamiStudioIAP, CRC32};
     
-    let mut _iap = device.lock().unwrap();
-    let iap = _iap.as_mut().ok_or(crate::error::Error::DeviceDisconnected)?;
+
+    let mut _iap = device.lock().await;
+    let iap = _iap
+        .as_mut()
+        .ok_or(crate::error::Error::DeviceDisconnected)?;
+
 
     let file_path = handle
         .dialog()
@@ -140,39 +145,49 @@ async fn update_firmware_call(handle: tauri::AppHandle, device: State<'_, Mutex<
         .blocking_pick_file();
 
     if let Some(FilePath::Path(file_path)) = file_path {
-
         let b = std::fs::read_to_string(file_path)?;
 
         let parser = HexParser::<2048>::new(&b);
-        let parts = parser.parse().map_err(|_| crate::error::Error::InvalidFile)?;
+        let parts = parser
+            .parse()
+            .map_err(|_| crate::error::Error::InvalidFile)?;
 
         if parts.is_empty() {
             return Err(crate::error::Error::InvalidFile);
         }
-        
+
         let app_addr = iap.get_iap_address()?;
-        
+
         if parts.first().unwrap().offset != app_addr {
             return Err(crate::error::Error::InvalidFile);
         }
-        
+
         iap.enter_iap_mode()?;
 
         let total_len = parts.len() as f32;
 
+        open_modal_progress(&handle, &handle.get_webview_window("main").unwrap()).await?;
+
+
         iap.begin_download_usb()?;
         for (i, part) in parts.iter().enumerate() {
             iap.download_file_part(part)?;
-            handle.emit("progress-update", 0.0 + (i as f32 + 1.0) * 1.0 / total_len * 90.0)?;
+            handle.emit(
+                "progress-update",
+                0.0 + (i as f32 + 1.0) * 1.0 / total_len * 90.0,
+            )?;
         }
         iap.end_download_usb()?;
-        
+
         for (i, part) in parts.iter().enumerate() {
             iap.crc_verify_part(part)?;
-            handle.emit("progress-update", 90.0 + (i as f32 + 1.0) * 1.0 / total_len * 10.0)?;
+            handle.emit(
+                "progress-update",
+                90.0 + (i as f32 + 1.0) * 1.0 / total_len * 10.0,
+            )?;
         }
 
-        iap.jump_to_app()?;
+        // iap.jump_to_app()?;
 
         // let resource_path = handle
         //     .path()
@@ -276,14 +291,14 @@ async fn open_update_url(app: tauri::AppHandle, _version: Version, str: String) 
 
 #[tauri::command]
 async fn device_list(
-    api_handle: State<'_, Mutex<HidApi>>,
+    api_handle: State<'_, tauri::async_runtime::Mutex<HidApi>>,
     device_handle_4k: State<'_, Mutex<Option<Meowpad4k<HidDevice>>>>,
     device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
     device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
     device_handle_v3: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
     device_handle_v21se: State<'_, Mutex<Option<meowpadv21se::Meowpad<HidDevice>>>>,
 ) -> Result<Vec<DeviceInfoSerdi>> {
-    let api = api_handle.lock().unwrap();
+    let api = api_handle.lock().await;
     // 在执行扫描前先锁住设备，不让其他线程访问
     let mut device_handle_4k = device_handle_4k.lock().unwrap();
     let mut device_handle_3k = device_handle_3k.lock().unwrap();
@@ -323,8 +338,8 @@ async fn device_list(
 }
 
 #[tauri::command]
-async fn refresh_devices(api_handle: State<'_, Mutex<HidApi>>) -> Result<bool> {
-    let mut api = api_handle.lock().unwrap();
+async fn refresh_devices(api_handle: State<'_, tauri::async_runtime::Mutex<HidApi>>) -> Result<bool> {
+    let mut api = api_handle.lock().await;
 
     let devices_old: Vec<hidapi::DeviceInfo> = api.device_list().cloned().collect();
 
@@ -358,18 +373,18 @@ async fn refresh_devices(api_handle: State<'_, Mutex<HidApi>>) -> Result<bool> {
 }
 
 #[tauri::command]
-fn connect_device(
-    api_handle: State<'_, Mutex<HidApi>>,
-    device_handle_iap: State<'_, Mutex<Option<IAP>>>,
+async fn connect_device(
+    api_handle: State<'_, tauri::async_runtime::Mutex<HidApi>>,
+    device_handle_iap: State<'_, Mutex<Option<IAP<'_>>>>,
     device_handle_4k: State<'_, Mutex<Option<Meowpad4k<HidDevice>>>>,
     device_handle_3k: State<'_, Mutex<Option<Meowpad3k<HidDevice>>>>,
     device_handle_pure64: State<'_, Mutex<Option<Meowboard<HidDevice>>>>,
     device_handle_v3: State<'_, Mutex<Option<MeowpadV3<HidDevice>>>>,
     device_handle_v21se: State<'_, Mutex<Option<meowpadv21se::Meowpad<HidDevice>>>>,
-    device_handle_kgm_iap: State<'_, Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>,
+    device_handle_kgm_iap: State<'_, tauri::async_runtime::Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>,
     device_info: DeviceInfoSerdi,
-) -> bool {
-    let api = api_handle.lock().unwrap();
+) -> Result<bool> {
+    let api = api_handle.lock().await;
 
     let d = if !device_info.path.as_bytes().is_empty() {
         api.open_path(device_info.path.as_c_str()).ok()
@@ -386,10 +401,15 @@ fn connect_device(
             .and_then(|d| d.open_device(&api).ok())
     };
 
+    _ = api_handle;
+
     if let Some(d) = d {
         info!("连接到设备 {}", device_info.device_name);
         if device_info.product_id == 0xFA00 {
-            *device_handle_kgm_iap.lock().unwrap() = Some(kagami_studio_iap::KagamiStudioIAP::new(device::HidDevice { device: d }));
+            *device_handle_kgm_iap.lock().await =
+                Some(kagami_studio_iap::KagamiStudioIAP::new(device::HidDevice {
+                    device: d,
+                }));
         } else if device_info.device_name == MEOWPAD_DEVICE_NAME {
             if device_info.firmware_version == "IAP" {
                 *device_handle_iap.lock().unwrap() = Some(IAP::new(d));
@@ -411,22 +431,24 @@ fn connect_device(
                 Some(meowpadv21se::Meowpad::new(device::HidDevice { device: d }));
         } else {
             warn!("连接失败，无法找到设备");
-            return false;
+            return Ok(false);
         }
     } else {
         warn!("连接失败，无法找到设备");
-        return false;
+        return Ok(false);
     }
 
-    true
+    Ok(true)
 }
 
-#[tauri::command]
-async fn open_modal_progress(app: tauri::AppHandle, main_window: tauri::WebviewWindow) -> Result<()> {
+async fn open_modal_progress(
+    app: &tauri::AppHandle,
+    main_window: &tauri::WebviewWindow,
+) -> Result<()> {
     let progress_window = tauri::WebviewWindowBuilder::new(
-        &app,
-        "progress", 
-        tauri::WebviewUrl::App("progress.html".into())
+        app,
+        "progress",
+        tauri::WebviewUrl::App("progress.html".into()),
     )
     .title("Kagami Studio Firmware Updater - Operation Progress")
     .inner_size(440.0, 65.0)
@@ -435,14 +457,9 @@ async fn open_modal_progress(app: tauri::AppHandle, main_window: tauri::WebviewW
     .minimizable(false)
     .maximizable(false)
     .closable(false)
-    .focus()
-    .visible(false)
-    .parent(&main_window)?
+    .parent(main_window)?
     .build()?;
 
-    main_window.set_enabled(false)?;
-
-    
     // 3. 监听关闭事件，重新启用父窗口
     let main_window_clone = main_window.clone();
     progress_window.on_window_event(move |event| {
@@ -450,6 +467,7 @@ async fn open_modal_progress(app: tauri::AppHandle, main_window: tauri::WebviewW
             let _ = main_window_clone.set_enabled(true);
         }
     });
+    main_window.set_enabled(false)?;
 
     Ok(())
 }
@@ -463,10 +481,10 @@ fn main() -> AnyResult<()> {
     std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
 
     let mut builder = tauri::Builder::default();
-    
+
     builder = builder.setup(|app| {
         let handle = app.handle().clone();
-        
+
         panic::set_hook(Box::new(move |e| {
             use better_panic::Settings;
             use std::backtrace::Backtrace;
@@ -492,9 +510,10 @@ fn main() -> AnyResult<()> {
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            let _ = app.get_webview_window("main")
-                       .expect("no main window")
-                       .set_focus();
+            let _ = app
+                .get_webview_window("main")
+                .expect("no main window")
+                .set_focus();
         }));
     }
 
@@ -660,7 +679,6 @@ fn main() -> AnyResult<()> {
             cmd21se::check_raw_config_21se,
             cmd21se::save_raw_config_21se,
             cmd21se::connect_21se,
-            open_modal_progress
         ])
         .manage(
             Client::builder()
@@ -674,8 +692,8 @@ fn main() -> AnyResult<()> {
         .manage::<Mutex<Option<Meowboard<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<meowpadv21se::Meowpad<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<IAP>>>(Mutex::new(None))
-        .manage::<Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>(Mutex::new(None))
-        .manage::<Mutex<HidApi>>(Mutex::new(HidApi::new().unwrap()))
+        .manage::<tauri::async_runtime::Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>(tauri::async_runtime::Mutex::new(None))
+        .manage::<tauri::async_runtime::Mutex<HidApi>>(tauri::async_runtime::Mutex::new(HidApi::new().unwrap()))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
     Ok(())

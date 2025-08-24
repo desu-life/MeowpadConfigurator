@@ -49,18 +49,12 @@ onMounted(async () => {
 
   // 监听来自主窗口的事件
   await listen<number>("progress-update", async (event) => {
-    if (await appWindow.isVisible() == false) {
-      appWindow.show();
-      appWindow.setFocus();
-    }
-
     progress.value = event.payload;
     progressText.value = Math.round(progress.value) + '%';
   });
 
   await listen("progress-close", (_) => {
     appWindow.close();
-    appWindow.destroy();
   });
 
 });
