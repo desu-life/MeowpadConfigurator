@@ -593,6 +593,7 @@ fn main() -> AnyResult<()> {
         .manage::<Mutex<Option<Meowboard<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<meowpadv21se::Meowpad<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<Option<IAP>>>(Mutex::new(None))
+        .manage::<Mutex<Option<kagami_studio_iap::KagamiStudioIAP<HidDevice>>>>(Mutex::new(None))
         .manage::<Mutex<HidApi>>(Mutex::new(HidApi::new().unwrap()))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

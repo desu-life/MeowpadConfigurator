@@ -22,12 +22,14 @@ import { IError, IHidDeviceInfo } from '@/apis';
 import { compareArray, getErrorMsg } from '@/utils';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { LogicalSize } from '@tauri-apps/api/dpi'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n();
 const dialog = useDialog()
 const message = useMessage();
 const store = useStore()
 const device = useDeviceStore()
+const router = useRouter()
 
 emitter.on('refresh-device-list', async (event: { e: IError }) => {
   if (store.refreshing_device_list) { return }
@@ -78,6 +80,7 @@ emitter.on('connection-broke', async (event: { e: IError | null }) => {
   store.iap_connected = false
   store.developer_mode = false
   appWindow.setSize(new LogicalSize(800, 600))
+  router.push("/")
 })
 
 
@@ -132,6 +135,7 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
         if (!store.developer_mode) {
           store.need_update_firmware = true // 需要更新固件
           emitter.emit('header-msg-update', { status: "error", str: t('bad_firmware_version', { version: device.device_info!.version }) })
+          router.push("/firmware-update")
           return
         }
       }
@@ -212,9 +216,23 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 
     device.connected = true
 
-    if (device.is_pure() && !store.developer_mode) {
-      appWindow.setSize(new LogicalSize(1200, 750))
+    if (store.developer_mode) {
+      router.push("/developer-settings")
+    } else {
+      if (device.is_pure()) {
+        appWindow.setSize(new LogicalSize(1200, 750))
+        router.push("/pure64")
+      } else if (device.is_v2()) {
+        router.push("/meowpadv2")
+      } else if (device.is_v2se()) {
+        router.push("/meowpadv2se")
+      } else if (device.is_v21se()) {
+        router.push("/meowpadv21se")
+      } else if (device.is_v3()) {
+        router.push("/meowpadv3")
+      }
     }
+
 
     if (device.device_status!.hall == false && !store.developer_mode) {
       if (device.is_pure()) {
@@ -233,6 +251,8 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       }
     }
 
+    
+
   } catch (e) {
     emitter.emit('connection-broke', { e: e as IError })
     console.error(e)
@@ -245,7 +265,9 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 <template>
   <n-spin :show="store.loading" id="spin-cover">
     <div id="main">
-      <template v-if="store.developer_mode">
+
+      <RouterView />
+      <!-- <template v-if="store.developer_mode">
         <DeveloperSettings></DeveloperSettings>
       </template>
 
@@ -272,13 +294,8 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       </template>
 
       <template v-else>
-        <div v-if="store.device_list.length > 0">
-          <DeviceList></DeviceList>
-        </div>
-        <div v-else>
-          <n-empty :description="t('no_device')" size="huge"></n-empty>
-        </div>
-      </template>
+        <RouterView />
+      </template> -->
 
     </div>
   </n-spin>
