@@ -39,6 +39,8 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         ],
       }),
       Components({
+        globs: ['!src/*.vue'],
+        directoryAsNamespace: true,
         resolvers: [NaiveUiResolver()]
       })
     ],
