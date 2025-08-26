@@ -210,7 +210,9 @@
   "socd_min_select": "At least two keys must be selected",
   "key_modal_select_title": "Please select a key",
   "updating_firmware": "Updating firmware, do not disconnect the device",
-  "firmware-update-success": "Update completed",
-  "firmware-update-cancel": "Update canceled",
-  "custom-key": "Custom key"
+  "firmware_update_success": "Update completed",
+  "firmware_update_cancel": "Update canceled",
+  "custom_key": "Custom key",
+  "invalid_firmware": "Invalid firmware",
+  "update_firmware_error": "Firmware update error, reason: {e}"
 }

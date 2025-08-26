@@ -4,7 +4,7 @@ import * as api4k from '@/apis/meowpadv2/api'
 import * as api3k from '@/apis/meowpadv2se/api'
 import * as api from '@/apis/api'
 
-export declare type Error = 'DeviceDisconnected' | 'DeviceNotFound' | 'Network' | 'Meowpad' | 'Iap';
+export declare type Error = 'DeviceDisconnected' | 'DeviceNotFound' | 'Io' | 'Network' | 'Meowpad' | 'Iap' | 'KagamiIap' | 'Tauri' | 'InvalidFirmware';
 export declare type DeviceName = 'Meowpad' | 'Meowpad SE v2' | 'Pure64' | 'Meowpad SE v2.1' | "MeowpadV3";
 export declare type KeyType = 'None' | 'Keyboard' | 'Custom' | 'Mouse' | 'Media';
 

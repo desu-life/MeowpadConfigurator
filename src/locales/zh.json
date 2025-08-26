@@ -210,7 +210,9 @@
   "socd_min_select": "至少需要选择两个键",
   "key_modal_select_title": "请选择按键",
   "updating_firmware": "正在更新固件，请勿断开设备",
-  "firmware-update-success": "更新完成",
-  "firmware-update-cancel": "更新取消",
-  "custom-key": "自选"
+  "firmware_update_success": "更新完成",
+  "firmware_update_cancel": "更新取消",
+  "custom_key": "自选",
+  "invalid_firmware": "无效的固件文件",
+  "update_firmware_error": "更新固件出错，错误原因：{e}"
 }

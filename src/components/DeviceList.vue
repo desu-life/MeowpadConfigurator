@@ -15,6 +15,7 @@ import { useRouter } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { message } from '@tauri-apps/plugin-dialog';
+import { getErrorMsg } from "@/utils";
 
 const { t } = useI18n();
 const store = useStore()
@@ -96,13 +97,14 @@ async function continue_device_upgrade(d: IHidDeviceInfo) {
             api.update_firmware_call().then(async (status: boolean) => {
                 emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
                 if (status) {
-                    await message(t('firmware-update-success'), { kind: 'info' });
+                    await message(t('firmware_update_success'), { kind: 'info' });
                 } else {
-                    await message(t('firmware-update-cancel'), { kind: 'error' });
+                    await message(t('firmware_update_cancel'), { kind: 'error' });
                 }
 
             }).catch((e: IError) => {
-                emitter.emit('connection-broke', { e: e })
+                emitter.emit('connection-broke', {e: e as IError})
+                emitter.emit('header-msg-update', { status: "error", str: t('update_firmware_error', { e: getErrorMsg(t, e as IError) }) })
             }).finally(() => {
                 emit("progress-close")
                 store.iap_connected = false

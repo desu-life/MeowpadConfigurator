@@ -145,21 +145,21 @@ async fn update_firmware_call(
         .blocking_pick_file();
 
     if let Some(FilePath::Path(file_path)) = file_path {
-        let b = std::fs::read_to_string(file_path)?;
+        let b = std::fs::read_to_string(file_path).map_err(|_| crate::error::Error::InvalidFirmware)?;
 
         let parser = HexParser::<2048>::new(&b);
         let parts = parser
             .parse()
-            .map_err(|_| crate::error::Error::InvalidFile)?;
+            .map_err(|_| crate::error::Error::InvalidFirmware)?;
 
         if parts.is_empty() {
-            return Err(crate::error::Error::InvalidFile);
+            return Err(crate::error::Error::InvalidFirmware);
         }
 
         let app_addr = iap.get_iap_address()?;
 
         if parts.first().unwrap().offset != app_addr {
-            return Err(crate::error::Error::InvalidFile);
+            return Err(crate::error::Error::InvalidFirmware);
         }
 
         iap.enter_iap_mode()?;

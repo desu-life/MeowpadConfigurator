@@ -149,7 +149,7 @@ function handleKeyClick(key: IMixedKey) {
               <span>
                 {{ formatKeys(pressedkeycodes) ?? $t("none") }}
               </span>
-              <n-button @click="enter_selection">{{ $t('custom-key') }}</n-button>
+              <n-button @click="enter_selection">{{ $t('custom_key') }}</n-button>
             </div>
           </template>
         </n-card>

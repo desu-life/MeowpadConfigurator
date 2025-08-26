@@ -210,7 +210,9 @@
   "socd_min_select": "至少需要選擇兩個鍵",
   "key_modal_select_title": "請選擇按鍵",
   "updating_firmware": "正在更新韌體，請勿斷開設備",
-  "firmware-update-success": "更新完成",
-  "firmware-update-cancel": "更新取消",
-  "custom-key": "自訂按鍵"
+  "firmware_update_success": "更新完成",
+  "firmware_update_cancel": "更新取消",
+  "custom_key": "自訂按鍵",
+  "invalid_firmware": "無效的韌體",
+  "update_firmware_error": "更新韌體出錯，錯誤原因：{e}"
 }

@@ -210,7 +210,9 @@
   "socd_min_select": "少なくとも2つのキーを選択する必要があります",
   "key_modal_select_title": "キーを選択してください",
   "updating_firmware": "ファームウェアを更新中です。デバイスを切断しないでください",
-  "firmware-update-success": "更新が完了しました",
-  "firmware-update-cancel": "更新がキャンセルされました",
-  "custom-key": "カスタムキー"
+  "firmware_update_success": "更新が完了しました",
+  "firmware_update_cancel": "更新がキャンセルされました",
+  "custom_key": "カスタムキー",
+  "invalid_firmware": "無効なファームウェア",
+  "update_firmware_error": "ファームウェア更新エラー、原因：{e}"
 }

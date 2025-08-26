@@ -46,11 +46,6 @@ pub enum Error {
         #[serde_as(as = "DisplayFromStr")]
         tauri::Error,
     ),
-    #[error("不支持的文件")]
-    InvalidFile,
-    #[error("CRC校验失败")]
-    CrcMismatch,
-    #[error("文件解析错误: {0}")]
-    FileParseError(String),
-
+    #[error("不支持的固件文件")]
+    InvalidFirmware,
 }
