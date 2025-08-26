@@ -42,7 +42,8 @@ export const useDeviceStore = defineStore("device", () => {
   const auto_calibration = ref<Toggle>(Toggle.Off);
   const hall_filter = ref<number>(0);
   const scod_pairs = ref<ISOCDKeyPairs[]>([]);
-
+  
+  // 这边检测不用走vid pid，这里检测的是固件是哪个，而不是设备是哪个
   function is_v2() {
     return device_hid_info.value?.device_name == 'Meowpad'
   }
@@ -52,7 +53,7 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   function is_pure() {
-    return device_hid_info.value?.product_id == 0xFB01
+    return device_hid_info.value?.device_name == "Pure64"
   }
 
   function is_v21se() {
@@ -60,7 +61,7 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   function is_v3() {
-    return device_hid_info.value?.product_id == 0xFB02
+    return device_hid_info.value?.device_name == "MeowpadV3"
   }
 
   async function try_connect() {

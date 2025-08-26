@@ -97,9 +97,7 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
 
     device.device_hid_info = device_hid_info;
 
-    
     await device.get_info();
-    
     if (device.device_info === undefined) {
       emitter.emit('header-msg-update', { status: "error", str: t('unknown_device') })
       return
@@ -231,28 +229,24 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       } else if (device.is_v3()) {
         router.push("/meowpadv3")
       }
-    }
 
-
-    if (device.device_status!.hall == false && !store.developer_mode) {
-      if (device.is_pure()) {
-        message.warning(t('device_cali_suggest'));
-      } else {
-        dialog.warning({
-          title: t('warning'),
-          content: t('device_cali_warn'),
-          positiveText: t('yes'),
-          negativeText: t('no'),
-          maskClosable: false,
-          onPositiveClick: () => {
-            emitter.emit('calibration-key')
-          },
-        })
+      if (device.device_status!.hall == false) {
+        if (device.is_pure()) {
+          message.warning(t('device_cali_suggest'));
+        } else {
+          dialog.warning({
+            title: t('warning'),
+            content: t('device_cali_warn'),
+            positiveText: t('yes'),
+            negativeText: t('no'),
+            maskClosable: false,
+            onPositiveClick: () => {
+              emitter.emit('calibration-key')
+            },
+          })
+        }
       }
     }
-
-    
-
   } catch (e) {
     emitter.emit('connection-broke', { e: e as IError })
     console.error(e)
