@@ -103,7 +103,7 @@ function applyKeySetting() {
           <Key :unit-width="key.width" :key-num="key.index" :on-click="k => clickKey(k)"
             :selected="key.index == selectedKey">
             <div v-if="key.index != undefined && store.key_config!.keys[key.index].key_data.length <= 1">
-              {{ formatKeys(store.key_config!.keys[key.index].key_data) }}
+              {{ formatKeys(store.key_config!.keys[key.index].key_data) ?? $t("none") }}
             </div>
             <div v-else>
               ...
@@ -114,7 +114,7 @@ function applyKeySetting() {
       <transition name="fade">
         <div class="line" v-if="selectedKey != null && store.key_config!.keys[selectedKey!].key_data.length > 1">
           <KeyShow :unit-width="4.2" style="--default-key-font-size: 13px;--default-key-height: 45px;">
-            {{ formatKeys(store.key_config!.keys[selectedKey!].key_data) }}
+            {{ formatKeys(store.key_config!.keys[selectedKey!].key_data) ?? $t("none") }}
           </KeyShow>
         </div>
       </transition>

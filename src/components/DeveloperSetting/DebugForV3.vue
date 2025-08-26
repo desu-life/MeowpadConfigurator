@@ -34,6 +34,7 @@ let keymapStyle = ref({
 import meowpad from '@/meowpad7k.json'
 import { IKeymap } from '@/interface';
 import KeyDebug from '../KeyComponents/KeyDebug.vue';
+import Key from '../KeyComponents/Key.vue';
 const keymap: IKeymap[][] = meowpad;
 
 function key_state_to_str(state: KeyState) {

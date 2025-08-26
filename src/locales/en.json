@@ -207,5 +207,10 @@
   "socd_pair_created": "SOCD pair created",
   "socd_pair_removed": "SOCD pair removed",
   "socd_add": "Add Socd Pair",
-  "socd_min_select": "Minimum two keys need to be selected"
+  "socd_min_select": "At least two keys must be selected",
+  "key_modal_select_title": "Please select a key",
+  "updating_firmware": "Updating firmware, do not disconnect the device",
+  "firmware-update-success": "Update completed",
+  "firmware-update-cancel": "Update canceled",
+  "custom-key": "Custom key"
 }

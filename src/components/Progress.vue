@@ -4,7 +4,7 @@
     <n-layout-content>
       <div class="window-content">
         <div class="labels-row">
-          <div class="label1">{{ greeting }}</div>
+          <div class="label1">{{ t('updating_firmware') }}</div>
           <div class="label2">{{ progressText }}</div>
         </div>
         <div class="progress-container">
@@ -22,6 +22,18 @@ import { GlobalThemeOverrides, NProgress } from "naive-ui";
 import { get_theme } from "@/apis/api";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { darkTheme } from "naive-ui";
+import { useI18n } from "vue-i18n";
+import { LazyStore } from "@tauri-apps/plugin-store";
+import { setI18nLanguage } from "@/locales";
+
+document.body.onselectstart = document.body.oncontextmenu = () => false
+
+if (navigator.language === "zh-CN") {
+  setI18nLanguage("zh");
+}
+
+const { t } = useI18n();
+const app_store = new LazyStore(".settings.dat");
 
 const lightThemeOverrides: GlobalThemeOverrides = {
   Layout: {
@@ -29,25 +41,13 @@ const lightThemeOverrides: GlobalThemeOverrides = {
     headerColor: '#F7F7F7',
   }
 }
-
 const theme = ref<string>()
-// document.body.onselectstart = document.body.oncontextmenu = () => false
 
-
-const greeting = "正在更新固件，请勿断开设备";
 const progress = ref(0);
 const progressText = ref(Math.round(progress.value) + '%');
 
 onMounted(async () => {
   const appWindow = getCurrentWebviewWindow()
-  theme.value = await get_theme();
-  await appWindow.onThemeChanged(async ({ payload: t }) => {
-    theme.value = await get_theme();
-  })
-
-  
-
-  // 监听来自主窗口的事件
   await listen<number>("progress-update", async (event) => {
     progress.value = event.payload;
     progressText.value = Math.round(progress.value) + '%';
@@ -57,6 +57,15 @@ onMounted(async () => {
     appWindow.close();
   });
 
+  theme.value = await get_theme();
+  await appWindow.onThemeChanged(async ({ payload: t }) => {
+    theme.value = await get_theme();
+  })
+
+  const language = await app_store.get<string>("language");
+  if (language) {
+    setI18nLanguage(language);
+  }
 });
 </script>
 

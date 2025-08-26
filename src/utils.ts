@@ -59,7 +59,7 @@ export function formatKeys(keycodes: KeyCode[]) {
     .filter((k) => k != KeyCode.None)
     .map((k) => KeyCode[k])
     .join(" + ");
-  return keys === "" ? "无" : keys;
+  return keys === "" ? null : keys;
 }
 
 export function Hex2Rgb(hex: string): IRgb {

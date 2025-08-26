@@ -6,7 +6,8 @@
     "linux"
   ],
   "windows": [
-    "main"
+    "main",
+    "progress"
   ],
   "permissions": [
     "global-shortcut:default",

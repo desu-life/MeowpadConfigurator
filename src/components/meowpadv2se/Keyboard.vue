@@ -111,9 +111,9 @@ function getKeyDataLen(index: number) {
 
 function getKeyText(index: number) {
   if (index != -1) {
-    return formatKeys(key_cfg.value!.keys[index].key_data)
+    return formatKeys(key_cfg.value!.keys[index].key_data) ?? t("none")
   } else {
-    return formatKeys(key_cfg.value!.side_btn)
+    return formatKeys(key_cfg.value!.side_btn) ?? t("none")
   }
 }
 

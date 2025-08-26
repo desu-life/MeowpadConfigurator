@@ -3,12 +3,14 @@ import { KeyCode } from '@/keycode';
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { compareKeys, formatKeys } from '@/utils'
-import { mapping, IKeyMap, formatKey } from "@/keymap";
+import { mapping, IKeyMaps } from "@/keymap";
 import KeyModalSelect from './KeyModalSelect.vue';
+import KeyFrame from './KeyFrame.vue';
 import { IMixedKey } from '@/apis';
 const store = useStore()
 
 const props = defineProps<{
+  keymapping?: IKeyMaps[],
   show: boolean
   pressedkeycodes: KeyCode[]
   currkey: IMixedKey[]
@@ -59,6 +61,7 @@ let default_height = ref(55)
 let default_width = ref(55)
 let default_margin = ref(2)
 let default_font_size = ref(15)
+let final_key_mapping = props.keymapping ?? mapping
 
 
 let keymapStyle = ref({
@@ -72,7 +75,7 @@ const binding_keys: Ref<Map<IMixedKey, boolean>> = ref(new Map())
 
 watch([() => props.currkey], () => {
   const newMap = new Map()
-  for (const m of mapping) {
+  for (const m of final_key_mapping) {
     for (const k of m.keys) {
       const isMatched = props.currkey.some(b => compareKeys([b], [k.code]))
       newMap.set(k.code, isMatched)
@@ -117,7 +120,7 @@ function handleKeyClick(key: IMixedKey) {
               <span>
                 {{ $t('key_modal_select_title') }}
               </span>
-              <n-button @click="leave_selection">确定</n-button>
+              <n-button @click="leave_selection">{{ $t('confirm') }}</n-button>
             </div>
           </template>
           <template #action>
@@ -125,7 +128,7 @@ function handleKeyClick(key: IMixedKey) {
               <div class="key-modal-select">
                 <n-collapse
                   :default-expanded-names="['BasicKeys', 'ExtendedKeys', 'FunctionKeys', 'MediaKeys', 'MouseKeys']">
-                  <n-collapse-item v-for="(v, i) in mapping" :key="i" :name="v.type" disabled>
+                  <n-collapse-item v-for="(v, i) in final_key_mapping" :key="i" :name="v.type" disabled>
                     <template #header>
                       <n-text>{{ $t(v.type) }}</n-text>
                     </template>
@@ -144,9 +147,9 @@ function handleKeyClick(key: IMixedKey) {
           <template #action>
             <div class="keyselect-part">
               <span>
-                {{ formatKeys(pressedkeycodes) }}
+                {{ formatKeys(pressedkeycodes) ?? $t("none") }}
               </span>
-              <n-button @click="enter_selection">自选</n-button>
+              <n-button @click="enter_selection">{{ $t('custom-key') }}</n-button>
             </div>
           </template>
         </n-card>

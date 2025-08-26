@@ -218,7 +218,7 @@ export function formatKey(key: IMixedKey): JSX.Element {
 
 
 
-export function formatKeysJsx(keycodes: IMixedKey[]): JSX.Element {
+export function formatKeysJsx(keycodes: IMixedKey[]): JSX.Element | null {
   const keys = keycodes
     .filter((k) => k.t != "None")
     .map((k, index) => {
@@ -229,7 +229,7 @@ export function formatKeysJsx(keycodes: IMixedKey[]): JSX.Element {
     });
   
   if (keys.length === 0) {
-    return <span>无</span>;
+    return null;
   }
   
   const keysWithSeparators = intersperse(

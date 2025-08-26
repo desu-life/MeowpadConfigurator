@@ -208,5 +208,9 @@
   "socd_pair_removed": "SOCD配对已移除",
   "socd_add": "添加配对",
   "socd_min_select": "至少需要选择两个键",
-  "key_modal_select_title": "请选择按键"
+  "key_modal_select_title": "请选择按键",
+  "updating_firmware": "正在更新固件，请勿断开设备",
+  "firmware-update-success": "更新完成",
+  "firmware-update-cancel": "更新取消",
+  "custom-key": "自选"
 }

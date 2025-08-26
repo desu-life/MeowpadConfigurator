@@ -29,7 +29,7 @@ function leaveFunc() {
       <n-card  size="medium"  :hoverable="true"
         :title="$t('key_modal_title')" role="dialog" aria-modal="true">
         <template #action>
-      {{ formatKeys(pressedkeycodes) }}
+      {{ formatKeys(pressedkeycodes) ?? $t("none") }}
     </template>
       </n-card>
     </div>

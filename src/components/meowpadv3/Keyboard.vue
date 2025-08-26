@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="tsx">
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { useI18n } from "vue-i18n";
@@ -9,6 +9,7 @@ import type { IKeymap } from '@/interface';
 import { ref } from 'vue';
 import { formatKeys, IsModifierKey, compareArray, detectKeys, compareKeys } from '@/utils'
 
+import { mapping, IKeyMaps } from "@/keymap";
 import { IKeyboard } from "@/apis/meowpadv3/config";
 import { storeToRefs } from 'pinia';
 
@@ -47,6 +48,7 @@ const isCapturingKeys = ref(false)
 const pressedkeycodes = ref<KeyCode[]>([])
 const currentKeyCode = ref<IMixedKey[]>([])
 const currKeyIndex = ref<number>(0)
+const totalkeymap = mapping.filter(v => v.type != "FunctionKeys")
 
 function cancelKeyCapture() {
   isCapturingKeys.value = false
@@ -153,9 +155,9 @@ function getKeyText(index: number, isHallKeys: boolean) {
   }
 
   if (isHallKeys) {
-    return formatKeysJsx(cfg.value!.layer[index])
+    return formatKeysJsx(cfg.value!.layer[index]) ?? <span>{ t("none") }</span>
   } else {
-    return formatKeysJsx(cfg.value!.layer[7 + index])
+    return formatKeysJsx(cfg.value!.layer[7 + index]) ?? <span>{ t("none") }</span>
   }
 }
 
@@ -163,7 +165,7 @@ function getKeyText(index: number, isHallKeys: boolean) {
 
 
 <template>
-  <KeyModalV2 v-model:show="showModal" :pressedkeycodes="pressedkeycodes" :currkey="currentKeyCode" :leave-func="leaveFunc" :enter-selection="cancelKeyCapture"></KeyModalV2>
+  <KeyModalV2 v-model:show="showModal" :pressedkeycodes="pressedkeycodes" :currkey="currentKeyCode" :leave-func="leaveFunc" :enter-selection="cancelKeyCapture" :keymapping="totalkeymap"></KeyModalV2>
   <div class="key-settings">
     <div class="keyboard" :style="keymapStyle">
       <div v-for="line in keymap" class="line">

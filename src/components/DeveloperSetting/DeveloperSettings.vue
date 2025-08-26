@@ -5,6 +5,8 @@ import { useDeviceStore } from '@/store/device';
 import IAP from '@/components/DeveloperSetting/IAP.vue'
 import { useI18n } from "vue-i18n";
 import { FormValidationStatus } from 'naive-ui';
+import DebugForV3 from './DebugForV3.vue'
+import Debug from './Debug.vue'
 
 const { t } = useI18n();
 const store = useStore()

@@ -116,9 +116,9 @@ function getKeyDataLen(index: number, isHallKeys: boolean) {
 
 function getKeyText(index: number, isHallKeys: boolean) {
   if (isHallKeys) {
-    return formatKeys(key_cfg.value!.hall_keys[index].key_data)
+    return formatKeys(key_cfg.value!.hall_keys[index].key_data) ?? t("none")
   } else {
-    return formatKeys(key_cfg.value!.normal_keys[index].key_data)
+    return formatKeys(key_cfg.value!.normal_keys[index].key_data) ?? t("none")
   }
 }
 

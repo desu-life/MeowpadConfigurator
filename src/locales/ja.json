@@ -207,5 +207,10 @@
   "socd_pair_created": "SOCDペアが作成されました",
   "socd_pair_removed": "SOCDペアが削除されました",
   "socd_add": "Socdペアを追加します",
-  "socd_min_select": "最小2つのキーを選択する必要があります"
+  "socd_min_select": "少なくとも2つのキーを選択する必要があります",
+  "key_modal_select_title": "キーを選択してください",
+  "updating_firmware": "ファームウェアを更新中です。デバイスを切断しないでください",
+  "firmware-update-success": "更新が完了しました",
+  "firmware-update-cancel": "更新がキャンセルされました",
+  "custom-key": "カスタムキー"
 }

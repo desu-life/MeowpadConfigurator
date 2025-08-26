@@ -4,7 +4,6 @@ import { Type } from "naive-ui/es/button/src/interface"
 import { useStore } from '@/store/main';
 import { useDeviceStore } from '@/store/device';
 import { useI18n } from "vue-i18n";
-import { setI18nLanguage, i18n, LOCALES } from '@/locales/index'
 import { Rgb2Hex, Hex2Rgb, getErrorMsg } from '@/utils';
 import { useDialog } from 'naive-ui'
 import * as api from '@/apis/api'

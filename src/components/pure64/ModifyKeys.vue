@@ -4,6 +4,8 @@ import { KeyCode } from "@/keycode";
 import { mapping, IKeyMap, formatKey } from "@/keymap";
 import { getErrorMsg, most, splitArray } from "@/utils";
 import { useI18n } from "vue-i18n";
+import KeyFrame from "./Keyboard/KeyFrame.vue"
+import KeyModifyOption from "./Keyboard/KeyModifyOption.vue"
 
 const { t } = useI18n();
 

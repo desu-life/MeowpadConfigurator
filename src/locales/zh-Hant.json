@@ -207,5 +207,10 @@
   "socd_pair_created": "SOCD配對已創建",
   "socd_pair_removed": "SOCD配對已移除",
   "socd_add": "添加SOCD對",
-  "socd_min_select": "至少需要選擇兩個鍵"
+  "socd_min_select": "至少需要選擇兩個鍵",
+  "key_modal_select_title": "請選擇按鍵",
+  "updating_firmware": "正在更新韌體，請勿斷開設備",
+  "firmware-update-success": "更新完成",
+  "firmware-update-cancel": "更新取消",
+  "custom-key": "自訂按鍵"
 }

@@ -96,9 +96,9 @@ async function continue_device_upgrade(d: IHidDeviceInfo) {
             api.update_firmware_call().then(async (status: boolean) => {
                 emitter.emit('header-msg-update', { status: "default", str: t('device_disconnected') })
                 if (status) {
-                    await message('更新完成', { kind: 'info' });
+                    await message(t('firmware-update-success'), { kind: 'info' });
                 } else {
-                    await message('更新取消', { kind: 'error' });
+                    await message(t('firmware-update-cancel'), { kind: 'error' });
                 }
 
             }).catch((e: IError) => {
@@ -107,11 +107,6 @@ async function continue_device_upgrade(d: IHidDeviceInfo) {
                 emit("progress-close")
                 store.iap_connected = false
             })
-            await invoke("open_modal_progress");
-                        
-
-            // emit("progress-update", 50);
-
         }
     } else {
         emitter.emit('header-msg-update', { status: "error", str: t('device_not_support') })
