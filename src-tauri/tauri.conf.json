@@ -36,7 +36,6 @@
       "signingIdentity": null
     },
     "resources": [
-      "resources/FirmwareUpdater.exe"
     ],
     "linux": {
       "deb": {
@@ -44,8 +43,8 @@
       }
     }
   },
-  "productName": "MeowpadConfiguratorV2",
-  "mainBinaryName": "MeowpadConfiguratorV2",
+  "productName": "MeowpadConfiguratorForV2",
+  "mainBinaryName": "MeowpadConfiguratorForV2",
   "version": "1.2.0",
   "identifier": "meowpad.configurator.v2",
   "plugins": {},

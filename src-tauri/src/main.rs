@@ -189,23 +189,6 @@ async fn update_firmware_call(
 
         iap.jump_to_app()?;
 
-        // let resource_path = handle
-        //     .path()
-        //     .resolve(
-        //         "resources/FirmwareUpdater.exe",
-        //         tauri::path::BaseDirectory::Resource,
-        //     )
-        //     .expect("failed to resolve resource");
-
-        // warn!("resource_path: {resource_path:#?}");
-
-        // Command::new(resource_path)
-        //     .args([file_path])
-        //     .spawn()
-        //     .expect("failed to execute process")
-        //     .wait()
-        //     .expect("process failed");
-
         Ok(true)
     } else {
         warn!("未选择固件文件");
