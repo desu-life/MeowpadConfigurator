@@ -44,9 +44,9 @@
       }
     }
   },
-  "productName": "MeowpadConfiguratorForV2",
-  "mainBinaryName": "MeowpadConfiguratorForV2",
-  "version": "1.1.0",
+  "productName": "MeowpadConfiguratorV2",
+  "mainBinaryName": "MeowpadConfiguratorV2",
+  "version": "1.2.0",
   "identifier": "meowpad.configurator.v2",
   "plugins": {},
   "app": {
@@ -54,7 +54,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Meowpad Configurator for v2",
+        "title": "Meowpad Configurator v2",
         "width": 800,
         "height": 600,
         "visible": false
