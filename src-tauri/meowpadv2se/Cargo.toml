@@ -7,18 +7,18 @@ edition = "2021"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-strum = "0.26.2"
-strum_macros = "0.26.2"
-serde_with = "3.8.1"
-serde_repr = "0.1.19"
-byteorder = "1.5.0"
-pretty-hex = "0.4.1"
-log = "0.4.21"
-num = "0.4.3"
-num-derive = "0.4.2"
-num-traits = "0.2.19"
-palette = { version = "0.7.6", features = ["serializing"] }
-ciborium = "0.2.2"
-rand = "0.8.5"
-thiserror = "1.0.61"
+strum = "0.27"
+strum_macros = "0.27"
+serde_with = "3"
+serde_repr = "0.1"
+byteorder = "1.5"
+pretty-hex = "0.4"
+log = "0.4"
+num = "0.4"
+num-derive = "0.4"
+num-traits = "0.2"
+palette = { version = "0.7", features = ["serializing"] }
+ciborium = "0.2"
+rand = "0.10"
+thiserror = "2"
 meowpad = { path = "../meowpad" }

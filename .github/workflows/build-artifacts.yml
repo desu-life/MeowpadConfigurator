@@ -33,7 +33,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libusb-dev libudev-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libusb-dev libudev-dev libfuse2
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@nightly
@@ -62,11 +62,19 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         run: pnpm install --no-frozen-lockfile # Change this to npm, yarn or pnpm.
 
-      - name: build artifacts
-        if: matrix.platform != 'macos-latest'
+      - name: build artifacts (Windows)
+        if: matrix.platform == 'windows-latest'
         working-directory: ./
         run: |
           pnpm run tauri build
+
+      - name: build artifacts (Linux)
+        if: matrix.platform == 'ubuntu-22.04'\
+        env:
+          NO_STRIP: "true"
+        working-directory: ./
+        run: |
+          pnpm run tauri build --verbose
 
       - name: build artifacts (MacOS)
         if: matrix.platform == 'macos-latest'

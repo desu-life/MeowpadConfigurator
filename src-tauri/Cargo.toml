@@ -14,7 +14,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies.uuid]
-version = "1.16.0"
+version = "1.20"
 features = [
     "v4",                # Lets you generate random UUIDs
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
@@ -28,15 +28,15 @@ tauri-plugin-log = { features = ["colored"] , version = "2" }
 
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-serde_with = "3.12.0"
+serde_with = "3"
 tauri = { version = "2", features = [] }
-hidapi = "2.6.3"
-pretty-hex = "0.4.1"
-once_cell = "1.19.0"
-anyhow = "1.0.89"
-log = "0.4.22"
-env_logger = "0.11.5"
-toml = "0.8.19"
+hidapi = "2.6"
+pretty-hex = "0.4"
+once_cell = "1.21"
+anyhow = "1"
+log = "0.4"
+env_logger = "0.11"
+toml = "0.9"
 meowpadv3 = { path = "./meowpadv3" }
 meowpad4k = { path = "./meowpadv2" }
 meowpad3k = { path = "./meowpadv2se" }
@@ -45,10 +45,10 @@ meowpad = { path = "./meowpad" }
 meowboard = { path = "./pure64" }
 hid-iap = { path = "./hid-iap" }
 kagami-studio-iap = { path = "./kagami-studio-iap" }
-reqwest = { version = "0.12.7", features = ["json"] }
-regex = "1.10.6"
-thiserror = "2.0.11"
-better-panic = "0.3.0"
+reqwest = { version = "0.13", features = ["json", "query", "form"] }
+regex = "1.12"
+thiserror = "2"
+better-panic = "0.3"
 cfg-if = "1.0"
 tauri-plugin-process = "2"
 tauri-plugin-http = "2"
@@ -59,7 +59,7 @@ tauri-plugin-fs = "2"
 tauri-plugin-opener = "2"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-ashpd = "0.12.0"
+ashpd = "0.12"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"

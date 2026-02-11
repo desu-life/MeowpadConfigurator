@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bitfield = "0.19.1"
-hex = "0.4.3"
-ihex = "3.0.0"
-scroll = "0.13.0"
-pretty-hex = "0.4.1"
-heapless = "0.9.1"
-thiserror = "2.0.16"
+bitfield = "0.19"
+hex = "0.4"
+ihex = "3"
+scroll = "0.13"
+pretty-hex = "0.4"
+heapless = "0.9"
+thiserror = "2"
 meowpad = { path = "../meowpad" }
