@@ -1,7 +1,7 @@
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { IVersion, KeyState } from "@/apis";
 import { Type } from "naive-ui/es/button/src/interface";
-import * as apip64 from '@/apis/pure64/api'
+import * as apip64 from '@/wasm/pure64'
 import { mapping } from "@/keycode";
 import emitter from "@/mitt";
 import { IMixedKey } from "@/apis";

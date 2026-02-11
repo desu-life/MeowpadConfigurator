@@ -15,7 +15,7 @@ import * as api from '@/apis/api'
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv21se/api'
-import * as apib from '@/apis/pure64/api'
+import * as apib from '@/wasm/pure64'
 import * as apiv3 from '@/apis/meowpadv3/api'
 import { useDialog } from 'naive-ui'
 import { IError, IHidDeviceInfo } from '@/apis';
@@ -23,6 +23,7 @@ import { compareArray, getErrorMsg } from '@/utils';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { LogicalSize } from '@tauri-apps/api/dpi'
 import { useRouter } from 'vue-router'
+import { isTauri } from '@/wasm/environment';
 
 const { t } = useI18n();
 const dialog = useDialog()
@@ -66,7 +67,6 @@ emitter.on('refresh-device-list', async (event: { e: IError }) => {
 })
 
 emitter.on('connection-broke', async (event: { e: IError | null }) => {
-  const appWindow = getCurrentWebviewWindow()
   if (event.e != null) { 
     emitter.emit('header-msg-update', { status: "error", str: t('connection_broke', { e: getErrorMsg(t, event.e) }) })
     console.error(event.e)
@@ -79,13 +79,17 @@ emitter.on('connection-broke', async (event: { e: IError | null }) => {
   device.light_config = undefined
   store.iap_connected = false
   store.developer_mode = false
-  appWindow.setSize(new LogicalSize(800, 600))
+  
+  if (isTauri()) {
+    const appWindow = getCurrentWebviewWindow()
+    appWindow.setSize(new LogicalSize(800, 600))
+  }
+  
   router.push("/")
 })
 
 
 emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
-  const appWindow = getCurrentWebviewWindow()
   emitter.emit('header-loading', { str: t('connecting') })
   try {
     let device_hid_info = event.device;
@@ -218,7 +222,10 @@ emitter.on('connect', async (event: { device: IHidDeviceInfo }) => {
       router.push("/developer-settings")
     } else {
       if (device.is_pure()) {
-        appWindow.setSize(new LogicalSize(1200, 750))
+        if (isTauri()) {
+          const appWindow = getCurrentWebviewWindow()
+          appWindow.setSize(new LogicalSize(1200, 750))
+        }
         router.push("/pure64")
       } else if (device.is_v2()) {
         router.push("/meowpadv2")

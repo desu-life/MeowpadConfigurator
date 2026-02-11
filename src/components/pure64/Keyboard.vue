@@ -23,13 +23,13 @@ import KeyModifyOption from "@/components/pure64/Keyboard/KeyModifyOption.vue";
 import KeySocd from "@/components/pure64/Keyboard/KeySocd.vue";
 import { ComponentPublicInstance, createVNode } from "vue";
 
-import * as apib from "@/apis/pure64/api";
+import * as apib from "@/wasm/pure64";
 import * as api from "@/apis/api";
 import { IError, KeyState } from "@/apis";
 import { useDeviceStore } from "@/store/device";
 import { KeyCode, mapping } from "@/keycode";
 import { useStore } from "@/store/main";
-import { IKeyboard, IKeyConfigBoard } from "@/apis/pure64/config";
+import { IKeyboard, IKeyConfigBoard } from "@/wasm/pure64/config";
 import { IMixedKey } from "@/apis";
 import emitter from "@/mitt";
 import { getErrorMsg, most, splitArray, time_2_str } from "@/utils";

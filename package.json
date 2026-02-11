@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:wasm": "cd src-wasm && wasm-pack build --target web --out-dir ../src/wasm-bindings --dev",
+    "build:wasm:release": "cd src-wasm && wasm-pack build --target web --out-dir ../src/wasm-bindings --release"
   },
   "dependencies": {
     "@tauri-apps/api": "~2.10.1",

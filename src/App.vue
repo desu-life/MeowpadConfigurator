@@ -17,10 +17,12 @@ import emitter from '@/mitt';
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv21se/api'
-import * as apip64 from '@/apis/pure64/api'
+import * as apip64 from '@/wasm/pure64'
 import * as apiv3 from '@/apis/meowpadv3/api'
 import { emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { isTauri } from '@/wasm/environment';
+import { initWasm } from '@/wasm/loader';
 
 
 const lightThemeOverrides: GlobalThemeOverrides = {
@@ -39,56 +41,108 @@ const theme = ref<string>()
 document.body.onselectstart = document.body.oncontextmenu = () => false
 
 async function get_firmware_versions() {
-  store.firmware_versions.set("Meowpad", await apiv2.get_firmware_version())
-  store.firmware_versions.set("Meowpad SE v2", await apiv2se.get_firmware_version())
-  store.firmware_versions.set("Meowpad SE v2.1", await apiv21se.get_firmware_version())
-  store.firmware_versions.set("Pure64", await apip64.get_firmware_version())
-  store.firmware_versions.set("MeowpadV3", await apiv3.get_firmware_version())
-  console.log(store.firmware_versions)
+  const isTauriEnv = isTauri();
+  
+  try {
+    // Pure64 uses unified API, works in both Tauri and Web
+    store.firmware_versions.set("Pure64", await apip64.get_firmware_version())
+    
+    // Other devices only work in Tauri mode
+    if (isTauriEnv) {
+      store.firmware_versions.set("Meowpad", await apiv2.get_firmware_version())
+      store.firmware_versions.set("Meowpad SE v2", await apiv2se.get_firmware_version())
+      store.firmware_versions.set("Meowpad SE v2.1", await apiv21se.get_firmware_version())
+      store.firmware_versions.set("MeowpadV3", await apiv3.get_firmware_version())
+    } else {
+      console.log('[Web] Firmware versions for other devices not available in browser mode')
+    }
+    
+    console.log(store.firmware_versions)
+  } catch (err) {
+    console.warn('[App] Failed to load firmware versions:', err)
+  }
 }
 
 onMounted(async () => {
-  const appWindow = getCurrentWebviewWindow()
+  const isTauriEnv = isTauri();
+  
   await store.load()
   await store.save()
   store.status_str = t("device_disconnected")
 
-  get_latest_version().then(async (version) => {
-    console.log(version)
-    store.version_info = version
-    if (version.length > 0) {
-      let need_update = await check_update(version)
-      if (need_update) {
-        await open_update_url(version[0], t('update_warning'))
+  // Tauri-specific initialization
+  if (isTauriEnv) {
+    const appWindow = getCurrentWebviewWindow()
+    
+    get_latest_version().then(async (version) => {
+      console.log(version)
+      store.version_info = version
+      if (version.length > 0) {
+        let need_update = await check_update(version)
+        if (need_update) {
+          await open_update_url(version[0], t('update_warning'))
+        }
       }
-    }
-  });
-
-  theme.value = await get_theme();
-  await appWindow.onThemeChanged(async ({ payload: t }) => {
-    theme.value = await get_theme();
-  })
-
-  appWindow.setSize(new LogicalSize(800, 600))
-  await appWindow.show()
-
-  await get_firmware_versions()
-
-  emitter.emit('refresh-device-list')
-
-  const interval = setInterval(async () => {
-    if (store.refreshing_devices) { return }
+    }).catch(err => {
+      console.warn('Failed to check for updates:', err)
+    });
 
     try {
-      store.refreshing_devices = true
-      let changes = await refresh_devices();
-      if (changes) {
-        emitter.emit('refresh-device-list')
-      }
-    } finally {
-      store.refreshing_devices = false
+      theme.value = await get_theme();
+      await appWindow.onThemeChanged(async ({ payload: t }) => {
+        theme.value = await get_theme();
+      })
+
+      appWindow.setSize(new LogicalSize(800, 600))
+      await appWindow.show()
+    } catch (err) {
+      console.warn('Failed to initialize Tauri window:', err)
     }
-  }, 1000)
+
+    // Device refresh loop (Tauri only)
+    const interval = setInterval(async () => {
+      if (store.refreshing_devices) { return }
+
+      try {
+        store.refreshing_devices = true
+        let changes = await refresh_devices();
+        if (changes) {
+          emitter.emit('refresh-device-list')
+        }
+      } catch (err) {
+        console.warn('Device refresh failed:', err)
+      } finally {
+        store.refreshing_devices = false
+      }
+    }, 1000)
+  } else {
+    // Web browser initialization
+    console.log('[Web] Running in browser mode with WebHID')
+    
+    // Get system color scheme preference
+    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    theme.value = darkModeQuery.matches ? 'dark' : 'light'
+    console.log(`[Web] System theme: ${theme.value}`)
+    
+    // Listen for theme changes
+    darkModeQuery.addEventListener('change', (e) => {
+      theme.value = e.matches ? 'dark' : 'light'
+      console.log(`[Web] Theme changed to: ${theme.value}`)
+    })
+    
+    // Initialize WASM for WebHID support
+    try {
+      console.log('[Web] Initializing WASM module...')
+      await initWasm()
+      console.log('[Web] WASM module initialized successfully')
+    } catch (err) {
+      console.error('[Web] Failed to initialize WASM:', err)
+      // Continue anyway, some features may not work
+    }
+  }
+
+  await get_firmware_versions()
+  emitter.emit('refresh-device-list')
 })
 
 store.key_detection_status = false

@@ -16,12 +16,15 @@ import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { message } from '@tauri-apps/plugin-dialog';
 import { getErrorMsg } from "@/utils";
+import { isTauri } from '@/wasm/environment';
+import { request_device as wasmRequestDevice } from '@/wasm/pure64';
 
 const { t } = useI18n();
 const store = useStore()
 const device = useDeviceStore()
 const dialog = useDialog()
 const router = useRouter()
+const isWebMode = ref(!isTauri());
 
 
 function check_firmware_version(d: IHidDeviceInfo) {
@@ -116,6 +119,42 @@ async function continue_device_upgrade(d: IHidDeviceInfo) {
 }
 
 
+
+async function requestWebHIDDevice() {
+    if (!navigator.hid) {
+        emitter.emit('header-msg-update', { status: "error", str: t('webhid_not_supported') })
+        return;
+    }
+    
+    try {
+        emitter.emit('header-loading', { str: t('selecting_device') })
+        
+        // Request device - this will show browser's device picker
+        const devices = await navigator.hid.requestDevice({
+            filters: [
+                { vendorId: 0x5D3E, productId: 0xFB01 }, // Pure64
+                { vendorId: 0x5D3E, productId: 0xFB02 }, // Meowpad V3
+                { vendorId: 0x5D3E, productId: 0xFB03 }, // Meowpad V2
+                { vendorId: 0x5D3E, productId: 0xFB04 }, // Meowpad V2 SE
+            ]
+        });
+        
+        if (devices && devices.length > 0) {
+            // Refresh device list to show the newly authorized device
+            emitter.emit('refresh-device-list');
+            emitter.emit('header-msg-update', { status: "success", str: t('device_authorized') })
+        } else {
+            emitter.emit('header-msg-update', { status: "default", str: t('no_device_selected') })
+        }
+    } catch (err: any) {
+        if (err.name === 'NotFoundError') {
+            emitter.emit('header-msg-update', { status: "default", str: t('no_device_selected') })
+        } else {
+            console.error('[WebHID] Request device failed:', err);
+            emitter.emit('header-msg-update', { status: "error", str: t('device_request_failed') })
+        }
+    }
+}
 
 async function device_update(d: IHidDeviceInfo) {
     if (d.device_name != "Meowpad") {
@@ -241,7 +280,16 @@ async function device_update(d: IHidDeviceInfo) {
     </div>
 
     <div v-else>
-        <n-empty :description="t('no_device')" size="huge"></n-empty>
+        <n-empty :description="t('no_device')" size="huge">
+            <template #extra v-if="isWebMode">
+                <n-button @click="requestWebHIDDevice" type="primary" size="large">
+                    {{ t('request_device') }}
+                </n-button>
+                <n-text depth="3" style="margin-top: 12px; display: block; font-size: 14px;">
+                    {{ t('webhid_permission_hint') }}
+                </n-text>
+            </template>
+        </n-empty>
     </div>
 </template>
 

@@ -10,7 +10,7 @@ import * as api from '@/apis/api'
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv2se/api'
-import * as apip64 from '@/apis/pure64/api'
+import * as apip64 from '@/wasm/pure64'
 import * as apiv3 from '@/apis/meowpadv3/api'
 import { IError } from '@/apis';
 import { Toggle } from '@/interface';

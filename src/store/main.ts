@@ -4,11 +4,44 @@ import { Type } from "naive-ui/es/button/src/interface";
 import { Toggle } from "@/interface";
 import { LOCALES, setI18nLanguage } from "@/locales";
 import { LazyStore } from "@tauri-apps/plugin-store";
+import { isTauri } from "@/wasm/environment";
+
+// Simple localStorage wrapper for browser environment
+class BrowserStore {
+  constructor(private key: string) {}
+  
+  async get<T>(itemKey: string): Promise<T | null> {
+    try {
+      const storeData = localStorage.getItem(this.key);
+      if (!storeData) return null;
+      const data = JSON.parse(storeData);
+      return data[itemKey] ?? null;
+    } catch {
+      return null;
+    }
+  }
+  
+  async set(itemKey: string, value: any): Promise<void> {
+    try {
+      const storeData = localStorage.getItem(this.key);
+      const data = storeData ? JSON.parse(storeData) : {};
+      data[itemKey] = value;
+      localStorage.setItem(this.key, JSON.stringify(data));
+    } catch (err) {
+      console.error('Failed to save to localStorage:', err);
+    }
+  }
+  
+  async save(): Promise<void> {
+    // No-op for localStorage (already saved in set)
+  }
+}
 
 export const useStore = defineStore("main", () => {
   const key_detection_status = ref(false)
-  const app_store = new LazyStore(".settings.dat");
-  const device_presets_store = new LazyStore(".device.presets.dat");
+  const useTauri = isTauri();
+  const app_store = useTauri ? new LazyStore(".settings.dat") : new BrowserStore("meowpad-settings");
+  const device_presets_store = useTauri ? new LazyStore(".device.presets.dat") : new BrowserStore("meowpad-presets");
   const status = ref<Type | undefined>(undefined);
   const status_str = ref("");
   const lang = ref<LOCALES>("en");

@@ -25,6 +25,7 @@ import { darkTheme } from "naive-ui";
 import { useI18n } from "vue-i18n";
 import { LazyStore } from "@tauri-apps/plugin-store";
 import { setI18nLanguage } from "@/locales";
+import { isTauri } from "@/wasm/environment";
 
 document.body.onselectstart = document.body.oncontextmenu = () => false
 
@@ -47,7 +48,13 @@ const progress = ref(0);
 const progressText = ref(Math.round(progress.value) + '%');
 
 onMounted(async () => {
+  if (!isTauri()) {
+    console.error('[Progress] This component requires Tauri environment');
+    return;
+  }
+  
   const appWindow = getCurrentWebviewWindow()
+  
   await listen<number>("progress-update", async (event) => {
     progress.value = event.payload;
     progressText.value = Math.round(progress.value) + '%';

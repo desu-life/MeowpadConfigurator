@@ -214,5 +214,12 @@
   "firmware_update_cancel": "Update canceled",
   "custom_key": "Custom key",
   "invalid_firmware": "Invalid firmware",
-  "update_firmware_error": "Firmware update error, reason: {e}"
+  "update_firmware_error": "Firmware update error, reason: {e}",
+  "request_device": "Connect Device",
+  "selecting_device": "Please select a device",
+  "webhid_not_supported": "Your browser does not support WebHID",
+  "device_authorized": "Device authorized successfully",
+  "no_device_selected": "No device selected",
+  "device_request_failed": "Device request failed",
+  "webhid_permission_hint": "Click the button above to select a device to connect"
 }

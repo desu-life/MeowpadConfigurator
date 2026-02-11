@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 src-tauri/meowpad.toml
 target/
+# WASM output
+/wasm/
+src/wasm-bindings/

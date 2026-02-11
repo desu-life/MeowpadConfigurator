@@ -214,5 +214,12 @@
   "firmware_update_cancel": "更新取消",
   "custom_key": "自选",
   "invalid_firmware": "无效的固件文件",
-  "update_firmware_error": "更新固件出错，错误原因：{e}"
+  "update_firmware_error": "更新固件出错，错误原因：{e}",
+  "request_device": "连接设备",
+  "selecting_device": "请选择设备",
+  "webhid_not_supported": "您的浏览器不支持 WebHID",
+  "device_authorized": "设备已授权",
+  "no_device_selected": "未选择设备",
+  "device_request_failed": "设备请求失败",
+  "webhid_permission_hint": "点击上方按钮选择要连接的设备"
 }

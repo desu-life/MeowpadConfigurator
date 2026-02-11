@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IKeyConfigBoard } from '@/apis/pure64/config';
+import { IKeyConfigBoard } from '@/wasm/pure64/config';
 import { Toggle } from '@/interface';
 import { useDeviceStore } from '@/store/device';
 import { useStore } from '@/store/main';

@@ -3,16 +3,17 @@ import { defineStore, acceptHMRUpdate } from "pinia";
 import { IKeyboard as IKBV2, ILighting as ILTV2 } from "@/apis/meowpadv2/config";
 import { IKeyboard as IKBV2SE, ILighting as ILTV2SE, LightingMode as LMV2SE } from "@/apis/meowpadv2se/config";
 import { IKeyboard as IKBV21SE, ILighting as ILTV21SE, LightingMode as LMV21SE } from "@/apis/meowpadv21se/config";
-import { IKeyboard as IKBP64 } from "@/apis/pure64/config";
+import { IKeyboard as IKBP64 } from "@/wasm/pure64/config";
 import { IKeyboard as IKBV3 } from "@/apis/meowpadv3/config";
 import { Toggle } from "../interface";
 import * as apiv2 from '@/apis/meowpadv2/api'
 import * as apiv2se from '@/apis/meowpadv2se/api'
 import * as apiv21se from '@/apis/meowpadv21se/api'
 import * as apiv3 from '@/apis/meowpadv3/api'
-import * as apib from '@/apis/pure64/api'
+import * as apib from '@/wasm/pure64'
 import { Hex2Rgb, Rgb2Hex } from "@/utils";
 import { KeyCode } from "@/keycode";
+import { isTauri } from "@/wasm/environment";
 
 export const useDeviceStore = defineStore("device", () => {
   const connected = ref(false);
@@ -89,6 +90,17 @@ export const useDeviceStore = defineStore("device", () => {
   }
   
   async function get_info() {
+    // In WebHID mode, use device info from enumeration stage
+    if (!isTauri() && device_hid_info.value) {
+      device_info.value = {
+        name: device_hid_info.value.device_name,
+        version: device_hid_info.value.firmware_version
+      };
+      console.log('[Device] Using cached device info from enumeration:', device_info.value);
+      return;
+    }
+    
+    // In Tauri mode, fetch from device
     if (is_v2()) {
       device_info.value = await apiv2.get_device_info()
     }
