@@ -13,7 +13,6 @@ extern "C" {
 }
 
 /// Panic hook for better error messages in WASM
-#[cfg(feature = "panic_hook")]
 pub fn set_panic_hook() {
     use std::panic;
 

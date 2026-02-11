@@ -29,7 +29,6 @@ impl<D: Device> Meowboard<D> {
     pub async fn ping(&self) -> Result<bool> {
         self.write(Packet::new(PacketID::Ping, [])).await?;
         let packet = self.read_timeout(1000).await?;
-        log::info!("Ping response: id={:?}, data={:?}", packet.id, packet.data.hex_dump());
         if packet.id == PacketID::Ping as u8 {
             Ok(true)
         } else {

@@ -7,15 +7,8 @@ use web_sys;
 use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 use async_trait::async_trait;
+use log;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-    
-    #[wasm_bindgen(js_namespace = console)]
-    fn error(s: &str);
-}
 
 /// WebHID implementation of the Device trait
 /// Uses js_sys to interact with navigator.hid API from JavaScript
@@ -42,7 +35,7 @@ impl WebHidDevice {
                 let report_id = if let Ok(id) = Reflect::get(&event, &JsValue::from_str("reportId")) {
                     id.as_f64().unwrap_or(0.0) as u8
                 } else {
-                    log("Failed to get reportId");
+                    log::error!("Failed to get reportId");
                     return;
                 };
                 
@@ -60,7 +53,7 @@ impl WebHidDevice {
                                 );
                                 
                                 let bytes: Vec<u8> = uint8_array.to_vec();
-                                log(&format!("Received report ID {} with {} bytes", report_id, bytes.len()));
+                                log::debug!("Received report ID {} with {} bytes", report_id, bytes.len());
                                 
                                 if let Ok(mut buf) = buffer_clone.lock() {
                                     // Only store data bytes, report ID is handled by WebHID
@@ -128,7 +121,7 @@ impl WebHidDevice {
             .unwrap_or(false);
         
         if !opened {
-            error(&format!("Device not opened, cannot write"));
+            log::error!("Device not opened, cannot write");
             return Err(meowpad::error::Error::Disconnect);
         }
         
@@ -136,7 +129,7 @@ impl WebHidDevice {
         // Input data format: [reportId (1 byte), ...data (64 bytes)] = 65 bytes total
         // We need to split them: reportId from first byte, data from remaining 64 bytes
         if data.len() != 65 {
-            error(&format!("Invalid data length: expected 65 bytes, got {}", data.len()));
+            log::error!("Invalid data length: expected 65 bytes, got {}", data.len());
             return Err(meowpad::error::Error::Disconnect);
         }
         
@@ -146,14 +139,14 @@ impl WebHidDevice {
         // Convert data (without report ID) to Uint8Array
         let array = Uint8Array::from(data_bytes);
         
-        log(&format!("Writing report ID {} with {} bytes of data", report_id, data_bytes.len()));
+        // log::debug!("Writing report ID {} with {} bytes of data", report_id, data_bytes.len());
 
         // Use sendReport for interrupt OUT transfers (standard for custom keyboards)
         let send_fn_name = "sendReport";
         let send_report_fn = match Reflect::get(&self.device, &JsValue::from_str(send_fn_name)) {
             Ok(func) => func,
             Err(e) => {
-                error(&format!("Failed to get {} function: {:?}", send_fn_name, e));
+                log::error!("Failed to get {} function: {:?}", send_fn_name, e);
                 return Err(meowpad::error::Error::Disconnect);
             }
         };
@@ -161,7 +154,7 @@ impl WebHidDevice {
         let func = match send_report_fn.dyn_into::<js_sys::Function>() {
             Ok(f) => f,
             Err(e) => {
-                error(&format!("{} is not a function: {:?}", send_fn_name, e));
+                log::error!("{} is not a function: {:?}", send_fn_name, e);
                 return Err(meowpad::error::Error::Disconnect);
             }
         };
@@ -177,7 +170,7 @@ impl WebHidDevice {
         ) {
             Ok(p) => p,
             Err(e) => {
-                error(&format!("Write error: {:?}", e));
+                log::error!("Write error: {:?}", e);
                 return Err(meowpad::error::Error::Disconnect);
             }
         };
@@ -185,11 +178,11 @@ impl WebHidDevice {
         // Wait for the promise to resolve
         match wasm_bindgen_futures::JsFuture::from(js_sys::Promise::from(promise)).await {
             Ok(_) => {
-                log(&format!("Successfully sent {} bytes", data.len()));
+                // log::debug!("Successfully sent {} bytes", data.len());
                 Ok(data.len())
             }
             Err(e) => {
-                error(&format!("Write promise rejected: {:?}", e));
+                log::error!("Write promise rejected: {:?}", e);
                 Err(meowpad::error::Error::Disconnect)
             }
         }

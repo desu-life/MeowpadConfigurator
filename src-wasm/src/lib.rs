@@ -43,7 +43,7 @@ pub struct DeviceInfo {
 /// Initialize logging for debugging
 #[wasm_bindgen]
 pub fn init_logger() {
-    wasm_logger::init(wasm_logger::Config::default());
+    wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
 }
 
 fn get_navigator() -> Result<JsValue, JsValue> {
