@@ -37,6 +37,7 @@
     "vue-router": "5.0.2"
   },
   "devDependencies": {
+    "@types/node": "^24",
     "@tauri-apps/cli": "2.10.0",
     "@vicons/fluent": "^0.13.0",
     "@vicons/ionicons5": "^0.13.0",
