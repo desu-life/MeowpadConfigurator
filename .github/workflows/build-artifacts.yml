@@ -69,7 +69,7 @@ jobs:
           pnpm run tauri build
 
       - name: build artifacts (Linux)
-        if: matrix.platform == 'ubuntu-22.04'\
+        if: matrix.platform == 'ubuntu-22.04'
         env:
           NO_STRIP: "true"
         working-directory: ./
