@@ -63,8 +63,7 @@ impl WebHidDevice {
                                 log(&format!("Received report ID {} with {} bytes", report_id, bytes.len()));
                                 
                                 if let Ok(mut buf) = buffer_clone.lock() {
-                                    // Add reportId as first byte (matching hidapi behavior)
-                                    buf.push_back(report_id);
+                                    // Only store data bytes, report ID is handled by WebHID
                                     for byte in bytes {
                                         buf.push_back(byte);
                                     }
@@ -202,6 +201,9 @@ impl WebHidDevice {
     
     /// Async read with timeout - waits for data to arrive
     pub async fn read_timeout_async(&self, buf: &mut [u8], timeout_ms: i32) -> meowpad::Result<usize> {
+        // Clear buffer before reading to avoid stale data
+        let _ = self.clear_buffer().await;
+        
         let max_attempts = (timeout_ms / 10).max(10) as usize;
         
         for _ in 0..max_attempts {
@@ -248,13 +250,8 @@ impl Device for WebHidDevice {
     }
 
     async fn read(&self, buf: &mut [u8]) -> meowpad::Result<usize> {
-        // Try to read from buffered data
-        if let Some(count) = self.try_read_buffered(buf) {
-            return Ok(count);
-        }
-
-        // No data available - non-blocking behavior
-        Err(meowpad::error::Error::Disconnect)
+        // Blocking read with default 5 second timeout
+        self.read_timeout_async(buf, 5000).await
     }
 
     async fn read_timeout(&self, buf: &mut [u8], timeout: i32) -> meowpad::Result<usize> {

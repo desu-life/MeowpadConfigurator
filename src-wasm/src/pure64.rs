@@ -39,14 +39,6 @@ pub async fn pure64_probe_device(hid_device_js: JsValue) -> Result<JsValue, JsVa
     
     log::info!("WebHidDevice created");
     
-    // Clear buffer before communication
-    if let Err(e) = webhid_device.clear_buffer().await {
-        log::error!("Failed to clear buffer: {:?}", e);
-        return Err(JsValue::from_str(&format!("Failed to clear buffer: {:?}", e)));
-    }
-    
-    log::info!("Buffer cleared");
-    
     // Keep reference to WebHidDevice for async operations
     // Meowboard is not used for now since its methods are synchronous
     
@@ -72,15 +64,14 @@ pub async fn pure64_probe_device(hid_device_js: JsValue) -> Result<JsValue, JsVa
         }
         
         // Wait for response with async read
-        let mut buf = [0u8; 65];  // 1 byte report ID + 64 bytes data
+        let mut buf = [0u8; 64];  // 64 bytes data (no report ID)
         match webhid_device.read_timeout_async(&mut buf, 1000).await {
             Ok(size) => {
                 log::debug!("Received {} bytes", size);
-                // buf[0] = report ID
-                // buf[1] = packet ID
-                // buf[2..] = packet data
-                if size >= 2 {
-                    let packet_id = buf[1];  // Skip report ID at buf[0]
+                // buf[0] = packet ID
+                // buf[1..] = packet data
+                if size >= 1 {
+                    let packet_id = buf[0];
                     log::debug!("Packet ID: {}", packet_id);
                     if packet_id == 3 {  // Ping response
                         log::info!("Ping successful");
@@ -111,13 +102,13 @@ pub async fn pure64_probe_device(hid_device_js: JsValue) -> Result<JsValue, JsVa
         }
     }
     
-    let mut buf = [0u8; 65];
+    let mut buf = [0u8; 64];
     if let Ok(size) = webhid_device.read_timeout_async(&mut buf, 1000).await {
-        if size >= 2 && buf[1] == 1 {  // PacketID::Ok = 1
-            // Parse packet: buf[0] = report ID, buf[1] = packet ID, buf[2..4] = length (u16 BE), buf[4..] = data
-            let data_len = u16::from_be_bytes([buf[2], buf[3]]) as usize;
-            if data_len > 0 && size >= 4 + data_len {
-                let name_bytes = &buf[4..4 + data_len];
+        if size >= 1 && buf[0] == 1 {  // PacketID::Ok = 1
+            // Parse packet: buf[0] = packet ID, buf[1..3] = length (u16 BE), buf[3..] = data
+            let data_len = u16::from_be_bytes([buf[1], buf[2]]) as usize;
+            if data_len > 0 && size >= 3 + data_len {
+                let name_bytes = &buf[3..3 + data_len];
                 if let Ok(name) = String::from_utf8(name_bytes.to_vec()) {
                     device_name = name;
                     log::info!("Device name: {}", device_name);
@@ -137,13 +128,13 @@ pub async fn pure64_probe_device(hid_device_js: JsValue) -> Result<JsValue, JsVa
         }
     }
     
-    let mut buf = [0u8; 65];
+    let mut buf = [0u8; 64];
     if let Ok(size) = webhid_device.read_timeout_async(&mut buf, 1000).await {
-        if size >= 2 && buf[1] == 1 {  // PacketID::Ok = 1
-            // Parse packet: buf[0] = report ID, buf[1] = packet ID, buf[2..4] = length (u16 BE), buf[4..] = data
-            let data_len = u16::from_be_bytes([buf[2], buf[3]]) as usize;
-            if data_len > 0 && size >= 4 + data_len {
-                let version_bytes = &buf[4..4 + data_len];
+        if size >= 1 && buf[0] == 1 {  // PacketID::Ok = 1
+            // Parse packet: buf[0] = packet ID, buf[1..3] = length (u16 BE), buf[3..] = data
+            let data_len = u16::from_be_bytes([buf[1], buf[2]]) as usize;
+            if data_len > 0 && size >= 3 + data_len {
+                let version_bytes = &buf[3..3 + data_len];
                 if let Ok(version) = String::from_utf8(version_bytes.to_vec()) {
                     firmware_version = version;
                     log::info!("Firmware version: {}", firmware_version);
@@ -219,23 +210,23 @@ pub async fn pure64_get_device_status(device_id: u32) -> Result<JsValue, JsValue
     }
     
     // Read response with timeout
-    let mut buf = [0u8; 65];
+    let mut buf = [0u8; 64];
     match webhid_device.read_timeout_async(&mut buf, 1000).await {
         Ok(size) => {
             log::info!("Read {} bytes for status", size);
-            if size >= 5 && buf[1] == 1 {  // PacketID::Ok = 1
-                // Parse status: buf[4] = key config, buf[5] = hall calib, buf[6] = enabled
+            if size >= 4 && buf[0] == 1 {  // PacketID::Ok = 1
+                // Parse status: buf[3] = key config, buf[4] = hall calib, buf[5] = enabled
                 let status = meowpad::models::DeviceStatus {
-                    key: buf[4] != 0,
-                    hall: buf[5] != 0,
-                    enabled: buf[6] != 0,
+                    key: buf[3] != 0,
+                    hall: buf[4] != 0,
+                    enabled: buf[5] != 0,
                     light: None,
                 };
                 
                 serde_wasm_bindgen::to_value(&status)
                     .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
             } else {
-                log::error!("Unexpected response packet ID: {}", buf[1]);
+                log::error!("Unexpected response packet ID: {}", buf[0]);
                 Err(JsValue::from_str("Unexpected response"))
             }
         }
@@ -482,39 +473,10 @@ pub async fn pure64_save_raw_config(device_id: u32, config: String) -> Result<()
 #[wasm_bindgen]
 pub async fn pure64_ping(device_id: u32) -> Result<bool, JsValue> {
     let webhid_device = get_webhid_device(device_id)?;
-    
-    // Clear buffer before ping
-    if let Err(e) = webhid_device.clear_buffer().await {
-        log::error!("Failed to clear buffer: {:?}", e);
-    }
-    
-    // Use async write and read for WebHID
-    let ping_packet = meowpad::Packet::new(3u8, vec![]);
-    
-    for chunk in ping_packet.build_packets() {
-        if let Err(e) = webhid_device.write_async(&chunk).await {
-            log::error!("Failed to write ping packet: {:?}", e);
-            return Ok(false);
-        }
-    }
-    
-    // Wait for device to respond (WebHID needs time for USB communication)
-    // Use read_timeout_async which properly waits for data
-    let mut buf = [0u8; 65];
-    match webhid_device.read_timeout_async(&mut buf, 1000).await {
-        Ok(size) => {
-            log::info!("Read {} bytes from device", size);
-            if size >= 2 && buf[1] == 3 {
-                log::info!("Ping successful");
-                Ok(true)
-            } else {
-                log::warn!("Ping response with wrong packet ID: {}", buf[1]);
-                Ok(false)
-            }
-        }
-        Err(e) => {
-            log::error!("Ping read error: {:?}", e);
-            Ok(false)
-        }
-    }
+
+    let mut meowboard = Meowboard::new(webhid_device);
+    let res = meowboard.ping().await
+        .map_err(|e| JsValue::from_str(&format!("Failed to ping device: {:?}", e)))?;
+
+    Ok(res)
 }

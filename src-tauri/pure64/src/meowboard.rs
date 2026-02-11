@@ -28,7 +28,8 @@ impl<D: Device> Meowboard<D> {
 
     pub async fn ping(&self) -> Result<bool> {
         self.write(Packet::new(PacketID::Ping, [])).await?;
-        let packet = self.read().await?;
+        let packet = self.read_timeout(1000).await?;
+        log::info!("Ping response: id={:?}, data={:?}", packet.id, packet.data.hex_dump());
         if packet.id == PacketID::Ping as u8 {
             Ok(true)
         } else {
@@ -339,13 +340,14 @@ impl<D: Device> Meowboard<D> {
 
     async fn read_timeout(&self, timeout: i32) -> Result<Packet> {
         let mut buf = Cursor::new([0u8; 64]);
-        self.device.read_timeout(buf.get_mut(), timeout).await?;
+        let num = self.device.read_timeout(buf.get_mut(), timeout).await?;
+        debug!("第一次读取: {} bytes, data: {:?}", num, buf.get_ref().hex_dump());
         debug!("收到数据包: {:?}", buf.get_ref().hex_dump());
         let packet_id = PacketID::from_u8(buf.read_u8()?).ok_or(Error::InvalidPacket)?;
         let packet_len = buf.read_u16::<BigEndian>()? as usize;
         let mut data = Vec::with_capacity(packet_len);
         let mut read_bytes = 0;
-        // let mut packet_num = 1;
+        let mut packet_num = 1;
         loop {
             if read_bytes < packet_len {
                 match buf.read_u8() {
@@ -355,11 +357,12 @@ impl<D: Device> Meowboard<D> {
                     }
                     Err(_) => {
                         // cur已经遍历结束
-                        // reset buffer
-                        unsafe { std::ptr::write_volatile(buf.get_mut(), [0u8; 64]) }
+                        buf.get_mut().fill(0);
                         buf.set_position(0);
+                        self.write(Packet::new(packet_id, [packet_num])).await?;
                         self.device.read_timeout(buf.get_mut(), timeout).await?;
-                        // packet_num += 1;
+                        debug!("再次读取: {} bytes, data: {:?}", num, buf.get_ref().hex_dump());
+                        packet_num += 1;
                     }
                 }
             } else {
@@ -391,11 +394,11 @@ impl<D: Device> Meowboard<D> {
                     Err(_) => {
                         // cur已经遍历结束
                         // reset buffer
-                        unsafe { std::ptr::write_volatile(buf.get_mut(), [0u8; 64]) }
+                        buf.get_mut().fill(0);
                         buf.set_position(0);
                         self.write(Packet::new(packet_id, [packet_num])).await?;
                         self.device.read(buf.get_mut()).await?;
-                        debug!("收到数据包: {:?}", buf.get_ref().hex_dump());
+                        debug!("再次读取: {} bytes, data: {:?}", packet_num, buf.get_ref().hex_dump());
                         packet_num += 1;
                     }
                 }
