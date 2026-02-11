@@ -2745,7 +2745,7 @@ dependencies = [
 
 [[package]]
 name = "meowpad_configurator"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "anyhow",
  "ashpd",
